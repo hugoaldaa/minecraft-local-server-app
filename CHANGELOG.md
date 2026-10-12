@@ -3,6 +3,25 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v1.8.0 - New server/jar implementations (2026-10-12)
+
+- `webContents.send` sobre ventana destruida | `sendToRenderer()` en `main/state.js` (guarda `isDestroyed` en ventana y webContents); usado en servers/crash/updater/window/stats.
+- Escritura a stdin de un proceso muerto | `writeStdin()` en `main/state.js` (guarda `writable`/`destroyed`/`writableEnded`) + handler `stdin.on('error')`.
+- Argumentos JVM con comillas partidos mal | `splitArgs()` en `main/validate.js` (respeta comillas simples/dobles).
+- Backups sin flush de mundo | `quiesce()`/`resume()` en `main/backups.js` (`save-off` + `save-all flush` + `save-on`).
+- Servidores iniciados fuera de la app indistinguibles | Detección por PID (`isJarRunning`) expuesta en tarjetas/barra + banner `#servers-banner` y `status.external*`.
+- Sin suite de tests | `test/*.test.js` con `node:test` (29 pruebas: validate, properties, servers, i18n, versions, http) y script `npm test`.
+- CI solo lint | `.github/workflows/lint.yml` ejecuta `npm test` tras ESLint.
+- Sin instalador de servidores | `main/downloader.js`: descarga **Vanilla** (manifest de Mojang) y **Paper** (API v3 `fill.papermc.io`, verificado con SHA-256).
+- Riesgo de Java incompatible | `minJavaFor()` (`main/versions.js`) + aviso en vivo del wizard vía `javaCheck`.
+- Descargas sin cancelar | `downloads:cancel` con `AbortController`; progreso por evento `downloads:progress`.
+- Sin proveedor Fabric | `server/jar` de `meta.fabricmc.net` (loader/installer estables más recientes); nuevo `parseFabricGameVersions()`.
+- Sin proveedor Forge | `promotions_slim.json` + instalador Maven `--installServer`; arranque args-based (`@user_jvm_args.txt` + `win_args.txt`/`unix_args.txt`), con `parseForgePromotions()`/`forgeArgsRelPath()`.
+- Modal sin semántica ni teclado | `role="dialog"`/`aria-modal`/`aria-labelledby`, `aria-label` traducible (`data-i18n-aria`), `aria-selected` en pestañas, Escape para cerrar y foco al abrir.
+- `downloader.js` mezclaba red y lógica | Capa HTTP extraída a `main/http.js` (redirecciones, `fetchText`/`fetchJson`, `sha256File`, `downloadToFile`) con test propio.
+- Versiones en `undefined` al elegir (Paper) | `parsePaperProjects` devolvía strings y el renderer leía `v.id`; `normalizeVersions()` unifica el contrato `{id}` en el IPC + renderer defensivo y etiqueta de Forge (`1.20.1 (Forge 47.4.10)`).
+- Modal de servidor con estilos incoherentes | `#ms-pick-dir` recibe estilo de botón, selects a ancho completo con foco, `.btn-primary` ya no lo pisa `.modal-actions button`, modal con scroll (`max-height:90vh`) y ancho adaptativo; botón de instalar deshabilitado hasta elegir versión; corrección de la caché de versiones al cambiar de proveedor (`shownProvider`).
+
 ## Unreleased
 
 - **Instalador de servidores integrado** en «Añadir servidor» (pestaña *Descargar servidor*): Vanilla (manifest de Mojang), Paper (API v3 `fill.papermc.io`, verificado con SHA-256), Fabric (`server/jar` de `meta.fabricmc.net`) y Forge (`promotions_slim.json` + instalador Maven `--installServer`, 1.17–1.20.1). Progreso y cancelación vía `downloads:progress`/`downloads:cancel`.
