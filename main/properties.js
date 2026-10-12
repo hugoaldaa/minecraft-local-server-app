@@ -133,4 +133,4 @@ function registerPropertiesIpc() {
   ipcMain.handle('banlist:write', (_, { serverDir, list } = {}) => writeJsonList(serverDir, 'banned-players.json', list))
 }
 
-module.exports = { registerPropertiesIpc, readProperties, writeProperties, readJsonList, writeJsonList }
+module.exports = { registerPropertiesIpc, readProperties, writeProperties, readJsonList, writeJsonList, offlineUuid, sanitizeList }

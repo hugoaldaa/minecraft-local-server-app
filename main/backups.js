@@ -4,7 +4,7 @@ const fs = require('fs')
 const archiver = require('archiver')
 const schedule = require('node-schedule')
 const { getAllServersMap, getServerSettings, getGlobalBackupDir, settingsStore } = require('./stores')
-const { getMainWindow, activeServers } = require('./state')
+const { activeServers, sendToRenderer, writeStdin } = require('./state')
 const { trackEvent } = require('./analytics')
 const { logCrash } = require('./crash')
 const { isStr, isServerDir, isAllowedBackupDir, isAllowedBackupFile } = require('./validate')
@@ -34,7 +34,26 @@ function pruneOldBackups(outDir) {
   } catch (_) { /* si falla el listado, no se borra nada */ }
 }
 
-async function createBackup(serverDir, backupDir) {
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+// Con el servidor en marcha, el mundo puede cambiar mientras se comprime el
+// zip. Se desactiva la escritura a disco (save-off), se fuerza el volcado
+// (save-all flush) y se reanuda (save-on) al terminar, para un backup
+// consistente sin detener el servidor.
+function quiesce(serverId) {
+  const s = activeServers[serverId]
+  if (!s) return false
+  writeStdin(s.process, 'save-off\n')
+  writeStdin(s.process, 'save-all flush\n')
+  return true
+}
+
+function resume(serverId) {
+  const s = activeServers[serverId]
+  if (s) writeStdin(s.process, 'save-on\n')
+}
+
+async function createBackup(serverDir, backupDir, serverId) {
   if (!isServerDir(serverDir)) return { ok: false, error: 'Directorio de servidor no válido' }
   if (!isAllowedBackupDir(backupDir)) return { ok: false, error: 'Carpeta de backups no permitida' }
   const srcDir = path.resolve(serverDir)
@@ -47,15 +66,22 @@ async function createBackup(serverDir, backupDir) {
     logCrash('backup_mkdir_error', err)
     return { ok: false, error: err.message }
   }
+  const live = isStr(serverId) && !!activeServers[serverId]
+  if (live) {
+    quiesce(serverId)
+    await sleep(2000) // margen para que el mundo se vuelque a disco
+  }
   return new Promise((resolve) => {
     const output = fs.createWriteStream(outFile)
     const archive = archiver('zip', { zlib: { level: compressionLevel() } })
+    const finish = (result) => { if (live) resume(serverId); resolve(result) }
     output.on('close', () => {
       pruneOldBackups(outDir)
       trackEvent('backup_created', { sizeMb: Math.round(archive.pointer() / 1024 / 1024) })
-      resolve({ ok: true, file: outFile, size: archive.pointer() })
+      finish({ ok: true, file: outFile, size: archive.pointer() })
     })
-    archive.on('error', (err) => { logCrash('backup_error', err); resolve({ ok: false, error: err.message }) })
+    output.on('error', (err) => { logCrash('backup_write_error', err); finish({ ok: false, error: err.message }) })
+    archive.on('error', (err) => { logCrash('backup_error', err); finish({ ok: false, error: err.message }) })
     archive.pipe(output)
     ;['world', 'world_nether', 'world_the_end'].forEach(dir => {
       const full = path.join(srcDir, dir)
@@ -127,11 +153,8 @@ function scheduleAutoBackup(serverId) {
 
   const run = async () => {
     try {
-      if (activeServers[serverId]) {
-        try { activeServers[serverId].process.stdin.write('save-all\n') } catch (_) { }
-      }
-      const res = await createBackup(serverDir, backupDir)
-      getMainWindow()?.webContents.send('console-line', {
+      const res = await createBackup(serverDir, backupDir, serverId)
+      sendToRenderer('console-line', {
         serverId,
         text: res.ok ? `Backup automático creado: ${path.basename(res.file)}` : `Error en backup automático: ${res.error}`,
         type: res.ok ? 'success' : 'error'
@@ -153,7 +176,7 @@ function initAutoBackups() {
 
 // ─── IPC ─────────────────────────────────────────────────────────────────────
 function registerBackupsIpc() {
-  ipcMain.handle('backup:create', (_, { serverDir, backupDir } = {}) => createBackup(serverDir, backupDir))
+  ipcMain.handle('backup:create', (_, { serverDir, backupDir, serverId } = {}) => createBackup(serverDir, backupDir, serverId))
   ipcMain.handle('backup:list', (_, backupDir) => listBackups(backupDir))
   ipcMain.handle('backup:delete', (_, filePath) => deleteBackupFile(filePath))
   ipcMain.handle('backup:dir', (_, serverId) => resolveBackupDir(serverId))

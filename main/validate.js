@@ -104,6 +104,32 @@ function isIntInRange(v, min, max, fallback) {
 
 function isValidColor(c) { return typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c) }
 
+// Divide argumentos de la línea de comandos respetando comillas simples/dobles.
+// Evita que `.split(' ')` rompa rutas con espacios: -Ddir="C:\My Servers".
+function splitArgs(input) {
+  if (typeof input !== 'string' || !input.trim()) return []
+  const args = []
+  let current = ''
+  let quote = null
+  let quoted = false
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i]
+    if (quote) {
+      if (ch === quote) quote = null
+      else current += ch
+    } else if (ch === '"' || ch === "'") {
+      quote = ch
+      quoted = true
+    } else if (/\s/.test(ch)) {
+      if (current !== '' || quoted) { args.push(current); current = ''; quoted = false }
+    } else {
+      current += ch
+    }
+  }
+  if (current !== '' || quoted) args.push(current)
+  return args
+}
+
 function cleanText(v, maxLen) {
   if (typeof v !== 'string') return ''
   return v.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, maxLen)
@@ -132,6 +158,7 @@ module.exports = {
   rememberPickedDir,
   isIntInRange,
   isValidColor,
+  splitArgs,
   cleanText,
   isValidJavaPath,
   isPlainObject,

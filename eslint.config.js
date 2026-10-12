@@ -17,7 +17,8 @@ const nodeGlobals = {
   setImmediate: 'readonly',
   queueMicrotask: 'readonly',
   URL: 'readonly',
-  fetch: 'readonly'
+  fetch: 'readonly',
+  AbortController: 'readonly'
 }
 
 const browserGlobals = {

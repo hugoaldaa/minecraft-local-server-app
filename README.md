@@ -12,6 +12,25 @@ Compatible with Vanilla, Paper, Spigot, Bukkit, Fabric, and Forge.
 - Whitelist and Banlist with visual editor.
 - server.properties editor.
 - Manual and automatic world backups.
+- Built-in server installer: download and set up **Vanilla**, **Paper**,
+  **Fabric** or **Forge** from inside the "Add server" dialog.
+
+## Server installer
+
+The "Add server" dialog has a **Download server** tab that fetches and installs a
+server without leaving the app:
+
+| Variant | Source                                                | Notes                                            |
+| ------- | ----------------------------------------------------- | ------------------------------------------------ |
+| Vanilla | Mojang version manifest                               | Official server JAR                              |
+| Paper   | `fill.papermc.io` (v3 API)                            | Stable builds, verified with SHA-256             |
+| Fabric  | `meta.fabricmc.net`                                   | Latest stable loader + installer                 |
+| Forge   | `files.minecraftforge.net` / Maven                    | 1.17 and newer; runs the installer               |
+
+Downloads show progress and can be cancelled. The installer also warns in
+advance when the selected Minecraft version needs a newer Java than the one
+configured (Java 8/17/21 depending on the version).
+
 
 ## Requirements
 
@@ -76,11 +95,12 @@ npm run dev      # same, passing the --dev flag
 ```bash
 npm run lint          # ESLint (flat config in eslint.config.js)
 npm run lint:fix      # auto-fix what can be fixed
+npm test              # Node's built-in test runner (test/*.test.js)
 npm run format        # Prettier, writes the files
 npm run format:check  # Prettier, check only
 ```
 
-CI runs `npm ci` + `npm run lint` on every push and pull request
+CI runs `npm ci` + `npm run lint` + `npm test` on every push and pull request
 (`.github/workflows/lint.yml`).
 
 ### Building
@@ -104,6 +124,9 @@ Releases are cut with `npm run release`; see [RELEASE_GUIDE.md](RELEASE_GUIDE.md
 | `main/stores.js`    | `electron-store` instances: servers, settings, analytics, crashes          |
 | `main/validate.js`  | Validation of IPC payloads and allow-lists for paths from the renderer     |
 | `main/servers.js`   | Create/start/stop servers, console commands, player management             |
+| `main/downloader.js`| Server installer: Vanilla/Paper/Fabric/Forge download, Forge install, IPC  |
+| `main/http.js`      | HTTP helpers: redirects, text/JSON fetch, SHA-256, resumable-free download |
+| `main/versions.js`  | Pure helpers: Java thresholds, version sorting, provider parsers           |
 | `main/properties.js`| `server.properties` and whitelist/banlist/ops editing                      |
 | `main/backups.js`   | Manual and scheduled world backups (`archiver`, `node-schedule`)           |
 | `main/window.js`    | `BrowserWindow` creation, navigation guards, window IPC                    |
@@ -113,6 +136,7 @@ Releases are cut with `npm run release`; see [RELEASE_GUIDE.md](RELEASE_GUIDE.md
 | `main/crash.js`     | Local log of uncaught errors and unhandled rejections                      |
 | `preload.js`        | `contextBridge` API exposed to the renderer as `window.api`                |
 | `src/`              | Renderer: `index.html` (strict CSP), `renderer.js`, CSS in `src/css/`      |
+| `test/`             | Unit tests run with `node --test` (validate, properties, servers, i18n…)    |
 | `assets/`           | App icons and fonts used by the builds                                     |
 | `web/`              | Static landing page, deployed separately (not part of the app bundle)      |
 | `scripts/`          | `release.mjs`, the release helper                                          |

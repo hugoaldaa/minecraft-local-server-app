@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
 const path = require('path')
-const { activeServers, setMainWindow, getMainWindow } = require('./state')
+const { activeServers, setMainWindow, getMainWindow, sendToRenderer } = require('./state')
 const { stopAllServers } = require('./servers')
 const { canOpenPath, rememberPickedDir, isStr } = require('./validate')
 const { settingsStore } = require('./stores')
@@ -61,14 +61,14 @@ function createWindow() {
     const running = Object.keys(activeServers)
     if (running.length > 0) {
       e.preventDefault()
-      mainWindow.webContents.send('confirm-close', { count: running.length })
+      sendToRenderer('confirm-close', { count: running.length })
     }
   })
   mainWindow.on('closed', () => setMainWindow(null))
-  mainWindow.on('maximize', () => { getMainWindow()?.webContents.send('window:maximized', true) })
-  mainWindow.on('unmaximize', () => { getMainWindow()?.webContents.send('window:maximized', false) })
+  mainWindow.on('maximize', () => { sendToRenderer('window:maximized', true) })
+  mainWindow.on('unmaximize', () => { sendToRenderer('window:maximized', false) })
   mainWindow.webContents.on('did-finish-load', () => {
-    getMainWindow()?.webContents.send('window:maximized', mainWindow.isMaximized())
+    sendToRenderer('window:maximized', mainWindow.isMaximized())
     // Tamaño de la interfaz guardado en Ajustes → Apariencia
     const zoom = settingsStore.get('uiScale')
     if ([1, 1.25, 1.5].includes(zoom)) mainWindow.webContents.setZoomFactor(zoom)

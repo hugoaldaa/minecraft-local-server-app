@@ -23,7 +23,7 @@ contextBridge.exposeInMainWorld('api', {
   writeWhitelist: (dir, list) => ipcRenderer.invoke('whitelist:write', { serverDir: dir, list }),
   readBanlist: (dir) => ipcRenderer.invoke('banlist:read', dir),
   writeBanlist: (dir, list) => ipcRenderer.invoke('banlist:write', { serverDir: dir, list }),
-  createBackup: (sd, bd) => ipcRenderer.invoke('backup:create', { serverDir: sd, backupDir: bd }),
+  createBackup: (sd, bd, sid) => ipcRenderer.invoke('backup:create', { serverDir: sd, backupDir: bd, serverId: sid }),
   listBackups: (bd) => ipcRenderer.invoke('backup:list', bd),
   deleteBackup: (p) => ipcRenderer.invoke('backup:delete', p),
   getBackupDir: (serverId) => ipcRenderer.invoke('backup:dir', serverId),
@@ -44,6 +44,18 @@ contextBridge.exposeInMainWorld('api', {
   onUpdateStatus: (cb) => ipcRenderer.on('update-status', (_, d) => cb(d)),
   onUpdateAvailable: (cb) => ipcRenderer.on('update-status', (_, d) => { if (d.status === 'available') cb(d) }),
   onUpdateDownloaded: (cb) => ipcRenderer.on('update-status', (_, d) => { if (d.status === 'ready') cb(d) }),
+
+  // Descarga/instalación de servidores
+  listDownloadVersions: (provider) => ipcRenderer.invoke('downloads:versions', provider),
+  minJavaFor: (versionId) => ipcRenderer.invoke('downloads:java', versionId),
+  getDefaultServerDir: () => ipcRenderer.invoke('downloads:defaultDir'),
+  installServer: (d) => ipcRenderer.invoke('downloads:install', d),
+  cancelDownload: (token) => ipcRenderer.invoke('downloads:cancel', token),
+  onDownloadProgress: (cb) => {
+    const l = (_e, p) => cb(p)
+    ipcRenderer.on('downloads:progress', l)
+    return () => ipcRenderer.removeListener('downloads:progress', l)
+  },
 
   // Analytics
   getAnalyticsConsent: () => ipcRenderer.invoke('analytics:getConsent'),

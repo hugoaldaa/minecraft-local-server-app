@@ -73,6 +73,7 @@
         <button class="btn-new-server" id="btn-new-server" data-i18n="servers.add">Añadir servidor</button>
       </div>
     </div>
+    <div class="servers-banner hidden" id="servers-banner" role="alert"></div>
     <div class="servers-grid" id="servers-grid"></div>
   </div>
 
@@ -566,18 +567,57 @@
   </div>
 
   <!-- ══ MODAL: new server ════════════════════════════════════════════════════ -->
-  <div class="modal-backdrop hidden" id="modal-server">
+  <div class="modal-backdrop hidden" id="modal-server" role="dialog" aria-modal="true" aria-labelledby="modal-server-title">
     <div class="modal modal-wide">
       <h3 id="modal-server-title" data-i18n="servers.add">Añadir servidor</h3>
+
+      <div class="segmented" id="ms-source" role="tablist" aria-label="Origen del servidor">
+        <button type="button" role="tab" aria-selected="true" class="active" data-source="manual" data-i18n="modal.sourceManual">Ya tengo el .jar</button>
+        <button type="button" role="tab" aria-selected="false" data-source="download" data-i18n="modal.sourceDownload">Descargar servidor</button>
+      </div>
+
+      <div id="ms-manual-fields" role="tabpanel">
+        <div class="field-group">
+          <label data-i18n="config.jarLabel">Archivo JAR</label>
+          <div class="field-row"><input type="text" id="ms-jar" placeholder="Ruta al .jar del servidor"
+              data-i18n-placeholder="modal.jarPlaceholder" readonly /><button id="ms-pick-jar" data-i18n-aria="modal.pickFile"
+              data-i18n-title="modal.pickFile">📁</button></div>
+        </div>
+      </div>
+
+      <div id="ms-download-fields" role="tabpanel" class="hidden">
+        <div class="field-row">
+          <div class="field-group flex1">
+            <label for="ms-provider" data-i18n="modal.provider">Variante</label>
+            <select id="ms-provider">
+              <option value="paper" data-i18n="modal.providerPaper">Paper</option>
+              <option value="vanilla" data-i18n="modal.providerVanilla">Vanilla</option>
+              <option value="fabric" data-i18n="modal.providerFabric">Fabric</option>
+              <option value="forge" data-i18n="modal.providerForge">Forge</option>
+            </select>
+          </div>
+          <div class="field-group flex1">
+            <label for="ms-version" data-i18n="modal.version">Versión</label>
+            <select id="ms-version"></select>
+          </div>
+        </div>
+        <p class="field-hint hidden" id="ms-java-warn"></p>
+        <div class="field-group">
+          <label for="ms-install-root" data-i18n="modal.installRoot">Instalar en</label>
+          <div class="field-row"><input type="text" id="ms-install-root" readonly data-i18n-placeholder="modal.installRootPlaceholder" /><button
+              id="ms-pick-dir" data-i18n-aria="modal.pickDir" data-i18n-title="modal.pickDir">📁</button></div>
+          <p class="field-hint" id="ms-install-hint"></p>
+        </div>
+        <div class="progress-wrap hidden" id="ms-progress">
+          <p id="ms-progress-label"></p>
+          <div class="upd-progress"><div class="upd-bar" id="ms-progress-fill"></div></div>
+        </div>
+      </div>
+
       <div class="field-group"><label data-i18n="modal.name">Nombre</label><input type="text" id="ms-name"
           placeholder="Mi servidor survival" data-i18n-placeholder="modal.namePlaceholder" /></div>
       <div class="field-group"><label data-i18n="modal.colorLabel">Color identificador</label>
         <div class="color-options" id="ms-color-options"></div>
-      </div>
-      <div class="field-group">
-        <label data-i18n="config.jarLabel">Archivo JAR</label>
-        <div class="field-row"><input type="text" id="ms-jar" placeholder="Ruta al .jar del servidor"
-            data-i18n-placeholder="modal.jarPlaceholder" readonly /><button id="ms-pick-jar">📁</button></div>
       </div>
       <div class="field-row">
         <div class="field-group flex1"><label data-i18n="modal.ramMin">RAM mín (MB)</label><input type="number"
@@ -594,7 +634,7 @@
   </div>
 
   <!-- ══ MODAL: confirm close ══════════════════════════════════════════════════════════════════ -->
-  <div class="modal-backdrop hidden" id="modal-close">
+  <div class="modal-backdrop hidden" id="modal-close" role="dialog" aria-modal="true" aria-labelledby="modal-close-title">
     <div class="modal">
       <h3 id="modal-close-title" data-i18n="close.title">¿Cerrar la aplicación?</h3>
       <p id="modal-close-msg" data-i18n="close.msg">Hay servidores en ejecución. Se detendrán antes de cerrar.</p>

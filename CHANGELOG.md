@@ -3,6 +3,15 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## Unreleased
+
+- **Instalador de servidores integrado** en «Añadir servidor» (pestaña *Descargar servidor*): Vanilla (manifest de Mojang), Paper (API v3 `fill.papermc.io`, verificado con SHA-256), Fabric (`server/jar` de `meta.fabricmc.net`) y Forge (`promotions_slim.json` + instalador Maven `--installServer`, 1.17–1.20.1). Progreso y cancelación vía `downloads:progress`/`downloads:cancel`.
+- **Robustez**: `sendToRenderer()`/`writeStdin()` protegen el envío al renderer y la escritura al stdin de procesos muertos; `splitArgs()` respeta comillas; los backups hacen `save-all flush` antes de comprimir.
+- **Tests y CI**: suite con `node:test` (`test/*.test.js`, `npm test`) y paso de tests en el workflow de lint.
+- **Accesibilidad del modal**: `role="dialog"`, `aria-modal`, `aria-label` traducible, `aria-selected` en pestañas, cierre con Escape y gestión de foco.
+- **Arquitectura**: capa HTTP extraída a `main/http.js`; helpers de versiones en `main/versions.js`.
+- **Correcciones del modal «Añadir servidor»**: Paper mostraba las versiones como `undefined` (contrato `{id}` unificado con `normalizeVersions`), la lista no se refrescaba al cambiar de variante ya cacheada, y se unificó el estilo (botón de carpeta, selects a ancho completo, botón primario correcto, modal con scroll y ancho adaptativo).
+
 ## v1.7.1 - Toogle styles (2026-10-09)
 
 - New toogle styles.

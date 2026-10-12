@@ -1,6 +1,6 @@
 const { app, ipcMain } = require('electron')
 const { autoUpdater } = require('electron-updater')
-const { getMainWindow } = require('./state')
+const { sendToRenderer } = require('./state')
 
 // electron-updater solo soporta AppImage en Linux: los .deb/.rpm se actualizan
 // con el gestor de paquetes del sistema.
@@ -34,7 +34,7 @@ function setupAutoUpdater() {
   autoUpdater.on('update-available', (info) => {
     hasUpdate = true
     manualCheck = false
-    getMainWindow()?.webContents.send('update-status', {
+    sendToRenderer('update-status', {
       status: 'available',
       version: info.version,
       releaseNotes: info.releaseNotes || null
@@ -44,21 +44,21 @@ function setupAutoUpdater() {
   autoUpdater.on('update-not-available', (info) => {
     hasUpdate = false
     manualCheck = false
-    getMainWindow()?.webContents.send('update-status', {
+    sendToRenderer('update-status', {
       status: 'latest',
       version: info?.version || app.getVersion()
     })
   })
 
   autoUpdater.on('download-progress', (progress) => {
-    getMainWindow()?.webContents.send('update-status', {
+    sendToRenderer('update-status', {
       status: 'downloading',
       percent: Math.round(progress.percent)
     })
   })
 
   autoUpdater.on('update-downloaded', (info) => {
-    getMainWindow()?.webContents.send('update-status', {
+    sendToRenderer('update-status', {
       status: 'ready',
       version: info.version
     })
@@ -70,7 +70,7 @@ function setupAutoUpdater() {
     // actualización: una comprobación rutinaria fallida no debe borrar ese estado.
     if (manualCheck || hasUpdate) {
       manualCheck = false
-      getMainWindow()?.webContents.send('update-status', { status: 'error' })
+      sendToRenderer('update-status', { status: 'error' })
     }
   })
 }

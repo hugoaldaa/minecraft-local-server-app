@@ -2,7 +2,7 @@ const { app, ipcMain } = require('electron')
 const os = require('os')
 const crypto = require('crypto')
 const { crashStore, settingsStore } = require('./stores')
-const { getMainWindow } = require('./state')
+const { sendToRenderer } = require('./state')
 const { sendAnalyticsPayload } = require('./analytics')
 
 function setupCrashReporter() {
@@ -34,7 +34,7 @@ function logCrash(type, err) {
   } catch (_) { }
 
   // Notifica al renderer si la ventana existe
-  getMainWindow()?.webContents.send('crash-logged', crash)
+  sendToRenderer('crash-logged', crash)
 
   // Envía si hay endpoint configurado
   const endpoint = settingsStore.get('crashEndpoint')

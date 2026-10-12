@@ -13,7 +13,8 @@ const state = {
   isRunning: false,
   update: { status: 'idle', hasUpdate: false, version: null, notes: null, percent: 0, lastChecked: null },
   detailBar: [false, false],
-  maximized: false
+  maximized: false,
+  dl: { source: 'manual', provider: 'paper', version: '', versions: {}, shownProvider: null, installRoot: '', token: null, installing: false, cancelRequested: false }
 }
 
 const MAX_LINES = 2000
@@ -592,6 +593,10 @@ async function refreshServersGrid() {
   state.servers = servers
   const grid = document.getElementById('servers-grid')
   const active = Object.keys(statusAll).length
+  const externalCount = Object.values(statusAll).filter(s => s && s.external).length
+  const banner = document.getElementById('servers-banner')
+  banner.classList.toggle('hidden', externalCount === 0)
+  banner.textContent = T('servers.externalNote', { count: externalCount })
   document.getElementById('servers-title').textContent = T('servers.title')
   document.getElementById('servers-sub').textContent = T('servers.sub', { count: state.servers.length, active })
 
@@ -606,13 +611,17 @@ async function refreshServersGrid() {
     return
   }
   fill(grid, ...state.servers.map(s => {
-    const running = !!statusAll[s.id]
+    const st = statusAll[s.id]
+    const running = !!st
+    const external = !!(st && st.external)
+    const statusAttrs = { class: `server-card-status${external ? ' is-external' : ''}` }
+    if (external) statusAttrs.title = T('status.externalHint', { pid: st.pid || '?' })
     return h('div', { class: 'server-card', 'data-server-id': s.id, 'data-color': s.color || SERVER_COLORS[0] },
       h('div', { class: 'server-card-header' },
         h('div', { class: 'server-card-name', text: s.name }),
-        h('div', { class: 'server-card-status' },
-          h('span', { class: `dot ${running ? 'on' : 'off'}` }),
-          h('span', { text: running ? T('status.online') : T('status.stopped') })
+        h('div', statusAttrs,
+          h('span', { class: `dot ${external ? 'external' : (running ? 'on' : 'off')}` }),
+          h('span', { text: external ? T('status.external') : (running ? T('status.online') : T('status.stopped')) })
         )
       )
     )
@@ -638,8 +647,10 @@ async function openServer(serverId) {
     ; (state.consoleLogs[serverId] || []).slice(-MAX_LINES).forEach(l => appendLog(l.text, l.type))
 
   const status = await run(T('run.serverStatus'), () => window.api.getStatus(serverId), { running: false })
-  state.isRunning = !!(status && status.running)
-  updateDetailBar(state.isRunning)
+  const external = !!(status && status.external)
+  state.isRunning = !!(status && status.running && !external)
+  updateDetailBar(state.isRunning, false, external)
+  if (external) appendLog(T('status.externalHint', { pid: (status && status.pid) || '?' }), 'warn')
 
   const settings = await run(T('run.settings'), () => window.api.getSettings(serverId), {})
   loadConfigTab(server, settings || {})
@@ -661,14 +672,76 @@ async function openServer(serverId) {
 }
 
 // ─── New server modal ─────────────────────────────────────────────────────────
+function closeServerModal() {
+  const modal = document.getElementById('modal-server')
+  modal.classList.add('hidden')
+  const opener = document.getElementById('btn-new-server')
+  if (opener && typeof opener.focus === 'function') opener.focus()
+}
+
 function initModal() {
   document.getElementById('btn-new-server').onclick = openServerModal
-  document.getElementById('ms-cancel').onclick = () => { document.getElementById('modal-server').classList.add('hidden') }
+  document.getElementById('ms-cancel').onclick = () => {
+    if (state.dl.installing) {
+      state.dl.cancelRequested = true
+      window.api.cancelDownload(state.dl.token)
+      return
+    }
+    closeServerModal()
+  }
   document.getElementById('ms-pick-jar').onclick = async () => {
     const p = await run(T('run.pickJar'), () => window.api.openJarDialog())
     if (p) document.getElementById('ms-jar').value = p
   }
-  document.getElementById('ms-save').onclick = saveNewServer
+  document.getElementById('ms-save').onclick = () => {
+    if (state.dl.source === 'download') saveNewServerDownload()
+    else saveNewServer()
+  }
+
+  // Pestañas de origen del servidor
+  document.querySelectorAll('#ms-source button').forEach(btn => {
+    btn.onclick = () => setServerSource(btn.dataset.source)
+  })
+  document.getElementById('ms-provider').onchange = () => {
+    state.dl.provider = document.getElementById('ms-provider').value
+    ensureVersions()
+  }
+  document.getElementById('ms-version').onchange = () => {
+    updateJavaWarn()
+    updateInstallButton()
+  }
+  document.getElementById('ms-java').addEventListener('input', updateJavaWarn)
+  document.getElementById('ms-name').addEventListener('input', updateInstallHint)
+  document.getElementById('ms-pick-dir').onclick = async () => {
+    const p = await run(T('run.pickDir'), () => window.api.openDirDialog())
+    if (p) {
+      document.getElementById('ms-install-root').value = p
+      updateInstallHint()
+    }
+  }
+  window.api.onDownloadProgress(p => {
+    if (!state.dl.installing || !p || p.token !== state.dl.token) return
+    const fill = document.getElementById('ms-progress-fill')
+    const label = document.getElementById('ms-progress-label')
+    if (p.phase === 'download') {
+      if (p.total) {
+        const pct = Math.min(100, Math.round((p.received / p.total) * 100))
+        fill.style.width = pct + '%'
+        label.textContent = T('modal.downloadProgress', { pct })
+      } else {
+        label.textContent = T('modal.downloading')
+      }
+    } else if (p.phase === 'verify') {
+      label.textContent = T('modal.verifying')
+    } else if (p.phase === 'install') {
+      fill.style.width = '100%'
+      label.textContent = T('modal.installing')
+    } else if (p.phase === 'done') {
+      fill.style.width = '100%'
+      label.textContent = T('modal.done')
+    }
+  })
+
   document.getElementById('modal-cancel').onclick = () => {
     document.getElementById('modal-close').classList.add('hidden')
     document.getElementById('modal-close-level1').classList.remove('hidden')
@@ -688,6 +761,13 @@ function initModal() {
     document.getElementById('modal-close-level2').classList.add('hidden')
   }
   document.getElementById('modal-confirm').onclick = () => window.api.close()
+
+  // Accesibilidad: Escape cierra el modal de servidor (salvo si está instalando)
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || e.defaultPrevented) return
+    const modal = document.getElementById('modal-server')
+    if (modal && !modal.classList.contains('hidden') && !state.dl.installing) closeServerModal()
+  })
 }
 
 function renderColorOptions(containerId, selectedColor) {
@@ -713,16 +793,187 @@ async function openServerModal() {
   document.getElementById('ms-min-ram').value = 1024
   document.getElementById('ms-max-ram').value = 4096
   document.getElementById('ms-error').textContent = ''
+  state.dl.token = null
+  state.dl.cancelRequested = false
+  state.dl.provider = document.getElementById('ms-provider').value
+  state.dl.shownProvider = null
   renderColorOptions('ms-color-options', null)
+  setServerSource('manual')
   document.getElementById('modal-server').classList.remove('hidden')
+  const nameInput = document.getElementById('ms-name')
+  if (nameInput && typeof nameInput.focus === 'function') nameInput.focus()
   // Valores por defecto de Ajustes → Servidores
   const pref = await run(T('run.settings'), () => Promise.all([
     window.api.getPref('defaultRam'),
-    window.api.getPref('defaultJava')
-  ]), [null, null])
-  const [ram, java] = Array.isArray(pref) ? pref : [null, null]
+    window.api.getPref('defaultJava'),
+    window.api.getPref('defaultServerDir')
+  ]), [null, null, null])
+  const [ram, java, serverDir] = Array.isArray(pref) ? pref : [null, null, null]
   if (Number.isInteger(ram) && ram >= 512 && ram <= 65536) document.getElementById('ms-max-ram').value = ram
   document.getElementById('ms-java').value = java || ''
+  const rootInput = document.getElementById('ms-install-root')
+  if (!rootInput.value && !serverDir) {
+    const d = await run(T('run.settings'), () => window.api.getDefaultServerDir(), null)
+    if (d && d.ok && d.dir) rootInput.value = d.dir
+  } else if (!rootInput.value && serverDir) {
+    rootInput.value = serverDir
+  }
+}
+
+// ─── Wizard de descarga ─────────────────────────────────────────────────────
+function updateInstallButton() {
+  const save = document.getElementById('ms-save')
+  if (state.dl.source !== 'download') {
+    save.disabled = state.dl.installing
+    return
+  }
+  const hasVersion = !!document.getElementById('ms-version').value
+  save.disabled = state.dl.installing || !hasVersion
+}
+
+function setServerSource(source) {
+  state.dl.source = source
+  document.querySelectorAll('#ms-source button').forEach(b => {
+    const active = b.dataset.source === source
+    b.classList.toggle('active', active)
+    b.setAttribute('aria-selected', active ? 'true' : 'false')
+  })
+  document.getElementById('ms-manual-fields').classList.toggle('hidden', source === 'download')
+  document.getElementById('ms-download-fields').classList.toggle('hidden', source !== 'download')
+  document.getElementById('ms-error').textContent = ''
+  const save = document.getElementById('ms-save')
+  if (source === 'download') {
+    save.textContent = T('modal.installAction')
+    ensureVersions()
+    updateInstallHint()
+  } else {
+    save.textContent = T('common.save')
+  }
+  updateInstallButton()
+}
+
+function renderVersionOptions(sel, versions) {
+  fill(sel, ...versions.map(v => {
+    const id = typeof v === 'string' ? v : v.id
+    const suffix = v && v.forge ? ` (Forge ${v.forge})` : (v && v.release === false ? ' (pre)' : '')
+    return h('option', { value: id }, `${id}${suffix}`)
+  }))
+  if (versions.length) sel.selectedIndex = 0
+}
+
+async function ensureVersions() {
+  const sel = document.getElementById('ms-version')
+  const provider = state.dl.provider
+  if (state.dl.versions[provider] && state.dl.shownProvider === provider) return
+  // Ya cargado antes: se reutiliza sin volver a pedirlo al main.
+  if (state.dl.versions[provider]) {
+    renderVersionOptions(sel, state.dl.versions[provider])
+    state.dl.shownProvider = provider
+    updateJavaWarn()
+    updateInstallButton()
+    return
+  }
+  sel.disabled = true
+  fill(sel, h('option', { value: '' }, T('common.loading')))
+  const res = await run(T('run.loadVersions'), () => window.api.listDownloadVersions(state.dl.provider), null)
+  const versions = (res && res.ok && Array.isArray(res.versions)) ? res.versions : []
+  if (res && !res.ok) document.getElementById('ms-error').textContent = res.error || T('servers.createError')
+  state.dl.versions[provider] = versions
+  state.dl.shownProvider = provider
+  sel.disabled = false
+  renderVersionOptions(sel, versions)
+  updateJavaWarn()
+  updateInstallButton()
+}
+
+function folderPreview() {
+  const name = document.getElementById('ms-name').value.trim() || 'server'
+  return name.replace(/[<>:"/\\|?*\x00-\x1f]+/g, '_').trim().slice(0, 60) || 'server'
+}
+
+function updateInstallHint() {
+  const root = document.getElementById('ms-install-root').value.trim()
+  const hint = document.getElementById('ms-install-hint')
+  hint.textContent = root ? T('modal.installHint', { dir: root.replace(/[\\/]+$/, '') + '\\' + folderPreview() }) : ''
+}
+
+async function updateJavaWarn() {
+  const version = document.getElementById('ms-version').value
+  const warn = document.getElementById('ms-java-warn')
+  if (!version) { warn.classList.add('hidden'); return }
+  const need = await run(T('run.checkJava'), () => window.api.minJavaFor(version), { ok: false })
+  if (!need || !need.ok || !need.major) { warn.classList.add('hidden'); return }
+  const javaPath = document.getElementById('ms-java').value.trim() || 'java'
+  const check = await run(T('run.checkJava'), () => window.api.javaCheck(javaPath), { ok: false })
+  const have = check && check.ok ? check.major : null
+  warn.classList.remove('hidden')
+  if (have === null) warn.textContent = T('modal.javaUnknown', { need: need.major })
+  else if (have < need.major) warn.textContent = T('modal.javaWarn', { need: need.major, have })
+  else warn.textContent = T('modal.javaOk', { need: need.major, have })
+}
+
+function setInstallingUI(active) {
+  state.dl.installing = active
+  const progress = document.getElementById('ms-progress')
+  const fill = document.getElementById('ms-progress-fill')
+  const save = document.getElementById('ms-save')
+  const cancel = document.getElementById('ms-cancel')
+  const err = document.getElementById('ms-error')
+  save.disabled = active
+  cancel.disabled = false
+  if (active) {
+    fill.style.width = '0%'
+    document.getElementById('ms-progress-label').textContent = ''
+    progress.classList.remove('hidden')
+    err.textContent = ''
+  } else {
+    progress.classList.add('hidden')
+    cancel.textContent = T('common.cancel')
+    if (state.dl.token) {
+      window.api.cancelDownload(state.dl.token)
+      state.dl.token = null
+    }
+  }
+}
+
+async function saveNewServerDownload() {
+  const err = document.getElementById('ms-error')
+  const name = document.getElementById('ms-name').value.trim()
+  const root = document.getElementById('ms-install-root').value.trim()
+  const version = document.getElementById('ms-version').value
+  if (!name) { err.textContent = T('modal.nameRequired'); return }
+  if (!version) { err.textContent = T('modal.selectVersion'); return }
+  if (!root) { err.textContent = T('modal.selectInstallRoot'); return }
+  const selectedColor = document.querySelector('#ms-color-options .color-opt.selected')
+  const payload = {
+    provider: state.dl.provider,
+    version,
+    name,
+    installRoot: root,
+    color: selectedColor ? selectedColor.dataset.color : SERVER_COLORS[0],
+    minRam: parseInt(document.getElementById('ms-min-ram').value, 10) || 1024,
+    maxRam: parseInt(document.getElementById('ms-max-ram').value, 10) || 4096,
+    javaPath: document.getElementById('ms-java').value.trim() || null
+  }
+  setInstallingUI(true)
+  state.dl.cancelRequested = false
+  try {
+    const res = await window.api.installServer(payload)
+    if (state.dl.cancelRequested) return
+    if (res && res.ok) {
+      document.getElementById('modal-server').classList.add('hidden')
+      refreshServersGrid()
+    } else {
+      err.textContent = (res && res.error) || T('servers.createError')
+    }
+  } catch (e) {
+    if (!state.dl.cancelRequested) {
+      console.error(`[${T('run.installServer')}]`, e)
+      err.textContent = T('servers.createError')
+    }
+  } finally {
+    setInstallingUI(false)
+  }
 }
 
 async function saveNewServer() {
@@ -762,13 +1013,14 @@ function initDetailNav() {
   })
 }
 
-function updateDetailBar(running, starting = false) {
-  state.detailBar = [running, starting]
+function updateDetailBar(running, starting = false, external = false) {
+  state.detailBar = [running, starting, external]
   const dot = document.getElementById('sbar-dot-status')
   const text = document.getElementById('sbar-status-text')
   const start = document.getElementById('detail-btn-start')
   const stop = document.getElementById('detail-btn-stop')
   if (starting) { dot.className = 'dot starting'; text.textContent = T('status.starting'); start.disabled = true; stop.disabled = true }
+  else if (external) { dot.className = 'dot external'; text.textContent = T('status.external'); start.disabled = true; stop.disabled = true }
   else if (running) { dot.className = 'dot on'; text.textContent = T('status.online'); start.disabled = true; stop.disabled = false }
   else { dot.className = 'dot off'; text.textContent = T('status.stopped'); start.disabled = false; stop.disabled = true }
 }
@@ -1120,10 +1372,9 @@ async function loadBackupsTab(server, settings) {
   document.getElementById('btn-backup-now').onclick = async () => {
     if (!serverDir || !dir) return
     appendLog(T('backups.creating'), 'info')
-    if (state.currentServerId) window.api.sendCommand(state.currentServerId, 'save-all')
     let res = null
     try {
-      res = await window.api.createBackup(serverDir, dir)
+      res = await window.api.createBackup(serverDir, dir, state.currentServerId)
     } catch (err) {
       console.error(`[${T('run.createBackup')}]`, err)
     }
@@ -1208,7 +1459,7 @@ window.api.onUpdateDownloaded(() => {
 // ─── Idioma (ES/EN): repinta lo dinámico al cambiar ──────────────────────────
 I18N.onLangChange(() => {
   updateMaxTitle()
-  updateDetailBar(state.detailBar[0], state.detailBar[1])
+  updateDetailBar(state.detailBar[0], state.detailBar[1], state.detailBar[2])
   if (document.getElementById('screen-servers').classList.contains('active')) refreshServersGrid()
   renderUpdateState()
   if (document.getElementById('screen-settings').classList.contains('active')) loadSettings()

@@ -1,6 +1,6 @@
 const si = require('systeminformation')
 const os = require('os')
-const { getMainWindow, activeServers } = require('./state')
+const { getMainWindow, activeServers, sendToRenderer } = require('./state')
 
 let statsInterval = null
 
@@ -45,10 +45,10 @@ function startStatsPolling() {
   stopStatsPolling()
   statsInterval = setInterval(async () => {
     const win = getMainWindow()
-    if (!win) return
+    if (!win || win.isDestroyed()) return
     try {
       const stats = await collectStats()
-      win.webContents.send('stats-update', {
+      sendToRenderer('stats-update', {
         cpu: stats.cpu,
         ramUsed: stats.ramUsed,
         ramTotal: stats.ramTotal,

@@ -59,6 +59,17 @@
   margin-top: 6px;
 }
 
+.servers-banner {
+  margin: 0 24px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--warn);
+  border: 2px solid var(--warn);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+}
+
 .servers-grid {
   flex: 1;
   overflow-y: auto;
@@ -227,6 +238,14 @@
 
 .dot.starting {
   background: var(--warn);
+}
+
+.dot.external {
+  background: var(--warn);
+}
+
+.server-card-status.is-external {
+  color: var(--warn);
 }
 
 @keyframes pulse {
@@ -954,12 +973,28 @@
   outline: none;
 }
 
-.field-group input:focus {
+/* Los selects dentro de su propio field-group ocupan todo el ancho; los que van
+   en una .field-row comparten el espacio con el resto de controles. */
+.field-group > select {
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.field-row input,
+.field-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-group input:focus,
+.field-group select:focus {
   border-color: var(--accent);
 }
 
 #btn-pick-jar,
 #ms-pick-jar,
+#ms-pick-dir,
 #btn-set-backup-dir {
   font-family: var(--pixel);
   font-size: 11px;
@@ -975,6 +1010,7 @@
 
 #btn-pick-jar:hover,
 #ms-pick-jar:hover,
+#ms-pick-dir:hover,
 #btn-set-backup-dir:hover {
   border-color: var(--accent);
   color: var(--accent);
@@ -1074,6 +1110,8 @@
   border-radius: var(--radius-lg);
   padding: 28px;
   width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1082,6 +1120,55 @@
 
 .modal-wide {
   width: 560px;
+  max-width: calc(100vw - 32px);
+}
+
+.segmented {
+  display: flex;
+  gap: 6px;
+  background: var(--bg0);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.segmented button {
+  flex: 1;
+  font-family: var(--pixel);
+  font-size: 11px;
+  line-height: 1;
+  padding: 9px 10px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.segmented button:hover {
+  color: var(--text);
+}
+
+.segmented button.active {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+
+.progress-wrap {
+  background: var(--bg0);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-wrap p {
+  font-size: 11px;
+  color: var(--text2);
+  margin: 0;
 }
 
 .modal h3 {
@@ -1115,9 +1202,30 @@
   transition: border-color 0.12s, color 0.12s;
 }
 
-.modal-actions button:hover {
+.modal-actions button:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* El botón primario del modal debe conservar su estilo (la regla anterior tiene
+   más especificidad que .btn-primary y lo pisaba). */
+.modal-actions button.btn-primary {
+  background: var(--accent);
+  border: 2px solid var(--accent2);
+  border-bottom: 5px solid var(--accent3);
+  color: var(--accent-ink);
+  padding: 11px 20px;
+}
+
+.modal-actions button.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.12);
+  border-color: var(--accent2);
+  color: var(--accent-ink);
+}
+
+.modal-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .modal-actions button.danger {

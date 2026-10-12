@@ -4,12 +4,12 @@ const fs = require('fs')
 const { spawn } = require('child_process')
 const crypto = require('crypto')
 const { getAllServersMap, saveServerMap, settingsStore } = require('./stores')
-const { getMainWindow, activeServers } = require('./state')
+const { activeServers, sendToRenderer, writeStdin } = require('./state')
 const { trackEvent } = require('./analytics')
 const { logCrash } = require('./crash')
 const { cancelAutoBackup } = require('./backups')
 const {
-  isStr, isIntInRange, isValidColor, cleanText, isValidJavaPath, isPlainObject
+  isStr, isIntInRange, isValidColor, cleanText, isValidJavaPath, isPlainObject, splitArgs
 } = require('./validate')
 
 // ─── External process detection ───────────────────────────────────────────────
@@ -83,6 +83,7 @@ async function startServer(serverId, acceptEula = false) {
   if (!config) return { ok: false, error: 'Servidor no encontrado' }
 
   const { jarPath, javaPath, minRam, maxRam, extraArgs } = config
+  const isForge = config.startType === 'forge'
   if (!isStr(jarPath)) return { ok: false, error: 'El servidor no tiene un .jar configurado' }
   if (!fs.existsSync(jarPath)) return { ok: false, error: 'No se encontró el archivo .jar' }
   const serverDir = path.dirname(jarPath)
@@ -106,16 +107,37 @@ async function startServer(serverId, acceptEula = false) {
       return { ok: false, error: 'No se pudo crear eula.txt: ' + err.message }
     }
   }
-  const extra = isStr(extraArgs) ? extraArgs.split(' ').filter(Boolean) : []
-  const args = [`-Xms${isIntInRange(minRam, 256, 65536, 1024)}M`, `-Xmx${isIntInRange(maxRam, 256, 131072, 4096)}M`, ...extra, '-jar', jarPath, '--nogui']
+  const extra = splitArgs(isStr(extraArgs) ? extraArgs : '')
+  const minR = isIntInRange(minRam, 256, 65536, 1024)
+  const maxR = isIntInRange(maxRam, 256, 131072, 4096)
+
+  let args
+  if (isForge) {
+    const forgeArgs = isStr(config.forgeArgs) ? config.forgeArgs : null
+    if (!forgeArgs || !fs.existsSync(forgeArgs)) return { ok: false, error: 'No se encontró la configuración de Forge (args)' }
+    const userJvm = path.join(serverDir, 'user_jvm_args.txt')
+    try {
+      fs.writeFileSync(userJvm, `-Xms${minR}M\n-Xmx${maxR}M\n${extra.length ? extra.join('\n') + '\n' : ''}`, 'utf8')
+    } catch (err) {
+      logCrash('forge_jvmargs_error', err)
+      return { ok: false, error: 'No se pudo escribir user_jvm_args.txt: ' + err.message }
+    }
+    args = ['@' + userJvm, '@' + forgeArgs, 'nogui']
+  } else {
+    args = [`-Xms${minR}M`, `-Xmx${maxR}M`, ...extra, '-jar', jarPath, '--nogui']
+  }
 
   try {
     const proc = spawn(java, args, { cwd: serverDir, shell: false })
     const startTime = Date.now()
 
+    // El stdin puede cerrarse (proceso muerto) y su 'error' es asíncrono:
+    // sin este handler sería un uncaughtException.
+    if (proc.stdin) proc.stdin.on('error', (err) => logCrash('server_stdin_error', err))
+
     proc.stdout.on('data', (data) => {
       data.toString().split('\n').filter(l => l.trim()).forEach(line => {
-        getMainWindow()?.webContents.send('console-line', { serverId, text: line, type: classifyLine(line) })
+        sendToRenderer('console-line', { serverId, text: line, type: classifyLine(line) })
         if (/Done \([\d.]+s\)!/i.test(line)) {
           trackEvent('server_started', { startupMs: Date.now() - startTime })
         }
@@ -123,18 +145,18 @@ async function startServer(serverId, acceptEula = false) {
     })
     proc.stderr.on('data', (data) => {
       data.toString().split('\n').filter(l => l.trim()).forEach(line => {
-        getMainWindow()?.webContents.send('console-line', { serverId, text: line, type: 'error' })
+        sendToRenderer('console-line', { serverId, text: line, type: 'error' })
       })
     })
     proc.on('exit', (code) => {
       const uptime = activeServers[serverId] ? Date.now() - activeServers[serverId].startTime : 0
       delete activeServers[serverId]
-      getMainWindow()?.webContents.send('server-stopped', { serverId, code })
+      sendToRenderer('server-stopped', { serverId, code })
       trackEvent('server_stopped', { code, uptimeMs: uptime })
     })
     proc.on('error', (err) => {
       delete activeServers[serverId]
-      getMainWindow()?.webContents.send('server-stopped', { serverId, error: err.message })
+      sendToRenderer('server-stopped', { serverId, error: err.message })
       logCrash('server_process_error', err)
     })
 
@@ -151,14 +173,14 @@ async function stopServer(serverId) {
   if (!s) {
     // ¿Está corriendo fuera de la app? Entonces no podemos detenerlo.
     const server = getAllServersMap()[serverId]
-    if (server && isStr(server.jarPath)) {
-      const pid = await isJarRunning(server.jarPath)
+    if (server && isStr(launchFingerprint(server))) {
+      const pid = await isJarRunning(launchFingerprint(server))
       if (pid) return { ok: false, error: 'Servidor iniciado fuera de la app: no se puede detener desde aquí' }
     }
     return { ok: false, error: 'No está en ejecución' }
   }
   try {
-    s.process.stdin.write('stop\n')
+    writeStdin(s.process, 'stop\n')
   } catch (err) {
     logCrash('server_stdin_error', err)
   }
@@ -177,14 +199,14 @@ async function sendCommand(serverId, cmd) {
   const s = activeServers[serverId]
   if (!s) {
     const server = getAllServersMap()[serverId]
-    if (server && isStr(server.jarPath)) {
-      const pid = await isJarRunning(server.jarPath)
+    if (server && isStr(launchFingerprint(server))) {
+      const pid = await isJarRunning(launchFingerprint(server))
       if (pid) return { ok: false, error: 'Servidor iniciado fuera de la app: la consola no está conectada' }
     }
     return { ok: false, error: 'El servidor no está en ejecución' }
   }
   try {
-    s.process.stdin.write(cmd + '\n')
+    if (!writeStdin(s.process, cmd + '\n')) return { ok: false, error: 'La consola del servidor no está disponible' }
     return { ok: true }
   } catch (err) {
     logCrash('server_stdin_error', err)
@@ -216,6 +238,39 @@ function sanitizeServerFields(input) {
   return out
 }
 
+// Crea el registro de un servidor mezclando el formulario con los valores por
+// defecto de Ajustes. Lo usa tanto 'servers:create' como el descargador.
+function buildServerRecord(input) {
+  const fields = sanitizeServerFields(input)
+  const prefRam = Number(settingsStore.get('defaultRam'))
+  const prefJava = settingsStore.get('defaultJava')
+  const prefJvmArgs = settingsStore.get('defaultJvmArgs')
+  const record = {
+    id: crypto.randomUUID(),
+    name: fields.name || 'Servidor',
+    jarPath: fields.jarPath,
+    javaPath: fields.javaPath ?? (isValidJavaPath(prefJava) ? prefJava || null : null),
+    minRam: fields.minRam ?? 1024,
+    maxRam: fields.maxRam ?? (Number.isInteger(prefRam) && prefRam >= 256 && prefRam <= 131072 ? prefRam : 4096),
+    extraArgs: fields.extraArgs ?? cleanText(String(prefJvmArgs || ''), 512),
+    color: fields.color || '#4ade80',
+    createdAt: Date.now()
+  }
+  // Servidores Forge (1.17+): arrancan vía @args en lugar de «-jar».
+  if (input.startType === 'forge' && isStr(input.forgeArgs)) {
+    record.startType = 'forge'
+    record.forgeArgs = path.resolve(input.forgeArgs)
+  }
+  return record
+}
+
+// Ruta con la que identificar un servidor externo: el JAR o, en Forge, el
+// fichero de argumentos (aparece en la línea de comandos del proceso java).
+function launchFingerprint(server) {
+  if (server && server.startType === 'forge' && isStr(server.forgeArgs)) return server.forgeArgs
+  return server && server.jarPath
+}
+
 function registerServersIpc() {
   ipcMain.handle('servers:list', () => Object.values(getAllServersMap()))
 
@@ -224,26 +279,11 @@ function registerServersIpc() {
     const fields = sanitizeServerFields(input)
     if (!isStr(fields.jarPath)) return { ok: false, error: 'Selecciona el archivo .jar' }
     const map = getAllServersMap()
-    const id = crypto.randomUUID()
-    // Valores por defecto de Ajustes → Servidores cuando el formulario no
-    // trae un valor explícito (el modal no envía extraArgs).
-    const prefRam = Number(settingsStore.get('defaultRam'))
-    const prefJava = settingsStore.get('defaultJava')
-    const prefJvmArgs = settingsStore.get('defaultJvmArgs')
-    map[id] = {
-      id,
-      name: fields.name || 'Servidor',
-      jarPath: fields.jarPath,
-      javaPath: fields.javaPath ?? (isValidJavaPath(prefJava) ? prefJava || null : null),
-      minRam: fields.minRam ?? 1024,
-      maxRam: fields.maxRam ?? (Number.isInteger(prefRam) && prefRam >= 256 && prefRam <= 131072 ? prefRam : 4096),
-      extraArgs: fields.extraArgs ?? cleanText(String(prefJvmArgs || ''), 512),
-      color: fields.color || '#4ade80',
-      createdAt: Date.now()
-    }
+    const server = buildServerRecord(fields)
+    map[server.id] = server
     saveServerMap(map)
     trackEvent('server_created')
-    return { ok: true, server: map[id] }
+    return { ok: true, server }
   })
 
   ipcMain.handle('servers:update', (_, { serverId, data } = {}) => {
@@ -279,8 +319,8 @@ function registerServersIpc() {
   ipcMain.handle('server:status', async (_, serverId) => {
     if (activeServers[serverId]) return { running: true }
     const server = getAllServersMap()[serverId]
-    if (server && isStr(server.jarPath)) {
-      const pid = await isJarRunning(server.jarPath)
+    if (server && isStr(launchFingerprint(server))) {
+      const pid = await isJarRunning(launchFingerprint(server))
       if (pid) return { running: true, external: true, pid }
     }
     return { running: false }
@@ -305,8 +345,8 @@ function registerServersIpc() {
     Object.keys(activeServers).forEach(id => { r[id] = true })
     try {
       const map = getAllServersMap()
-      const ids = Object.keys(map).filter(id => !r[id] && isStr(map[id].jarPath))
-      const results = await Promise.all(ids.map(id => isJarRunning(map[id].jarPath)))
+      const ids = Object.keys(map).filter(id => !r[id] && isStr(launchFingerprint(map[id])))
+      const results = await Promise.all(ids.map(id => isJarRunning(launchFingerprint(map[id]))))
       ids.forEach((id, i) => { if (results[i]) r[id] = { external: true, pid: results[i] } })
     } catch (_) { }
     statusAllCache = { at: Date.now(), value: r }
@@ -315,4 +355,4 @@ function registerServersIpc() {
 }
 
 // Nota: la validación de rutas compartida vive en validate.js (isServerDir…)
-module.exports = { registerServersIpc, stopAllServers, isJarRunning }
+module.exports = { registerServersIpc, stopAllServers, isJarRunning, classifyLine, buildServerRecord, detectJavaVersion }

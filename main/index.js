@@ -9,6 +9,7 @@ const { registerServersIpc, stopAllServers } = require('./servers')
 const { registerPropertiesIpc } = require('./properties')
 const { registerBackupsIpc, scheduleAutoBackup, initAutoBackups } = require('./backups')
 const { setupAutoUpdater, stopUpdater, registerUpdaterIpc } = require('./updater')
+const { registerDownloadsIpc } = require('./downloader')
 const { startStatsPolling, stopStatsPolling } = require('./stats')
 const { isPlainObject, isStr, cleanText } = require('./validate')
 
@@ -20,6 +21,7 @@ registerAnalyticsIpc()
 registerCrashIpc()
 registerWindowIpc()
 registerUpdaterIpc()
+registerDownloadsIpc()
 
 ipcMain.handle('app:version', () => app.getVersion())
 

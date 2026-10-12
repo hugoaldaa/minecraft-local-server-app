@@ -41,12 +41,15 @@ const MESSAGES = {
     'servers.empty': 'No tienes servidores aún.',
     'servers.emptyHint': 'Pulsa "+ Añadir servidor" para empezar.',
     'servers.createError': 'No se pudo crear el servidor',
+    'servers.externalNote': '{count} servidor(es) iniciado(s) fuera de la app: su consola no está conectada. Detenlos desde la terminal o reinícialos aquí.',
 
     'status.online': 'En línea',
     'status.stopped': 'Detenido',
     'status.starting': 'Iniciando...',
     'status.startAction': 'Iniciar',
     'status.stopAction': 'Detener',
+    'status.external': 'Externo',
+    'status.externalHint': 'Iniciado fuera de la app (PID {pid}): la consola no está conectada. Reinícialo desde aquí para gestionarlo.',
 
     'tab.console': 'Consola',
     'tab.players': 'Jugadores',
@@ -116,6 +119,31 @@ const MESSAGES = {
     'modal.javaLabel': 'Java (opcional)',
     'modal.nameRequired': 'El nombre es obligatorio',
     'modal.selectJar': 'Selecciona el archivo .jar',
+    'modal.sourceManual': 'Ya tengo el .jar',
+    'modal.sourceDownload': 'Descargar servidor',
+    'modal.provider': 'Variante',
+    'modal.providerPaper': 'Paper',
+    'modal.providerVanilla': 'Vanilla',
+    'modal.providerFabric': 'Fabric',
+    'modal.providerForge': 'Forge',
+    'modal.pickFile': 'Elegir archivo .jar',
+    'modal.pickDir': 'Elegir carpeta de instalación',
+    'modal.version': 'Versión',
+    'modal.installRoot': 'Instalar en',
+    'modal.installRootPlaceholder': 'Carpeta donde se creará el servidor',
+    'modal.installHint': 'Se creará en: {dir}',
+    'modal.installAction': 'Descargar e instalar',
+    'modal.installing': 'Instalando...',
+    'modal.selectVersion': 'Selecciona una versión',
+    'modal.selectInstallRoot': 'Elige la carpeta de instalación',
+    'modal.downloading': 'Descargando...',
+    'modal.downloadProgress': 'Descargando... {pct}%',
+    'modal.verifying': 'Verificando el archivo...',
+    'modal.done': 'Listo',
+    'modal.cancelDownload': 'Cancelar descarga',
+    'modal.javaWarn': '⚠ Esta versión necesita Java {need} como mínimo (tienes {have}): el servidor podría no arrancar.',
+    'modal.javaOk': '✔ Java {have} compatible (mínimo {need}).',
+    'modal.javaUnknown': 'No se pudo comprobar Java. Esta versión necesita al menos Java {need}.',
 
     'close.title': '¿Cerrar la aplicación?',
     'close.msg': 'Hay servidores en ejecución. Se detendrán antes de cerrar.',
@@ -262,7 +290,10 @@ const MESSAGES = {
     'run.deleteBackup': 'eliminar backup',
     'run.reloadBackups': 'recargar backups',
     'run.saveConfig': 'guardar configuración',
-    'run.deleteServer': 'eliminar servidor'
+    'run.deleteServer': 'eliminar servidor',
+    'run.loadVersions': 'cargar versiones',
+    'run.checkJava': 'comprobar Java',
+    'run.installServer': 'instalar servidor'
   },
   en: {
     'common.cancel': 'Cancel',
@@ -303,12 +334,15 @@ const MESSAGES = {
     'servers.empty': "You don't have any servers yet.",
     'servers.emptyHint': 'Press "+ Add server" to get started.',
     'servers.createError': 'Could not create the server',
+    'servers.externalNote': '{count} server(s) started outside the app: their console is not connected. Stop them from the terminal or restart them here.',
 
     'status.online': 'Online',
     'status.stopped': 'Stopped',
     'status.starting': 'Starting...',
     'status.startAction': 'Start',
     'status.stopAction': 'Stop',
+    'status.external': 'External',
+    'status.externalHint': 'Started outside the app (PID {pid}): the console is not connected. Restart it from here to manage it.',
 
     'tab.console': 'Console',
     'tab.players': 'Players',
@@ -378,6 +412,31 @@ const MESSAGES = {
     'modal.javaLabel': 'Java (optional)',
     'modal.nameRequired': 'The name is required',
     'modal.selectJar': 'Select the .jar file',
+    'modal.sourceManual': 'I already have the .jar',
+    'modal.sourceDownload': 'Download server',
+    'modal.provider': 'Variant',
+    'modal.providerPaper': 'Paper',
+    'modal.providerVanilla': 'Vanilla',
+    'modal.providerFabric': 'Fabric',
+    'modal.providerForge': 'Forge',
+    'modal.pickFile': 'Choose .jar file',
+    'modal.pickDir': 'Choose install folder',
+    'modal.version': 'Version',
+    'modal.installRoot': 'Install to',
+    'modal.installRootPlaceholder': 'Folder where the server will be created',
+    'modal.installHint': 'Will be created in: {dir}',
+    'modal.installAction': 'Download and install',
+    'modal.installing': 'Installing...',
+    'modal.selectVersion': 'Select a version',
+    'modal.selectInstallRoot': 'Choose the install folder',
+    'modal.downloading': 'Downloading...',
+    'modal.downloadProgress': 'Downloading... {pct}%',
+    'modal.verifying': 'Verifying the file...',
+    'modal.done': 'Done',
+    'modal.cancelDownload': 'Cancel download',
+    'modal.javaWarn': '⚠ This version needs Java {need} or newer (you have {have}): the server may not start.',
+    'modal.javaOk': '✔ Java {have} is compatible (minimum {need}).',
+    'modal.javaUnknown': 'Could not detect Java. This version needs at least Java {need}.',
 
     'close.title': 'Close the application?',
     'close.msg': 'There are servers running. They will be stopped before closing.',
@@ -524,7 +583,10 @@ const MESSAGES = {
     'run.deleteBackup': 'delete backup',
     'run.reloadBackups': 'reload backups',
     'run.saveConfig': 'save settings',
-    'run.deleteServer': 'delete server'
+    'run.deleteServer': 'delete server',
+    'run.loadVersions': 'load versions',
+    'run.checkJava': 'check Java',
+    'run.installServer': 'install server'
   }
 }
 
@@ -562,6 +624,9 @@ function apply() {
   })
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     el.title = t(el.dataset.i18nTitle)
+  })
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria))
   })
   document.documentElement.lang = currentLang
 }
