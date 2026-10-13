@@ -112,8 +112,10 @@ function downloadToFile(url, destPath, { signal, onProgress } = {}) {
             settled = true
             fs.rename(tmpPath, destPath, (err) => (err ? fail(err) : resolve({ received, total })))
           })
+          // Asegura que los bytes recibidos se escriban realmente en disco:
+          // antes solo se contaban y el fichero quedaba vacío.
           stream.on('data', d => { received += d.length; report() })
-          stream.on('end', () => { if (ws && !ws.destroyed) ws.end() })
+          stream.pipe(ws)
           stream.on('error', fail)
           if (signal) signal.addEventListener('abort', cancel, { once: true })
         })
