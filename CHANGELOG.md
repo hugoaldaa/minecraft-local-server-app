@@ -3,6 +3,10 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v1.8.1 - Debug creating servers (2026-10-13)
+
+- Now it works when you download and install a server version.
+
 ## v1.8.0 - New server/jar implementations (2026-10-12)
 
 - `webContents.send` sobre ventana destruida | `sendToRenderer()` en `main/state.js` (guarda `isDestroyed` en ventana y webContents); usado en servers/crash/updater/window/stats.
