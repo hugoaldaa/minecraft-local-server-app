@@ -96,6 +96,7 @@
     <nav class="nav" id="detail-nav">
       <button class="nav-item active" data-tab="console" data-i18n="tab.console">Consola</button>
       <button class="nav-item" data-tab="players" data-i18n="tab.players">Jugadores</button>
+      <button class="nav-item" data-tab="stats" data-i18n="tab.stats">Estadísticas</button>
       <button class="nav-item" data-tab="lists" data-i18n="tab.lists">Listas</button>
       <button class="nav-item" data-tab="properties" data-i18n="tab.properties">Propiedades</button>
       <button class="nav-item" data-tab="backups" data-i18n="tab.backups">Backups</button>
@@ -132,6 +133,74 @@
           <button class="btn-action" data-action="gamemode creative">Creative</button>
         </div>
       </div>
+    </div>
+
+    <!-- Pestaña de estadísticas (Fase 3) -->
+    <div class="tab" id="tab-stats">
+      <div class="panel-header">
+        <h2 data-i18n="stats.title">Estadísticas del servidor</h2>
+        <button class="btn-secondary" id="btn-refresh-stats" data-i18n="common.refresh">Actualizar</button>
+        <button class="btn-secondary" id="btn-export-stats" data-i18n="common.export">Exportar</button>
+        <select id="stats-export-format" aria-label="Export format">
+          <option value="csv" data-i18n="common.exportCsv">CSV</option>
+          <option value="json" data-i18n="common.exportJson" selected>JSON</option>
+        </select>
+      </div>
+
+      <section class="stats-section">
+        <h3 data-i18n="stats.summary">Resumen</h3>
+        <div class="stats-cards">
+          <div class="stats-card">
+            <span class="stats-label" data-i18n="stats.uptime">Horas encendido</span>
+            <span class="stats-value" id="stats-uptime">—</span>
+          </div>
+          <div class="stats-card">
+            <span class="stats-label" data-i18n="stats.cpuPeak">Pico de CPU</span>
+            <span class="stats-value" id="stats-cpu-peak">—</span>
+            <span class="stats-sub" id="stats-cpu-peak-at"></span>
+          </div>
+          <div class="stats-card">
+            <span class="stats-label" data-i18n="stats.ramPeak">Pico de RAM</span>
+            <span class="stats-value" id="stats-ram-peak">—</span>
+            <span class="stats-sub" id="stats-ram-peak-at"></span>
+          </div>
+          <div class="stats-card">
+            <span class="stats-label" data-i18n="stats.concurrentPeak">Jugadores concurrentes máximos</span>
+            <span class="stats-value" id="stats-concurrent-peak">—</span>
+            <span class="stats-sub" id="stats-concurrent-peak-at"></span>
+          </div>
+        </div>
+        <div class="stats-chart">
+          <h3 data-i18n="stats.playersPerDay">Jugadores por día</h3>
+          <div class="stats-chart-body">
+            <svg id="stats-chart-players-day" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+          </div>
+          <ul class="stats-days" id="stats-days"></ul>
+        </div>
+      </section>
+
+      <section class="stats-section">
+        <h3 data-i18n="stats.topMoments">Momentos con más jugadores</h3>
+        <ul class="stats-moments" id="stats-moments"></ul>
+        <p class="stats-empty hidden" id="stats-moments-empty" data-i18n="stats.noData">Sin datos todavía.</p>
+      </section>
+
+      <section class="stats-section">
+        <h3 data-i18n="stats.playersList">Jugadores</h3>
+        <div class="stats-players">
+          <table class="stats-table" id="stats-players-table">
+            <thead>
+              <tr>
+                <th data-i18n="stats.colPlayer">Jugador</th>
+                <th data-i18n="stats.colPlayed">Tiempo jugado</th>
+                <th data-i18n="stats.colDaysActive">Días activos</th>
+              </tr>
+            </thead>
+            <tbody id="stats-players-body"></tbody>
+          </table>
+          <p class="stats-empty hidden" id="stats-players-empty" data-i18n="stats.noData">Sin datos todavía.</p>
+        </div>
+      </section>
     </div>
 
     <div class="tab" id="tab-lists">
@@ -439,6 +508,26 @@
               <div class="set-row-control">
                 <label class="switch"><input type="checkbox" id="set-auto-eula" /><span
                     class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.retentionSamples">Muestras con retención (días)</span>
+                <p class="set-row-hint" data-i18n="settings.retentionSamplesHint">Historial de CPU/RAM que se
+                  conserva por servidor (días).</p>
+              </div>
+              <div class="set-row-control set-row-input">
+                <input type="number" id="set-retention-samples" min="1" max="365" step="1" />
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.retentionEvents">Eventos con retención (días)</span>
+                <p class="set-row-hint" data-i18n="settings.retentionEventsHint">Eventos de jugadores y totales
+                  por jugador (días).</p>
+              </div>
+              <div class="set-row-control set-row-input">
+                <input type="number" id="set-retention-events" min="1" max="3650" step="1" />
               </div>
             </div>
           </div>

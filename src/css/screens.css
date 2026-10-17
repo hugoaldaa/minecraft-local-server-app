@@ -1458,6 +1458,131 @@ code {
   margin-bottom: 4px;
 }
 
+/* ═══ Estadísticas (Fase 3) ═══════════════════════════════════════════ */
+#tab-stats {
+  overflow-y: auto;
+}
+
+.stats-section {
+  padding: 18px 20px;
+  border-top: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stats-section:first-child {
+  border-top: none;
+}
+
+.stats-section h3 {
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.stats-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stats-card {
+  background: var(--bg2);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  flex: 1 1 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stats-label {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.stats-value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.stats-sub {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.stats-chart {
+  background: var(--bg0);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.stats-chart-body {
+  min-height: 160px;
+}
+
+.chart-bar {
+  fill: var(--accent);
+}
+
+.chart-axis {
+  stroke: var(--line2);
+}
+
+.chart-label {
+  font-size: 10px;
+  fill: var(--text2);
+  text-anchor: middle;
+}
+
+.stats-moments {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.stats-moment {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.stats-days {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.stats-day {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+
+#stats-export-format {
+  margin-left: 8px;
+}
+
+.stats-players {
+  overflow-x: auto;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.stats-table th,
+.stats-table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
 .update-notes ul {
   margin: 0;
   padding-left: 18px;

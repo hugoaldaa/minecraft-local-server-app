@@ -32,7 +32,9 @@ const browserGlobals = {
   getComputedStyle: 'readonly',
   requestAnimationFrame: 'readonly',
   cancelAnimationFrame: 'readonly',
-  matchMedia: 'readonly'
+  matchMedia: 'readonly',
+  Blob: 'readonly',
+  URLSearchParams: 'readonly'
 }
 
 const rules = {

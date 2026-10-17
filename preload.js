@@ -67,6 +67,14 @@ contextBridge.exposeInMainWorld('api', {
   clearCrashes: () => ipcRenderer.invoke('crashes:clear'),
   getLastCrash: () => ipcRenderer.invoke('crashes:getLast'),
 
+  // Estadísticas por servidor (Fase 2). El segundo parámetro es opcional y
+  // permite filtrar por un rango [desde, hasta].
+  getEstadisticasResumen: (serverId, filters) => ipcRenderer.invoke('estadisticas:resumen', serverId, filters),
+  getEstadisticasJugadores: (serverId, filters) => ipcRenderer.invoke('estadisticas:jugadores', serverId, filters),
+
+  // Exportar estadísticas a CSV (Fase 4)
+  exportEstadisticas: (serverId) => ipcRenderer.invoke('estadisticas:export', serverId),
+
   // Dialogs
   openJarDialog: () => ipcRenderer.invoke('dialog:openJar'),
   openDirDialog: () => ipcRenderer.invoke('dialog:openDir'),

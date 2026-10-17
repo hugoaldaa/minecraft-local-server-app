@@ -3,9 +3,11 @@ const path = require('path')
 const fs = require('fs')
 const { spawn } = require('child_process')
 const crypto = require('crypto')
-const { getAllServersMap, saveServerMap, settingsStore } = require('./stores')
+const { getAllServersMap, saveServerMap, settingsStore, saveRunTime } = require('./stores')
 const { activeServers, sendToRenderer, writeStdin } = require('./state')
 const { trackEvent } = require('./analytics')
+const { closeServerSessions, deleteServerStats } = require('./estadisticas')
+const { getRunTime } = require('./stores')
 const { logCrash } = require('./crash')
 const { cancelAutoBackup } = require('./backups')
 const {
@@ -149,10 +151,22 @@ async function startServer(serverId, acceptEula = false) {
       })
     })
     proc.on('exit', (code) => {
-      const uptime = activeServers[serverId] ? Date.now() - activeServers[serverId].startTime : 0
+      const running = activeServers[serverId]
+      const stopTime = Date.now()
+      const uptime = running ? stopTime - running.startTime : 0
+      // Hora de parada para calcular las horas encendido y cerrar las
+      // sesiones de jugadores que estaban conectados (Fase 1).
+      if (running) running.stopTime = stopTime
+      // Guarda la hora de parada para calcular las horas encendido (Fase 2).
+      const run = getRunTime(serverId)
+      saveRunTime(serverId, {
+        startedAt: running ? running.startTime : run ? run.startedAt : null,
+        stoppedAt: stopTime
+      })
       delete activeServers[serverId]
       sendToRenderer('server-stopped', { serverId, code })
       trackEvent('server_stopped', { code, uptimeMs: uptime })
+      closeServerSessions(serverId, stopTime)
     })
     proc.on('error', (err) => {
       delete activeServers[serverId]
@@ -161,6 +175,8 @@ async function startServer(serverId, acceptEula = false) {
     })
 
     activeServers[serverId] = { process: proc, startTime: Date.now() }
+    // Guarda la hora de inicio para calcular las horas encendido (Fase 2).
+    saveRunTime(serverId, { startedAt: Date.now() })
     return { ok: true }
   } catch (err) {
     logCrash('server_start_error', err)
@@ -303,6 +319,8 @@ function registerServersIpc() {
     cancelAutoBackup(serverId)
     delete map[serverId]
     saveServerMap(map)
+    // Las estadísticas propias de este servidor también se descartan.
+    deleteServerStats(serverId)
     return { ok: true }
   })
 

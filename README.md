@@ -7,6 +7,9 @@ Compatible with Vanilla, Paper, Spigot, Bukkit, Fabric, and Forge.
 
 - Start/stop the server.
 - Real-time CPU and RAM statistics.
+- Per-server statistics: hours online, CPU/RAM peaks, players per day, busiest
+  moments, time played per player, and persistent history with retention.
+- Export the statistics history as CSV or JSON.
 - Real-time console with command history.
 - Player management (kick, ban, op, gamemode).
 - Whitelist and Banlist with visual editor.

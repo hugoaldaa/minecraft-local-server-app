@@ -34,6 +34,11 @@ de los tags y commits del repositorio. Formato de [Keep a Changelog](https://kee
 - **Accesibilidad del modal**: `role="dialog"`, `aria-modal`, `aria-label` traducible, `aria-selected` en pestañas, cierre con Escape y gestión de foco.
 - **Arquitectura**: capa HTTP extraída a `main/http.js`; helpers de versiones en `main/versions.js`.
 - **Correcciones del modal «Añadir servidor»**: Paper mostraba las versiones como `undefined` (contrato `{id}` unificado con `normalizeVersions`), la lista no se refrescaba al cambiar de variante ya cacheada, y se unificó el estilo (botón de carpeta, selects a ancho completo, botón primario correcto, modal con scroll y ancho adaptativo).
+- **Estadísticas por servidor completas** (Fases 1–4): historial persistente de muestras CPU/RAM, eventos de jugadores del log (`joined`/`left`) con retención configurable, horas encendido, picos de CPU/RAM, jugadores por día (conexiones incluidas), momentos con más jugadores, tiempo jugado por jugador, y una pestaña «Estadísticas» en el detalle del servidor.
+- **Exportación de estadísticas**: a CSV o JSON, elegible en la pestaña «Estadísticas» (`estadisticas:export` devuelve ambos formatos).
+- **Filtros por rango** en las consultas de estadísticas (`desde`/`hasta` opcionales en `estadisticas:resumen` y `estadisticas:jugadores`); la interfaz todavía no los usa.
+- **Retención configurable** en Ajustes: `retentionSamples` (muestras, 30 días por defecto, máximo 365) y `retentionEvents` (eventos y totales, 730 días por defecto, máximo 3650).
+- **Pico destacado y conexiones por día** en la pestaña «Estadísticas»: tarjeta con el máximo de jugadores concurrentes y listado de conexiones por día debajo de la gráfica de jugadores.
 
 ## v1.7.1 - Toogle styles (2026-10-09)
 

@@ -11,6 +11,8 @@ const { registerBackupsIpc, scheduleAutoBackup, initAutoBackups } = require('./b
 const { setupAutoUpdater, stopUpdater, registerUpdaterIpc } = require('./updater')
 const { registerDownloadsIpc } = require('./downloader')
 const { startStatsPolling, stopStatsPolling } = require('./stats')
+const { startLogPolling, stopLogPolling } = require('./logs')
+const { registerEstadisticasIpc } = require('./estadisticas')
 const { isPlainObject, isStr, cleanText } = require('./validate')
 
 // ─── Registro de IPC ────────────────────────────────────────────────────────
@@ -22,12 +24,13 @@ registerCrashIpc()
 registerWindowIpc()
 registerUpdaterIpc()
 registerDownloadsIpc()
+registerEstadisticasIpc()
 
 ipcMain.handle('app:version', () => app.getVersion())
 
 // ─── Preferencias globales (Ajustes) ────────────────────────────────────────
 const PREF_KEYS = ['backupDir', 'backupKeep', 'backupLevel', 'theme', 'lang', 'defaultServerDir', 'closeToTray', 'startOnBoot', 'uiScale',
-  'defaultRam', 'defaultJava', 'defaultJvmArgs', 'autoEula']
+  'defaultRam', 'defaultJava', 'defaultJvmArgs', 'autoEula', 'retentionSamples', 'retentionEvents']
 
 ipcMain.handle('prefs:get', (_, key) => (PREF_KEYS.includes(key) ? settingsStore.get(key, null) : null))
 ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
@@ -82,6 +85,14 @@ ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
   if (key === 'autoEula') {
     if (typeof value !== 'boolean') return { ok: false, error: 'Valor no válido' }
     settingsStore.set('autoEula', value)
+    return { ok: true }
+  }
+  if (key === 'retentionSamples' || key === 'retentionEvents') {
+    // Días con retención: cuánto tiempo se conservan muestras/eventos.
+    const maxDays = key === 'retentionSamples' ? 365 : 3650
+    const n = Number.parseInt(value, 10)
+    if (!Number.isInteger(n) || n < 1 || n > maxDays) return { ok: false, error: 'Periodo no válido' }
+    settingsStore.set(key, n)
     return { ok: true }
   }
   if (key === 'uiScale') {
@@ -145,6 +156,7 @@ app.whenReady().then(() => {
   createWindow()
   syncTray()
   startStatsPolling()
+  startLogPolling()
   setupAutoUpdater()
   initAutoBackups()
   trackEvent('app_launch', { version: app.getVersion() })
@@ -155,5 +167,6 @@ app.on('window-all-closed', () => { app.quit() })
 app.on('will-quit', () => {
   stopUpdater()
   stopStatsPolling()
+  stopLogPolling()
   stopAllServers()
 })
