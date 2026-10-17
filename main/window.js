@@ -106,7 +106,7 @@ function registerWindowIpc() {
       properties: ['openFile'],
       ...(isStr(startDir) && startDir ? { defaultPath: startDir } : {})
     })
-    return r.canceled ? null : r.filePath[0]
+    return r.canceled ? null : r.filePaths[0]
   })
   ipcMain.handle('dialog:openDir', async () => {
     const r = await dialog.showOpenDialog(getMainWindow(), { title: 'Selecciona carpeta', properties: ['openDirectory'] })

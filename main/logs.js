@@ -73,16 +73,15 @@ function readTail(filePath) {
       if (err) return reject(err)
       const start = Math.max(0, stat.size - TAIL_BYTES)
       const cutMidLine = stat.size - start > 0
-      fs.open(filePath, 'r', (openErr, handle) => {
+      fs.open(filePath, 'r', (openErr, fd) => {
         if (openErr) return reject(openErr)
-        handle.stat((statErr, info) => {
+        fs.fstat(fd, (statErr, info) => {
           if (statErr) return reject(statErr)
-          handle.seek(start, 'start', seekErr => {
-            if (seekErr) return reject(seekErr)
-            const length = info.size - start
-            const buffer = Buffer.alloc(length)
-            handle.read(buffer, 0, length, start, (readErr, read) => {
-              handle.close()
+          const length = info.size - start
+          const buffer = Buffer.alloc(length)
+          fs.read(fd, buffer, 0, length, start, (readErr, read) => {
+            fs.close(fd, closeErr => {
+              if (closeErr) return reject(closeErr)
               if (readErr) return reject(readErr)
               resolve({ text: buffer.toString('utf8', 0, read), cutMidLine })
             })
