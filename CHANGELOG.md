@@ -3,6 +3,10 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v1.9.2 - Nuevo icono Linux (2026-10-17)
+
+- Nuevo icono Linux
+
 ## v1.9.1 - Jar patch (2026-10-17)
 
 - Ahora ya puedes seleccionar bien el jar a la hora de añadir un servidor.
