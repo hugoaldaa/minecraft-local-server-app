@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=Minecraft Local Server Manager
-Exec=/ruta/completa/a/run-minecraft-manager.sh
-Icon=/ruta/completa/a/assets/icon.png
-Type=Application
-Categories=Utility;Game;
-StartupWMClass=Minecraft Local Server Manager
-Terminal=false
