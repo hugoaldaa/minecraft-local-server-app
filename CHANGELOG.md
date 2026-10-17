@@ -3,6 +3,10 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v1.9.1 - Jar patch (2026-10-17)
+
+- Ahora ya puedes seleccionar bien el jar a la hora de añadir un servidor.
+
 ## v1.9.0 - Statistics panel (2026-10-17)
 
 - **Estadísticas por servidor completas** (Fases 1–4): historial persistente de muestras CPU/RAM, eventos de jugadores del log (`joined`/`left`) con retención configurable, horas encendido, picos de CPU/RAM, jugadores por día (conexiones incluidas), momentos con más jugadores, tiempo jugado por jugador, y una pestaña «Estadísticas» en el detalle del servidor.
