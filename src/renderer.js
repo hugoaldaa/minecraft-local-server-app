@@ -1417,10 +1417,27 @@ function initLists(server) {
       res = await window.api.sendCommand(state.currentServerId, cmd)
     } catch (err) {
       console.error('[whitelist]', err)
+      appendLog(T('log.error', { msg: err?.message || err }), 'error')
+      e.target.checked = !e.target.checked
+      return
     }
     if (res && res.ok === false) {
-      e.target.checked = !e.target.checked
-      appendLog(T('log.error', { msg: res.error }), 'error')
+      // Servidor parado (o consola sin conectar): persistir en server.properties
+      // para que la whitelist quede activada al arrancar y el check se quede.
+      if (state.currentServerDir) {
+        try {
+          await window.api.writeProperties(state.currentServerDir, {
+            'white-list': e.target.checked ? 'true' : 'false'
+          })
+        } catch (err2) {
+          console.error('[whitelist] props write', err2)
+          appendLog(T('log.error', { msg: err2?.message || err2 }), 'error')
+          e.target.checked = !e.target.checked
+        }
+      } else {
+        e.target.checked = !e.target.checked
+        appendLog(T('log.error', { msg: res.error }), 'error')
+      }
     }
   }
   loadListsTab(server)
@@ -1433,6 +1450,13 @@ async function reloadLists() {
   const bl = await run(T('run.readBanlist'), () => window.api.readBanlist(serverDir), { list: [] })
   renderList('whitelist-ul', (wl && wl.list) || [], 'whitelist')
   renderList('banlist-ul', (bl && bl.list) || [], 'banlist', true)
+  try {
+    const props = await window.api.readProperties(serverDir)
+    if (props && typeof props === 'object') {
+      const toggle = document.getElementById('whitelist-toggle')
+      if (toggle) toggle.checked = String(props['white-list'] || 'false') === 'true'
+    }
+  } catch (_) {}
 }
 
 async function loadListsTab(server) {
