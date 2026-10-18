@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, shell, nativeImage } = require('electron')
+const fs = require('fs')
 const path = require('path')
 const { activeServers, setMainWindow, getMainWindow, sendToRenderer } = require('./state')
 const { stopAllServers } = require('./servers')
@@ -15,6 +16,28 @@ function applyWindowTheme() {
 }
 
 let forceClosing = false
+
+// Carga el icono de la app de forma robusta. En el build de Linux empaquetado
+// los recursos viven dentro de app.asar y nativeImage.createFromPath puede no
+// poder leer la ruta del archivo directamente; de fallar, se lee el buffer y
+// se crea la imagen desde él (fs.readFileSync sí resuelve rutas asar).
+function loadAppIcon() {
+  const iconPath = path.join(
+    __dirname,
+    '..',
+    'assets',
+    process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  )
+  let image = nativeImage.createFromPath(iconPath)
+  if (image.isEmpty()) {
+    try {
+      image = nativeImage.createFromBuffer(fs.readFileSync(iconPath))
+    } catch (_) {
+      // icono no disponible
+    }
+  }
+  return image
+}
 
 // Espera a que todos los servidores se detengan (o al timeout) antes de salir.
 // Sin esto, app.quit() queda cancelado por el guard de 'close' y la app no cierra.
@@ -39,7 +62,7 @@ function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1280, height: 800, minWidth: 1024, minHeight: 640,
     title: 'Minecraft Manager',
-    icon: path.join(__dirname, '..', 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
+    icon: loadAppIcon(),
     backgroundColor: currentBackgroundColor(),
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload.js'),

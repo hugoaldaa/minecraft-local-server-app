@@ -1,4 +1,5 @@
 const { app, Tray, Menu, nativeImage } = require('electron')
+const fs = require('fs')
 const path = require('path')
 const { settingsStore } = require('./stores')
 const { getMainWindow } = require('./state')
@@ -37,7 +38,14 @@ function setContextMenu() {
 function createTray() {
   if (tray) return
   const iconPath = path.join(__dirname, '..', 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png')
-  const image = nativeImage.createFromPath(iconPath)
+  let image = nativeImage.createFromPath(iconPath)
+  if (image.isEmpty()) {
+    try {
+      image = nativeImage.createFromBuffer(fs.readFileSync(iconPath))
+    } catch (_) {
+      return
+    }
+  }
   if (image.isEmpty()) return
   tray = new Tray(image)
   tray.setToolTip(app.getName())

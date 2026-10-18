@@ -66,7 +66,8 @@
       "synopsis": "Gestor de servidores locales de Minecraft",
       "desktop": {
         "Name": "Minecraft Manager",
-        "StartupWMClass": "minecraft-local-server-manager"
+        "StartupWMClass": "minecraft-local-server-app",
+        "Icon": "minecraft-local-server-app"
       }
     },
     "deb": {
