@@ -3,6 +3,10 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v1.9.4 - White-list patch (2026-10-18)
+
+- White-list patch
+
 ## v1.9.3 - Linux patch (2026-10-18)
 
 - Linux patch.
