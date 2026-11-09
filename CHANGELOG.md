@@ -3,6 +3,25 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v1.9.5 - Statistics patch (2026-11-09)
+
+- 1. Columnas siempre rellenas (renderer)
+- Antes, si un jugador no tenía tiempo acumulado, las celdas se veían vacías. Ahora renderStatsPlayers siempre muestra:
+- - Tiempo jugado: 0 min en vez de vacío.
+- - Días activos: 0 en vez de vacío.
+- - Última vez visto: fecha/hora si hay eventos, o — si no.
+- 2. Nueva columna "Última vez visto" (main + renderer)
+- getPlayerList ahora calcula el último evento (join/leave) de cada jugador y lo devuelve como lastSeen. La tabla lo muestra como fecha legible. Así, aunque el tiempo jugado sea 0, se ve cuándo entró por última vez.
+- 3. Filtro rápido por período (HTML + renderer)
+- Se añadió un selector en la pestaña Estadísticas: Todo / Últimos 7 días / Últimos 30 días. Al elegir uno, se vuelve a cargar filtrando por ese rango. El filtro se envía al IPC estadisticas:jugadores (ya soportado).
+- 4. Auto-refresco mientras el servidor está activo (renderer)
+- Las estadísticas ahora se recargan solas cada 10 segundos si:
+- - Estás en la pestaña Estadísticas, y
+- - El servidor está en marcha.
+- Así no hace falta pulsar "Actualizar" para ver los datos mientras juegan. Se detiene al cambiar de pestaña.
+- 5. Exportación completa
+- CSV y JSON ahora incluyen la columna de última vez visto.
+
 ## v1.9.4 - White-list patch (2026-10-18)
 
 - White-list patch
