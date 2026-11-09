@@ -199,13 +199,21 @@ function filterResourceSamples(samples, filters) {
 function getPlayerList(serverId, filters) {
   const events = filterPlayerEvents(getPlayerEvents(serverId), filters)
   const run = getRunTime(serverId)
-  const totals = computePlayerTotals(events, run && (run.stoppedAt || Date.now()))
+  const endTs = run && (run.stoppedAt || Date.now())
+  const totals = computePlayerTotals(events, endTs)
+  // Último evento conocido por jugador (join o leave) para mostrar cuándo se le vio por última vez.
+  const lastSeen = {}
+  for (const event of events) {
+    const prev = lastSeen[event.player]
+    if (prev === undefined || event.ts > prev) lastSeen[event.player] = event.ts
+  }
   const list = Object.keys(totals).map(player => {
     const total = totals[player]
     return {
       player,
       totalMs: total.totalMs,
-      daysActive: Object.keys(total.days).length
+      daysActive: Object.keys(total.days).length,
+      lastSeen: lastSeen[player] || null
     }
   })
   list.sort((a, b) => b.totalMs - a.totalMs)
@@ -259,9 +267,9 @@ function buildServerCsv(serverId) {
     addRow([day, Object.keys(entry.players).length, entry.joins])
   }
 
-  addRow(['jugador', 'tiempo_jugado_ms', 'diasactivos'])
+  addRow(['jugador', 'tiempo_jugado_ms', 'diasactivos', 'ultima_vez_visto'])
   for (const player of players) {
-    addRow([player.player, player.totalMs, player.daysActive])
+    addRow([player.player, player.totalMs, player.daysActive, player.lastSeen || ''])
   }
 
   return rows.join('\r\n')
@@ -282,7 +290,8 @@ function buildServerJson(serverId) {
     jugadores: players.map(p => ({
       jugador: p.player,
       tiempoJugadoMs: p.totalMs,
-      diasActivos: p.daysActive
+      diasActivos: p.daysActive,
+      ultimaVezVisto: p.lastSeen
     }))
   }
 }

@@ -1025,7 +1025,12 @@ function initDetailNav() {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
       btn.classList.add('active')
       document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active')
-      if (btn.dataset.tab === 'stats') loadServerStats()
+      if (btn.dataset.tab === 'stats') {
+        loadServerStats()
+        if (state.isRunning) startStatsRefresh()
+      } else {
+        stopStatsRefresh()
+      }
     }
   })
 }
@@ -1174,9 +1179,30 @@ function renderPlayers() {
 }
 
 // ─── Estadísticas (Fase 3) ──────────────────────────────────────────────────
+let statsRefreshTimer = null
+
+function startStatsRefresh() {
+  stopStatsRefresh()
+  statsRefreshTimer = setInterval(() => {
+    if (document.getElementById('tab-stats').classList.contains('active')) {
+      loadServerStats()
+    }
+  }, 10000)
+}
+
+function stopStatsRefresh() {
+  if (statsRefreshTimer) {
+    clearInterval(statsRefreshTimer)
+    statsRefreshTimer = null
+  }
+}
+
 function initStats() {
   document.getElementById('btn-refresh-stats').onclick = loadServerStats
   document.getElementById('btn-export-stats').onclick = exportServerStats
+  document.getElementById('stats-filter-period').addEventListener('change', loadServerStats)
+  // Auto-refresco mientras el servidor esté en marcha y se vea la pestaña.
+  if (state.isRunning) startStatsRefresh()
 }
 
 function formatDuration(ms) {
@@ -1238,11 +1264,21 @@ function renderBarChart(container, points) {
   container.appendChild(svg)
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+function periodMs(period) {
+  if (period === '7d') return 7 * MS_PER_DAY
+  if (period === '30d') return 30 * MS_PER_DAY
+  return null
+}
+
 async function loadServerStats() {
   const serverId = state.currentServerId
   if (!serverId) return
-  const summary = await run(T('run.statsResumen'), () => window.api.getEstadisticasResumen(serverId), null)
-  const players = await run(T('run.statsJugadores'), () => window.api.getEstadisticasJugadores(serverId), null)
+  const period = document.getElementById('stats-filter-period')
+  const filters = period && period.value !== 'all' ? { desde: Date.now() - periodMs(period.value) } : null
+  const summary = await run(T('run.statsResumen'), () => window.api.getEstadisticasResumen(serverId, filters), null)
+  const players = await run(T('run.statsJugadores'), () => window.api.getEstadisticasJugadores(serverId, filters), null)
   if (summary) renderStatsSummary(summary)
   if (players) renderStatsPlayers(players)
 }
@@ -1366,7 +1402,7 @@ function renderStatsPlayers(players) {
   if (!players.length) {
     const tr = document.createElement('tr')
     const td = document.createElement('td')
-    td.colSpan = 3
+    td.colSpan = 4
     td.className = 'stats-empty'
     td.textContent = T('stats.noData')
     tr.appendChild(td)
@@ -1378,10 +1414,12 @@ function renderStatsPlayers(players) {
     const player = document.createElement('td')
     player.textContent = p.player
     const played = document.createElement('td')
-    played.textContent = formatDuration(p.totalMs)
+    played.textContent = p.totalMs > 0 ? formatDuration(p.totalMs) : '0 min'
     const days = document.createElement('td')
-    days.textContent = String(p.daysActive)
-    tr.appendChild(player, played, days)
+    days.textContent = String(p.daysActive || 0)
+    const lastSeen = document.createElement('td')
+    lastSeen.textContent = p.lastSeen ? formatDateTime(p.lastSeen) : '—'
+    tr.appendChild(player, played, days, lastSeen)
     body.appendChild(tr)
   })
 }

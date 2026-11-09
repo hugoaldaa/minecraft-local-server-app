@@ -87,6 +87,11 @@ const MESSAGES = {
     'stats.concurrentPeak': 'Jugadores concurrentes máximos',
     'stats.concurrentPeakAt': 'Máximo a las {time}',
     'stats.connectionsPerDay': '{day}: {joins} conexiones, {players} jugadores',
+    'stats.filterPeriod': 'Período',
+    'stats.filterAll': 'Todo',
+    'stats.filter7d': 'Últimos 7 días',
+    'stats.filter30d': 'Últimos 30 días',
+    'stats.colLastSeen': 'Última vez visto',
 
     'lists.active': 'Activa',
     'lists.reasonOptional': 'Motivo (opcional)',
@@ -411,6 +416,11 @@ const MESSAGES = {
     'stats.concurrentPeak': 'Peak concurrent players',
     'stats.concurrentPeakAt': 'Peak at {time}',
     'stats.connectionsPerDay': '{day}: {joins} connections, {players} players',
+    'stats.filterPeriod': 'Period',
+    'stats.filterAll': 'All',
+    'stats.filter7d': 'Last 7 days',
+    'stats.filter30d': 'Last 30 days',
+    'stats.colLastSeen': 'Last seen',
 
     'lists.active': 'On',
     'lists.reasonOptional': 'Reason (optional)',

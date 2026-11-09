@@ -140,6 +140,12 @@
       <div class="panel-header">
         <h2 data-i18n="stats.title">Estadísticas del servidor</h2>
         <button class="btn-secondary" id="btn-refresh-stats" data-i18n="common.refresh">Actualizar</button>
+        <label class="stats-filter-label" data-i18n="stats.filterPeriod">Período</label>
+        <select id="stats-filter-period" aria-label="Filter period">
+          <option value="all" data-i18n="stats.filterAll" selected>Todo</option>
+          <option value="7d" data-i18n="stats.filter7d">Últimos 7 días</option>
+          <option value="30d" data-i18n="stats.filter30d">Últimos 30 días</option>
+        </select>
         <button class="btn-secondary" id="btn-export-stats" data-i18n="common.export">Exportar</button>
         <select id="stats-export-format" aria-label="Export format">
           <option value="csv" data-i18n="common.exportCsv">CSV</option>
@@ -194,6 +200,7 @@
                 <th data-i18n="stats.colPlayer">Jugador</th>
                 <th data-i18n="stats.colPlayed">Tiempo jugado</th>
                 <th data-i18n="stats.colDaysActive">Días activos</th>
+                <th data-i18n="stats.colLastSeen">Última vez visto</th>
               </tr>
             </thead>
             <tbody id="stats-players-body"></tbody>
