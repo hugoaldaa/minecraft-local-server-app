@@ -3,6 +3,10 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v1.9.7 - Statistics patch v3 (2026-11-10)
+
+- Statistics patch v3
+
 ## v1.9.6 - Statistics patch v2 (2026-11-10)
 
 - Statistics patch v2.
