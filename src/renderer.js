@@ -1419,7 +1419,10 @@ function renderStatsPlayers(players) {
     days.textContent = String(p.daysActive || 0)
     const lastSeen = document.createElement('td')
     lastSeen.textContent = p.lastSeen ? formatDateTime(p.lastSeen) : '—'
-    tr.appendChild(player, played, days, lastSeen)
+    tr.appendChild(player)
+    tr.appendChild(played)
+    tr.appendChild(days)
+    tr.appendChild(lastSeen)
     body.appendChild(tr)
   })
 }
