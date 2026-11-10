@@ -1278,9 +1278,9 @@ async function loadServerStats() {
   const period = document.getElementById('stats-filter-period')
   const filters = period && period.value !== 'all' ? { desde: Date.now() - periodMs(period.value) } : null
   const summary = await run(T('run.statsResumen'), () => window.api.getEstadisticasResumen(serverId, filters), null)
-  const players = await run(T('run.statsJugadores'), () => window.api.getEstadisticasJugadores(serverId, filters), null)
+  const players = await run(T('run.statsJugadores'), () => window.api.getEstadisticasJugadores(serverId, filters), null) || []
   if (summary) renderStatsSummary(summary)
-  if (players) renderStatsPlayers(players)
+  renderStatsPlayers(players)
 }
 
 function renderStatsSummary(data) {

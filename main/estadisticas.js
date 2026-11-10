@@ -12,6 +12,16 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000
 const DEFAULT_RETENTION_DAYS = 730
 const MAX_RETENTION_DAYS = 3650
 
+// Formatea una cantidad de milisegundos como "X h Y min" o solo "X min",
+// igual que se muestra en la pantalla de estadísticas.
+function formatDuration(ms) {
+  const totalMin = Math.floor(ms / 60000)
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
+  if (h <= 0) return `${m} min`
+  return `${h} h ${m} min`
+}
+
 // Días de retención configurables en Ajustes: cuánto tiempo se conservan los
 // eventos de jugadores y los totales por jugador.
 function retentionDays() {
@@ -267,9 +277,9 @@ function buildServerCsv(serverId) {
     addRow([day, Object.keys(entry.players).length, entry.joins])
   }
 
-  addRow(['jugador', 'tiempo_jugado_ms', 'diasactivos', 'ultima_vez_visto'])
+  addRow(['jugador', 'tiempo_jugado', 'diasactivos', 'ultima_vez_visto'])
   for (const player of players) {
-    addRow([player.player, player.totalMs, player.daysActive, player.lastSeen || ''])
+    addRow([player.player, formatDuration(player.totalMs), player.daysActive, player.lastSeen || ''])
   }
 
   return rows.join('\r\n')
@@ -289,7 +299,7 @@ function buildServerJson(serverId) {
     momentosConMasJugadores: metrics.concurrentMoments,
     jugadores: players.map(p => ({
       jugador: p.player,
-      tiempoJugadoMs: p.totalMs,
+      tiempoJugado: formatDuration(p.totalMs),
       diasActivos: p.daysActive,
       ultimaVezVisto: p.lastSeen
     }))
