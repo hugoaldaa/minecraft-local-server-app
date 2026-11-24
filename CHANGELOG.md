@@ -3,6 +3,28 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.0.0 - Major release v2.0.0 (2026-11-24)
+
+### Añadido
+
+- ## v2.0.0 - Estabilidad y control total
+- ### Añadido
+- Selección automática de Java 8/17/21 según la versión de Minecraft del servidor (la versión queda guardada al instalar).
+- `SHA256SUMS` publicado en cada release y enlazado desde la web para verificar la descarga.
+- ### Corregido
+- Aviso antes de arrancar si el puerto del servidor ya está ocupado.
+- Los fallos que no se arreglan solos (Java incompatible, EULA sin aceptar, puerto ocupado) ya no se reintentan.
+- El temporizador de 10 s para forzar la parada se cancela cuando el proceso sale.- Los botones de descarga de la web apuntaban a nombres de archivo con espacios que no existían.
+- ### Cambios
+- Versión mayor por el alcance del trabajo: no rompe servidores, ajustes ni backups existentes.
+- El renderer se ha dividido en 19 módulos y se han añadido smoke tests del proceso principal (sin cambios visibles).
+- Las notas de release mantienen sus secciones desde el tag hasta GitHub y se muestran con markdown seguro dentro de la app.
+- CHANGELOG histórico normalizado: cabeceras uniformes y viñetas `- -` corregidas.
+- Web de descarga actualizada con las funciones nuevas y compatibilidad corregida (Vanilla, Paper, Fabric y Forge).
+- ### Otros
+- Licencia MIT añadida al proyecto.
+- La firma de Windows con SignPath sigue en trámites; mientras tanto, verifica el instalador con `SHA256SUMS`.
+
 ## v1.9.7 - Statistics patch v3 (2026-11-10)
 
 - Statistics patch v3
