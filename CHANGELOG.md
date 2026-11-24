@@ -3,6 +3,18 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## Sin publicar
+
+### Cambios
+
+- Actualizado Electron de 28.3.3 a 45.4.1, electron-builder de 24.13.3 a 26.18.1 y electron-updater a 6.8.11. La configuración Linux usa `desktopName`/`syncDesktopName` en lugar del antiguo bloque `desktop`, y CI pasa a Node 22.
+- Actualizado `systeminformation` a 5.33.26 y fijada `brace-expansion` 5.1.0 mediante `overrides` para resolver avisos de seguridad.
+- Añadido `npm run build:linux:local` para builds Linux sin publicación (el script `build:linux` publica en GitHub).
+
+### Otros
+
+- No se borra ni se migra ningún dato del usuario: los JSON de `userData` se leen igual con la nueva versión.
+
 ## v2.1.0 - Privacy Features (2026-11-24)
 
 ### Añadido

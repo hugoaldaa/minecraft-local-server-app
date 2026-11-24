@@ -107,7 +107,7 @@ installer is not code-signed yet (see `FIRMADO_SIGNPATH.md`).
 
 ### Requirements
 
-- Node.js 20 or newer, with npm.
+- Node.js 22 or newer, with npm (CI uses Node 22).
 - Java (JRE) if you want to run servers from a dev build. The required version depends on the Minecraft version: Java 8 for 1.16.5 and older, Java 17 for 1.17–1.20.4, Java 21 for 1.20.5 and newer.
 
 ### Getting started

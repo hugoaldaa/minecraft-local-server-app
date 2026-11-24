@@ -2,6 +2,7 @@
   "name": "minecraft-local-server-app",
   "version": "2.1.0",
   "description": "Minecraft Local Server Manager",
+  "desktopName": "Minecraft-Local-Server-Manager.desktop",
   "license": "MIT",
   "author": "hugoaldaa",
   "homepage": "https://github.com/hugoaldaa/minecraft-local-server-app",
@@ -25,6 +26,7 @@
     "build:ci": "npm run build:win",
     "build:win": "electron-builder --win --x64 --publish always",
     "build:linux": "electron-builder --linux AppImage deb --x64 --publish always",
+    "build:linux:local": "electron-builder --linux AppImage deb --x64",
     "release": "node scripts/release.mjs",
     "release:notes": "node scripts/release.mjs --backfill"
   },
@@ -67,11 +69,7 @@
       "category": "Utility",
       "icon": "assets/icon.png",
       "synopsis": "Gestor de servidores locales de Minecraft",
-      "desktop": {
-        "Name": "Minecraft Manager",
-        "StartupWMClass": "minecraft-local-server-app",
-        "Icon": "minecraft-local-server-app"
-      }
+      "syncDesktopName": true
     },
     "deb": {
       "maintainer": "hugoaldaa <hugoaldaa@users.noreply.github.com>",
@@ -105,16 +103,19 @@
   "dependencies": {
     "adm-zip": "^0.6.1",
     "archiver": "^6.0.1",
-    "electron-store": "^8.1.0",
-    "electron-updater": "^6.3.4",
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.8.11",
     "node-schedule": "^2.1.1",
-    "systeminformation": "^5.22.0"
+    "systeminformation": "^5.33.26"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "^28.0.0",
-    "electron-builder": "^24.9.1",
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0",
     "eslint": "^9.39.5",
     "prettier": "^3.9.9"
+  },
+  "overrides": {
+    "brace-expansion": "^5.1.0"
   }
 }
