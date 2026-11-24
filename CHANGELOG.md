@@ -3,6 +3,12 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.2.2 - Release fix (2026-11-24)
+
+### Corregido
+
+- Release fix.
+
 ## v2.2.1 - Logo background fix (2026-11-24)
 
 ### Añadido
