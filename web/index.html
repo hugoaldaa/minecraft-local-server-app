@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Minecraft Local Server Manager</title>
-<meta name="description" content="Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Spigot, Bukkit, Fabric y Forge.">
+<meta name="description" content="Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Fabric y Forge.">
 <link rel="icon" href="./favicon.ico" sizes="16x16 24x24 32x32 48x48 64x64 128x128 256x256">
 <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="Minecraft Manager">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Minecraft Local Server Manager">
-<meta property="og:description" content="Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Spigot, Bukkit, Fabric y Forge.">
+<meta property="og:description" content="Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Fabric y Forge.">
 <meta property="og:image" content="./icon-512.png">
 <meta property="og:image:alt" content="Icono de Minecraft Local Server Manager">
 <meta property="og:image:width" content="512">
@@ -108,6 +108,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
     <p class="lead">Una aplicación de escritorio para crear, arrancar y administrar servidores locales de Minecraft sin pelearte con la línea de comandos.</p>
     <div class="actions"><a class="btn dl" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">Descargar para Windows</a><a class="btn alt" href="#funciones">Ver funciones</a></div>
     <p class="linux">También para Linux:<a class="dl-l" data-f="Minecraft-Local-Server-Manager.AppImage" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">AppImage</a><a class="dl-l" data-f="Minecraft-Local-Server-Manager.deb" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">.deb</a></p>
+    <p class="linux">Verifica tu descarga:<a class="dl-l" data-f="SHA256SUMS" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">SHA256SUMS</a></p>
   </div>
   <div class="win" aria-label="Vista previa de la consola del servidor">
     <div class="bar"><span class="status"><span class="dot"></span>Servidor en marcha</span><span class="btn-stop">Detener</span></div>
@@ -130,13 +131,17 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
     <div class="row"><h3>Gestión de jugadores</h3><p>Expulsa, banea, da permisos de operador o cambia el modo de juego de cada jugador.</p></div>
     <div class="row"><h3>Whitelist y banlist</h3><p>Edita las listas desde un editor visual, sin tocar archivos JSON.</p></div>
     <div class="row"><h3>Editor de server.properties</h3><p>Ajusta la configuración del servidor desde la propia aplicación.</p></div>
-    <div class="row"><h3>Copias de seguridad</h3><p>Guarda tus mundos manualmente o de forma automática.</p></div>
+    <div class="row"><h3>Copias de seguridad</h3><p>Guarda tus mundos manualmente o de forma automática y restaura cualquier copia con un clic.</p></div>
+    <div class="row"><h3>Reinicios programados</h3><p>Reinicia cada servidor cada 6, 12 o 24 horas y recupéralo automáticamente tras una caída.</p></div>
+    <div class="row"><h3>Diagnóstico de errores</h3><p>Detecta problemas de Java, puerto ocupado, memoria o EULA y te explica cómo solucionarlos.</p></div>
+    <div class="row"><h3>Notificaciones</h3><p>Recibe avisos cuando un servidor arranca, se cae, entra un jugador o termina una copia.</p></div>
+    <div class="row"><h3>Instalador integrado</h3><p>Descarga y configura Vanilla, Paper, Fabric o Forge desde la propia aplicación, verificando la integridad de la descarga.</p></div>
   </div>
 </div></section>
 
 <section id="compatibilidad"><div class="wrap">
   <h2>Funciona con tu tipo de servidor</h2>
-  <ul class="loaders"><li>Vanilla</li><li>Paper</li><li>Spigot</li><li>Bukkit</li><li>Fabric</li><li>Forge</li></ul>
+  <ul class="loaders"><li>Vanilla</li><li>Paper</li><li>Fabric</li><li>Forge</li></ul>
   <p class="lead">Del servidor oficial a los más populares con plugins y mods.</p>
 </div></section>
 
@@ -145,6 +150,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
   <p>Consigue la última versión y consulta el código en GitHub.</p>
   <div class="actions"><a class="btn dl" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">Descargar para Windows</a><a class="btn alt" href="https://github.com/hugoaldaHD/minecraft-local-server-app">Ver el código</a></div>
   <p class="linux">También para Linux:<a class="dl-l" data-f="Minecraft-Local-Server-Manager.AppImage" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">AppImage</a><a class="dl-l" data-f="Minecraft-Local-Server-Manager.deb" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">.deb</a></p>
+  <p class="linux">Verifica tu descarga:<a class="dl-l" data-f="SHA256SUMS" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">SHA256SUMS</a></p>
 </div></section>
 
 <footer><div class="wrap"><span>Minecraft Local Server Manager · por hugoaldaHD</span><span>Proyecto independiente, no afiliado a Mojang ni a Microsoft.</span></div></footer>
@@ -179,7 +185,7 @@ var T={
 "Funciones":"Features","Compatibilidad":"Compatibility",
 "Tu servidor de Minecraft, bajo control.":"Your Minecraft server, under control.",
 "Una aplicación de escritorio para crear, arrancar y administrar servidores locales de Minecraft sin pelearte con la línea de comandos.":"A desktop app to start and manage local Minecraft servers without wrestling with the command line.",
-"Descargar para Windows":"Download for Windows","Ver funciones":"See features","Ver el código":"View the code","También para Linux:":"Also for Linux:",
+"Descargar para Windows":"Download for Windows","Ver funciones":"See features","Ver el código":"View the code","También para Linux:":"Also for Linux:","Verifica tu descarga:":"Verify your download:",
 "Servidor en marcha":"Server running","Detener":"Stop",
 "Todo lo que necesitas para tu servidor":"Everything you need to run your server",
 "Arranca y detén":"Start and stop","Inicia o apaga el servidor con un clic desde la misma ventana.":"Start or shut down the server with one click from the same window.",
@@ -188,14 +194,18 @@ var T={
 "Gestión de jugadores":"Player management","Expulsa, banea, da permisos de operador o cambia el modo de juego de cada jugador.":"Kick, ban, give operator rights or change each player's game mode.",
 "Whitelist y banlist":"Whitelist and banlist","Edita las listas desde un editor visual, sin tocar archivos JSON.":"Edit the lists in a visual editor, without touching JSON files.",
 "Editor de server.properties":"server.properties editor","Ajusta la configuración del servidor desde la propia aplicación.":"Adjust the server settings from inside the app.",
-"Copias de seguridad":"Backups","Guarda tus mundos manualmente o de forma automática.":"Save your worlds manually or automatically.",
+"Copias de seguridad":"Backups","Guarda tus mundos manualmente o de forma automática y restaura cualquier copia con un clic.":"Save your worlds manually or automatically and restore any backup with one click.",
+"Reinicios programados":"Scheduled restarts","Reinicia cada servidor cada 6, 12 o 24 horas y recupéralo automáticamente tras una caída.":"Restart each server every 6, 12 or 24 hours and recover it automatically after a crash.",
+"Diagnóstico de errores":"Error diagnosis","Detecta problemas de Java, puerto ocupado, memoria o EULA y te explica cómo solucionarlos.":"Detects Java, port, memory or EULA problems and explains how to fix them.",
+"Notificaciones":"Notifications","Recibe avisos cuando un servidor arranca, se cae, entra un jugador o termina una copia.":"Get alerts when a server starts, crashes, a player joins or a backup finishes.",
+"Instalador integrado":"Built-in installer","Descarga y configura Vanilla, Paper, Fabric o Forge desde la propia aplicación, verificando la integridad de la descarga.":"Download and set up Vanilla, Paper, Fabric or Forge from inside the app, with download integrity verification.",
 "Funciona con tu tipo de servidor":"Works with your type of server",
 "Del servidor oficial a los más populares con plugins y mods.":"From the official server to the most popular ones with plugins and mods.",
 "Empieza a gestionar tu servidor":"Start managing your server",
 "Consigue la última versión y consulta el código en GitHub.":"Get the latest version and browse the code on GitHub.",
 "Minecraft Local Server Manager · por hugoaldaHD":"Minecraft Local Server Manager · by hugoaldaHD",
 "Proyecto independiente, no afiliado a Mojang ni a Microsoft.":"Independent project, not affiliated with Mojang or Microsoft."};
-var DESC={es:"Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Spigot, Bukkit, Fabric y Forge.",en:"Desktop app to manage local Minecraft servers. Compatible with Vanilla, Paper, Spigot, Bukkit, Fabric and Forge."};
+var DESC={es:"Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Fabric y Forge.",en:"Desktop app to manage local Minecraft servers. Compatible with Vanilla, Paper, Fabric and Forge."};
 var ARIA={es:"Vista previa de la consola del servidor",en:"Server console preview"};
 /* Si defines aquí el nombre exacto del .exe de la release (p. ej. "MiApp-Setup.exe"),
    el botón descargará directamente la última versión. Vacío = abre la última release. */

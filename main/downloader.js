@@ -3,8 +3,8 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 const { spawn } = require('child_process')
-const { fetchText, fetchJson, sha256File, downloadToFile } = require('./http')
-const { sendToRenderer } = require('./state')
+const { fetchText, fetchJson, sha256File, sha1File, downloadToFile } = require('./http')
+const { sendToRenderer, serverMapEvents } = require('./state')
 const { getAllServersMap, saveServerMap, settingsStore } = require('./stores')
 const { trackEvent } = require('./analytics')
 const { buildServerRecord, detectJavaVersion } = require('./servers')
@@ -38,9 +38,11 @@ async function getVanillaServerUrl(versionId) {
   const version = (manifest.versions || []).find(v => v.id === versionId && v.type === 'release')
   if (!version || !isStr(version.url)) throw new Error('Versión Vanilla no encontrada')
   const vjson = JSON.parse(await fetchText(version.url))
+  const server = vjson.downloads && vjson.downloads.server
   const url = parseVersionJsonServer(vjson)
   if (!url) throw new Error('El servidor no está disponible para esta versión')
-  return url
+  // Mojang publica el SHA-1 en el JSON de cada versión: lo usamos para verificar.
+  return { url, sha1: (server && isStr(server.sha1) ? server.sha1 : null) }
 }
 
 async function listPaperVersions() {
@@ -70,7 +72,10 @@ async function getFabricServerUrl(versionId) {
   const loader = (Array.isArray(loaders) ? loaders : []).find(l => l && l.stable) || (Array.isArray(loaders) ? loaders[0] : null)
   const installer = (Array.isArray(installers) ? installers : []).find(i => i && i.stable) || (Array.isArray(installers) ? installers[0] : null)
   if (!loader || !installer) throw new Error('No se pudo resolver Fabric')
-  return `${FABRIC_GAME.replace('/game', '')}/loader/${encodeURIComponent(versionId)}/${encodeURIComponent(loader.version)}/${encodeURIComponent(installer.version)}/server/jar`
+  // El .jar de servidor de Fabric se genera al vuelo: no hay hash remoto directo
+  // para esta URL. Se verifica el instalador de Fabric por separado cuando se
+  // disponga de su checksum.
+  return { url: `${FABRIC_GAME.replace('/game', '')}/loader/${encodeURIComponent(versionId)}/${encodeURIComponent(loader.version)}/${encodeURIComponent(installer.version)}/server/jar`, sha1: null }
 }
 
 async function listForgeVersions() {
@@ -145,6 +150,13 @@ async function installForge(cfg, versionId, finalDir, emit, ctrl) {
       onProgress: ({ received, total }) => emit('download', { received, total })
     })
 
+    // Verificar el instalador de Forge con su .sha1 de Maven antes de ejecutarlo.
+    const expectedForgeSha1 = (await fetchText(installerUrl + '.sha1')).trim().split(/\s+/)[0]
+    const actualForgeSha1 = await sha1File(installerPath)
+    if (actualForgeSha1.toLowerCase() !== expectedForgeSha1.toLowerCase()) {
+      throw new Error('El instalador de Forge no superó la verificación de integridad')
+    }
+
     emit('install', { provider: 'forge' })
     const code = await runProcess(java, ['-jar', installerPath, '--installServer'], finalDir, ctrl.signal)
     if (code !== 0) throw new Error('El instalador de Forge falló (código ' + code + ')')
@@ -170,11 +182,13 @@ async function installForge(cfg, versionId, finalDir, emit, ctrl) {
       maxRam: cfg.maxRam,
       extraArgs: cfg.extraArgs,
       color: cfg.color,
+      mcVersion: versionId,
       startType: 'forge',
       forgeArgs: argsFile
     })
     map[server.id] = server
     saveServerMap(map)
+    serverMapEvents.emit('changed', server.id, 'create')
     trackEvent('server_downloaded', { provider: 'forge', version: versionId })
     emit('done', { serverId: server.id })
     return { ok: true, server, dir: finalDir }
@@ -215,9 +229,9 @@ async function installServer(cfg) {
 
     let target
     if (provider === 'vanilla') {
-      target = { url: await getVanillaServerUrl(versionId), sha256: null }
+      target = await getVanillaServerUrl(versionId)
     } else if (provider === 'fabric') {
-      target = { url: await getFabricServerUrl(versionId), sha256: null }
+      target = await getFabricServerUrl(versionId)
     } else {
       const build = await getPaperBuild(versionId)
       target = { url: build.url, sha256: build.sha256 }
@@ -230,11 +244,19 @@ async function installServer(cfg) {
         onProgress: ({ received, total }) => emit('download', { received, total })
       })
       emit('verify', { received: dl.received, total: dl.total })
+      // Verificar siempre antes de guardar: SHA-256 (Paper) o SHA-1 (Vanilla/Mojang).
       if (target.sha256) {
         const actual = await sha256File(destPath)
         if (actual.toLowerCase() !== target.sha256.toLowerCase()) {
           throw new Error('La descarga no superó la verificación de integridad')
         }
+      } else if (target.sha1) {
+        const actual = await sha1File(destPath)
+        if (actual.toLowerCase() !== target.sha1.toLowerCase()) {
+          throw new Error('La descarga no superó la verificación de integridad')
+        }
+      } else {
+        throw new Error('No hay checksum disponible para verificar la descarga')
       }
     } catch (err) {
       fs.rm(destPath, { force: true }, () => {})
@@ -248,10 +270,12 @@ async function installServer(cfg) {
       minRam: cfg.minRam,
       maxRam: cfg.maxRam,
       extraArgs: cfg.extraArgs,
-      color: cfg.color
+      color: cfg.color,
+      mcVersion: versionId
     })
     map[server.id] = server
     saveServerMap(map)
+    serverMapEvents.emit('changed', server.id, 'create')
     trackEvent('server_downloaded', { provider, version: versionId })
     emit('done', { serverId: server.id })
     return { ok: true, server, dir: finalDir }

@@ -2,6 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert')
 const logs = require('../main/logs')
 const estadisticas = require('../main/estadisticas')
+const { savePlayerEvents, saveRunTime } = require('../main/stores')
 
 // ─── parseLogLine ──────────────────────────────────────────────────────────
 test('detecta join y leave con el timestamp del log', () => {
@@ -53,14 +54,15 @@ test('cierra las sesiones abiertas al parar el servidor', () => {
   assert.equal(totals['Steve'].totalMs, 5 * 60000)
 })
 
-test('desglosa el tiempo por día (UTC)', () => {
-  const inicio = Date.UTC(2026, 9, 16, 23, 0, 0) // 16 de octubre a las 23:00
-  const fin = Date.UTC(2026, 9, 17, 1, 0, 0) // 17 de octubre a las 01:00
+test('desglosa el tiempo por día (zona local)', () => {
+  const ahora = new Date()
+  const inicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 0, 0).getTime()
+  const fin = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 1, 0, 0).getTime()
   const partes = estadisticas.splitByDay(inicio, fin)
   assert.equal(partes.length, 2)
-  assert.equal(partes[0].day, '2026-10-16')
+  // Debe cruzar medianoche local: dos días distintos.
+  assert.notEqual(partes[0].day, partes[1].day)
   assert.equal(partes[0].ms, 60 * 60000)
-  assert.equal(partes[1].day, '2026-10-17')
   assert.equal(partes[1].ms, 3600000)
 })
 
@@ -191,4 +193,109 @@ test('pruneEvents respeta los días de retención configurados', () => {
     kept.some(e => e.player === 'B'),
     false
   )
+})
+
+// ─── computePlayerSessions / lastSeen ──────────────────────────────────────
+
+test('computePlayerSessions cierra sesiones abiertas en serverEndTs y actualiza lastSeen', () => {
+  const ahora = Date.now()
+  const hace = minutos => ahora - minutos * 60000
+  const events = [
+    { ts: hace(60), type: 'join', player: 'Steve' },
+    { ts: hace(50), type: 'leave', player: 'Steve' },
+    { ts: hace(30), type: 'join', player: 'Alex' } // sigue conectado al cierre
+  ]
+  const { totals, lastSeen } = estadisticas.computePlayerSessions(events, hace(10))
+  assert.equal(totals['Steve'].totalMs, 10 * 60000)
+  assert.equal(lastSeen['Steve'], hace(50))
+  assert.equal(totals['Alex'].totalMs, 20 * 60000)
+  assert.equal(lastSeen['Alex'], hace(10))
+})
+
+test('computePlayerSessions lastSeen usa el leave más reciente', () => {
+  const ahora = Date.now()
+  const hace = minutos => ahora - minutos * 60000
+  const events = [
+    { ts: hace(60), type: 'join', player: 'Steve' },
+    { ts: hace(55), type: 'leave', player: 'Steve' },
+    { ts: hace(50), type: 'join', player: 'Steve' },
+    { ts: hace(45), type: 'leave', player: 'Steve' }
+  ]
+  const { lastSeen } = estadisticas.computePlayerSessions(events, ahora)
+  assert.equal(lastSeen['Steve'], hace(45))
+})
+
+test('computePlayerSessions ignora joins duplicados sin leave intermedio', () => {
+  const ahora = Date.now()
+  const hace = minutos => ahora - minutos * 60000
+  const events = [
+    { ts: hace(60), type: 'join', player: 'Steve' },
+    { ts: hace(55), type: 'join', player: 'Steve' } // duplicado: se ignora
+  ]
+  const { totals } = estadisticas.computePlayerSessions(events, hace(50))
+  assert.equal(totals['Steve'].totalMs, 10 * 60000)
+})
+
+test('getPlayerList lastSeen absoluto no cambia con filtro de período', () => {
+  const ahora = Date.now()
+  const hace = minutos => ahora - minutos * 60000
+  const serverId = `srv-lastseen-${ahora}`
+  savePlayerEvents(serverId, [
+    { ts: hace(120), type: 'join', player: 'Old' },
+    { ts: hace(10), type: 'join', player: 'Old' },
+    { ts: hace(5), type: 'leave', player: 'Old' }
+  ])
+  saveRunTime(serverId, { startedAt: hace(200), stoppedAt: hace(1) })
+
+  const all = estadisticas.getPlayerList(serverId, null)
+  assert.equal(all[0].player, 'Old')
+  assert.equal(all[0].lastSeen, hace(5))
+
+  const filtered = estadisticas.getPlayerList(serverId, { desde: hace(60) })
+  assert.equal(filtered[0].lastSeen, hace(5))
+})
+
+test('getPlayerList lastSeen de sesión abierta al parar usa el cierre del servidor', () => {
+  const ahora = Date.now()
+  const hace = minutos => ahora - minutos * 60000
+  const serverId = `srv-open-${ahora}`
+  savePlayerEvents(serverId, [
+    { ts: hace(60), type: 'join', player: 'OpenPlayer' }
+  ])
+  saveRunTime(serverId, { startedAt: hace(200), stoppedAt: hace(10) })
+
+  const list = estadisticas.getPlayerList(serverId, null)
+  assert.equal(list[0].player, 'OpenPlayer')
+  // lastSeen = stopTime (hace(10)), no el join (hace(60)).
+  assert.ok(Math.abs(list[0].lastSeen - hace(10)) < 5000)
+  assert.equal(list[0].totalMs, 50 * 60000)
+})
+
+// ─── parseLogLine con baseDate y milisegundos ──────────────────────────────
+
+test('parseLogLine infiere la fecha desde baseDate en vez de hoy', () => {
+  const ayer = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const ev = logs.parseLogLine('[23:59:00] [Server thread/INFO]: Steve joined the game', { baseDate: ayer })
+  assert.ok(ev)
+  const expected = new Date(ayer.getFullYear(), ayer.getMonth(), ayer.getDate(), 23, 59, 0).getTime()
+  assert.equal(ev.ts, expected)
+})
+
+test('parseLogLine acepta milisegundos', () => {
+  const hoy = new Date()
+  const ev = logs.parseLogLine('[10:15:30.123] [Server thread/INFO]: Steve joined the game', { baseDate: hoy })
+  assert.ok(ev)
+  const expected = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 10, 15, 30, 123).getTime()
+  assert.equal(ev.ts, expected)
+})
+
+test('parseLogLine devuelve approximate:true cuando no hay timestamp y se permite', () => {
+  const ev = logs.parseLogLine('Steve joined the game', { allowApproximate: true })
+  assert.ok(ev)
+  assert.equal(ev.approximate, true)
+  assert.ok(ev.ts > 0)
+})
+
+test('parseLogLine descarta línea sin timestamp si no se permite aproximado', () => {
+  assert.equal(logs.parseLogLine('Steve joined the game'), null)
 })

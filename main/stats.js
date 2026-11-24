@@ -39,7 +39,7 @@ function retentionSamplesDays() {
   return Number.isInteger(n) && n > 0 && n <= MAX_RETENTION_DAYS ? n : DEFAULT_SAMPLES_RETENTION_DAYS
 }
 
-// Conserva solo las muestas del servidor y un tope por seguridad.
+// Conserva solo las muestras del servidor y un tope por seguridad.
 function pruneSamples(samples, retentionDays) {
   const days = retentionDays || retentionSamplesDays()
   const cutoff = Date.now() - days * MS_PER_DAY
@@ -74,51 +74,19 @@ async function flushSamples(force) {
   }
 }
 
-// Unidad mínima de CPU/RAM que se envía al renderer (lo que ya existía).
-async function collectCurrentStats() {
+// Toma una sola lectura de procesos, envía el estado al renderer y guarda la
+// muestra en el historial. Se usa una sola llamada a si.processes() por ciclo
+// en vez de dos (una para la UI y otra para el historial).
+async function collectOnce() {
   const totalMB = totalMemoryMB()
-  const pids = Object.values(activeServers)
-    .map(s => s.process && s.process.pid)
-    .filter(Boolean)
-  if (pids.length) {
-    try {
-      const procs = await si.processes()
-      let cpu = 0
-      let rss = 0
-      for (const p of procs.list) {
-        if (pids.includes(p.pid)) {
-          cpu += p.cpu || 0
-          rss += p.memRss || 0
-        }
-      }
-      return {
-        cpu: Math.round(cpu),
-        ramUsed: rssToMB(rss, totalMB),
-        ramTotal: totalMB,
-        scope: 'server'
-      }
-    } catch (_) {
-      /* cae al sistema */
-    }
-  }
-  const [load, mem] = await Promise.all([si.currentLoad(), si.mem()])
-  return {
-    cpu: Math.round(load.currentLoad),
-    ramUsed: Math.round((mem.total - mem.available) / 1048576),
-    ramTotal: totalMB,
-    scope: 'system'
-  }
-}
-
-// Toma una muestra por cada servidor activo y una muestra global cuando no hay
-// servidores en marcha (picos del sistema). Se guarda en el historial para
-// calcular picos, jugadores por día, etc.
-async function collectSamplesOnce() {
-  const totalMB = totalMemoryMB()
-  const procs = await si.processes().catch(() => ({ list: [] }))
   const activeIds = Object.keys(activeServers)
+  const ts = Date.now()
+
+  let statsForRenderer = null
   const samples = []
+
   if (activeIds.length) {
+    const procs = await si.processes().catch(() => ({ list: [] }))
     // Un proceso por servidor: su uso de CPU/RAM pertenece a ese servidor.
     for (const serverId of activeIds) {
       const proc = activeServers[serverId].process
@@ -132,20 +100,36 @@ async function collectSamplesOnce() {
           rss += p.memRss || 0
         }
       }
-      samples.push({ serverId, ts: Date.now(), cpu: Math.round(cpu), ramUsed: rssToMB(rss, totalMB) })
+      const ramUsed = rssToMB(rss, totalMB)
+      samples.push({ serverId, ts, cpu: Math.round(cpu), ramUsed })
+      // Primera muestra de servidor activo se usa para la barra de título.
+      if (!statsForRenderer) {
+        statsForRenderer = { cpu: Math.round(cpu), ramUsed, ramTotal: totalMB, scope: 'server' }
+      }
     }
   } else {
-    // Sin servidores: las métricas del sistema completo. Se guarda con una
-    // clave reservada para no colisionar con servidores reales.
+    // Sin servidores: las métricas del sistema completo.
     const [load, mem] = await Promise.all([si.currentLoad(), si.mem()])
-    samples.push({
-      serverId: 'system',
-      ts: Date.now(),
-      cpu: Math.round(load.currentLoad),
-      ramUsed: Math.round((mem.total - mem.available) / 1048576)
-    })
+    const cpu = Math.round(load.currentLoad)
+    const ramUsed = Math.round((mem.total - mem.available) / 1048576)
+    samples.push({ serverId: 'system', ts, cpu, ramUsed })
+    statsForRenderer = { cpu, ramUsed, ramTotal: totalMB, scope: 'system' }
   }
+
   for (const sample of samples) pushPending(sample)
+
+  if (statsForRenderer) {
+    const win = getMainWindow()
+    if (win && !win.isDestroyed()) {
+      sendToRenderer('stats-update', {
+        cpu: statsForRenderer.cpu,
+        ramUsed: statsForRenderer.ramUsed,
+        ramTotal: statsForRenderer.ramTotal,
+        scope: statsForRenderer.scope,
+        activeServers: activeIds
+      })
+    }
+  }
 }
 
 function startStatsPolling() {
@@ -154,23 +138,13 @@ function startStatsPolling() {
     flushSamples(true).catch(() => {})
   }, FLUSH_INTERVAL_MS)
   statsInterval = setInterval(async () => {
-    const win = getMainWindow()
-    if (!win || win.isDestroyed()) return
     try {
-      const stats = await collectCurrentStats()
-      sendToRenderer('stats-update', {
-        cpu: stats.cpu,
-        ramUsed: stats.ramUsed,
-        ramTotal: stats.ramTotal,
-        scope: stats.scope,
-        activeServers: Object.keys(activeServers)
-      })
-      await collectSamplesOnce()
+      await collectOnce()
     } catch (_) {}
   }, SAMPLE_INTERVAL_MS)
 }
 
-function stopStatsPolling() {
+async function stopStatsPolling() {
   if (statsInterval) {
     clearInterval(statsInterval)
     statsInterval = null
@@ -179,6 +153,9 @@ function stopStatsPolling() {
     clearInterval(flushInterval)
     flushInterval = null
   }
+  // Guarda las muestras pendientes al detenerse para no perder hasta 15 s de
+  // historial de CPU/RAM.
+  await flushSamples(true).catch(() => {})
 }
 
 module.exports = { startStatsPolling, stopStatsPolling, pruneSamples }

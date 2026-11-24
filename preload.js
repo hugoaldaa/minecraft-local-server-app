@@ -26,7 +26,9 @@ contextBridge.exposeInMainWorld('api', {
   createBackup: (sd, bd, sid) => ipcRenderer.invoke('backup:create', { serverDir: sd, backupDir: bd, serverId: sid }),
   listBackups: (bd) => ipcRenderer.invoke('backup:list', bd),
   deleteBackup: (p) => ipcRenderer.invoke('backup:delete', p),
+  restoreBackup: (bf, sd, sid) => ipcRenderer.invoke('backup:restore', { backupFile: bf, serverDir: sd, serverId: sid }),
   getBackupDir: (serverId) => ipcRenderer.invoke('backup:dir', serverId),
+  getRestartStatus: (serverId) => ipcRenderer.invoke('restart:status', serverId),
 
   // Settings
   getSettings: (serverId) => ipcRenderer.invoke('settings:get', serverId),
@@ -72,8 +74,9 @@ contextBridge.exposeInMainWorld('api', {
   getEstadisticasResumen: (serverId, filters) => ipcRenderer.invoke('estadisticas:resumen', serverId, filters),
   getEstadisticasJugadores: (serverId, filters) => ipcRenderer.invoke('estadisticas:jugadores', serverId, filters),
 
-  // Exportar estadísticas a CSV (Fase 4)
-  exportEstadisticas: (serverId) => ipcRenderer.invoke('estadisticas:export', serverId),
+  // Exportar estadísticas a CSV (Fase 4). El segundo parámetro es opcional y
+  // permite filtrar por un rango [desde, hasta].
+  exportEstadisticas: (serverId, filters) => ipcRenderer.invoke('estadisticas:export', serverId, filters),
 
   // Dialogs
   openJarDialog: () => ipcRenderer.invoke('dialog:openJar'),
@@ -92,5 +95,6 @@ contextBridge.exposeInMainWorld('api', {
   onStatsUpdate: (cb) => ipcRenderer.on('stats-update', (_, d) => cb(d)),
   onConfirmClose: (cb) => ipcRenderer.on('confirm-close', (_, d) => cb(d)),
   onCrashLogged: (cb) => ipcRenderer.on('crash-logged', (_, d) => cb(d)),
+  onAppNotification: (cb) => ipcRenderer.on('app-notification', (_, d) => cb(d)),
   removeAllListeners: (ch) => ipcRenderer.removeAllListeners(ch)
 })

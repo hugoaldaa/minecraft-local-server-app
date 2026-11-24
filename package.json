@@ -2,11 +2,12 @@
   "name": "minecraft-local-server-app",
   "version": "1.9.7",
   "description": "Minecraft Local Server Manager",
-  "author": "FixItNow",
-  "homepage": "https://github.com/hugoaldaHD/minecraft-local-server-app",
+  "license": "MIT",
+  "author": "hugoaldaa",
+  "homepage": "https://github.com/hugoaldaa/minecraft-local-server-app",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hugoaldaHD/minecraft-local-server-app.git"
+    "url": "https://github.com/hugoaldaa/minecraft-local-server-app.git"
   },
   "main": "main/index.js",
   "scripts": {
@@ -15,6 +16,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "node --test",
+    "smoke": "node --test test/smoke.test.js",
+    "checksums": "node scripts/checksums.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64",
@@ -28,7 +31,7 @@
   "build": {
     "appId": "com.minecraftmanager.app",
     "productName": "Minecraft Local Server Manager",
-    "artifactName": "${productName}.${ext}",
+    "artifactName": "Minecraft-Local-Server-Manager.${ext}",
     "publish": {
       "provider": "github",
       "releaseType": "release"
@@ -71,7 +74,7 @@
       }
     },
     "deb": {
-      "maintainer": "FixItNow <hugoaldaHD@users.noreply.github.com>",
+      "maintainer": "hugoaldaa <hugoaldaa@users.noreply.github.com>",
       "priority": "optional",
       "depends": [
         "libgtk-3-0 | libgtk-3-0t64",
@@ -99,6 +102,7 @@
     ]
   },
   "dependencies": {
+    "adm-zip": "^0.6.1",
     "archiver": "^6.0.1",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.3.4",

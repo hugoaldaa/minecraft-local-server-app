@@ -142,9 +142,13 @@
         <button class="btn-secondary" id="btn-refresh-stats" data-i18n="common.refresh">Actualizar</button>
         <label class="stats-filter-label" data-i18n="stats.filterPeriod">Período</label>
         <select id="stats-filter-period" aria-label="Filter period">
-          <option value="all" data-i18n="stats.filterAll" selected>Todo</option>
-          <option value="7d" data-i18n="stats.filter7d">Últimos 7 días</option>
+          <option value="7d" data-i18n="stats.filter7d" selected>Últimos 7 días</option>
+          <option value="14d" data-i18n="stats.filter14d">Últimos 14 días</option>
           <option value="30d" data-i18n="stats.filter30d">Últimos 30 días</option>
+          <option value="90d" data-i18n="stats.filter90d">Últimos 90 días</option>
+          <option value="6m" data-i18n="stats.filter6m">Últimos 6 meses</option>
+          <option value="1y" data-i18n="stats.filter1y">Último año</option>
+          <option value="all" data-i18n="stats.filterAll">Todo</option>
         </select>
         <button class="btn-secondary" id="btn-export-stats" data-i18n="common.export">Exportar</button>
         <select id="stats-export-format" aria-label="Export format">
@@ -179,7 +183,7 @@
         <div class="stats-chart">
           <h3 data-i18n="stats.playersPerDay">Jugadores por día</h3>
           <div class="stats-chart-body">
-            <svg id="stats-chart-players-day" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+            <svg id="stats-chart-players-day" viewBox="0 0 600 160" preserveAspectRatio="none" class="chart-svg"></svg>
           </div>
           <ul class="stats-days" id="stats-days"></ul>
         </div>
@@ -264,6 +268,20 @@
           <button class="btn-primary" id="btn-save-auto" data-i18n="common.save">Guardar</button>
         </div>
       </div>
+      <div class="backup-auto-config">
+        <h3 data-i18n="backups.restartTitle">Reinicio programado</h3>
+        <p class="field-hint" data-i18n="backups.restartHint">Detiene y arranca el servidor periódicamente.</p>
+        <div class="auto-backup-row">
+          <label class="toggle-wrap"><input type="checkbox" id="auto-restart-enabled" /><span
+              data-i18n="backups.restartEnable">Reiniciar automáticamente</span></label>
+          <select id="auto-restart-interval">
+            <option value="6h" data-i18n="backups.every6h">Cada 6 horas</option>
+            <option value="12h" data-i18n="backups.every12h">Cada 12 horas</option>
+            <option value="24h" selected data-i18n="backups.daily">Una vez al día</option>
+          </select>
+        </div>
+        <p class="field-hint" id="auto-restart-next" data-i18n="backups.restartNone">Sin reinicio programado</p>
+      </div>
       <div class="backups-list" id="backups-list"></div>
     </div>
 
@@ -316,6 +334,8 @@
       <nav class="set-nav" id="set-nav">
         <button class="set-nav-item active" data-set-section="general">⚙ <span
             data-i18n="settings.general">General</span></button>
+        <button class="set-nav-item" data-set-section="notifications">🔔 <span
+            data-i18n="settings.notifications">Notificaciones</span></button>
         <button class="set-nav-item" data-set-section="appearance">🎨 <span
             data-i18n="settings.appearance">Apariencia</span></button>
         <button class="set-nav-item" data-set-section="backups">💾 <span
@@ -383,6 +403,46 @@
               </div>
               <div class="set-row-control">
                 <label class="switch"><input type="checkbox" id="set-start-on-boot" /><span
+                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Notificaciones -->
+        <section class="set-panel" data-set-panel="notifications">
+          <h3 data-i18n="settings.notifications">Notificaciones</h3>
+          <div class="set-group">
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.notifyServer">Servidores</span>
+                <p class="set-row-hint" data-i18n="settings.notifyServerHint">Avisa al iniciar, detener o caer un
+                  servidor.</p>
+              </div>
+              <div class="set-row-control">
+                <label class="switch"><input type="checkbox" id="set-notify-server" /><span
+                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.notifyPlayers">Jugadores</span>
+                <p class="set-row-hint" data-i18n="settings.notifyPlayersHint">Avisa cuando un jugador se conecta o
+                  desconecta.</p>
+              </div>
+              <div class="set-row-control">
+                <label class="switch"><input type="checkbox" id="set-notify-players" /><span
+                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.notifyBackups">Copias de seguridad</span>
+                <p class="set-row-hint" data-i18n="settings.notifyBackupsHint">Avisa cuando se crea una copia de
+                  seguridad.</p>
+              </div>
+              <div class="set-row-control">
+                <label class="switch"><input type="checkbox" id="set-notify-backups" /><span
                     class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
               </div>
             </div>
@@ -745,8 +805,32 @@
     </div>
   </div>
 
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Scripts clásicos: comparten ámbito global, por lo que el ORDEN importa.
+       renderer.js conserva el estado y los helpers; el resto está troceado
+       por responsabilidad en src/renderer/. -->
   <script src="i18n.js"></script>
   <script src="renderer.js"></script>
+  <script src="renderer/bootstrap.js"></script>
+  <script src="renderer/updates.js"></script>
+  <script src="renderer/titlebar.js"></script>
+  <script src="renderer/delegates.js"></script>
+  <script src="renderer/consent.js"></script>
+  <script src="renderer/settings.js"></script>
+  <script src="renderer/events.js"></script>
+  <script src="renderer/servers-ui.js"></script>
+  <script src="renderer/modal.js"></script>
+  <script src="renderer/download.js"></script>
+  <script src="renderer/detail.js"></script>
+  <script src="renderer/console.js"></script>
+  <script src="renderer/players.js"></script>
+  <script src="renderer/stats.js"></script>
+  <script src="renderer/lists.js"></script>
+  <script src="renderer/properties.js"></script>
+  <script src="renderer/backups.js"></script>
+  <script src="renderer/config.js"></script>
+  <script src="renderer/late.js"></script>
 </body>
 
 </html>

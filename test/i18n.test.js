@@ -17,8 +17,16 @@ const en = MESSAGES.en
 
 function usedKeys() {
   const keys = new Set()
-  const renderer = fs.readFileSync(path.join(__dirname, '..', 'src', 'renderer.js'), 'utf8')
-  const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'index.html'), 'utf8')
+  const src = path.join(__dirname, '..', 'src')
+  // El renderer está troceado en scripts clásicos (Fase 2.7): hay que escanear
+  // todos para no perder claves usadas desde los módulos.
+  const files = [path.join(src, 'renderer.js')]
+  const modulesDir = path.join(src, 'renderer')
+  if (fs.existsSync(modulesDir)) {
+    fs.readdirSync(modulesDir).filter(f => f.endsWith('.js')).forEach(f => files.push(path.join(modulesDir, f)))
+  }
+  const renderer = files.map(f => fs.readFileSync(f, 'utf8')).join('\n')
+  const html = fs.readFileSync(path.join(src, 'index.html'), 'utf8')
 
   // T('clave') en el renderer
   for (const m of renderer.matchAll(/T\('([\w.]+)'/g)) { if (!m[1].endsWith('.')) keys.add(m[1]) }

@@ -26,3 +26,6 @@ jobs:
 
       - name: Tests
         run: npm test
+
+      - name: Smoke tests (proceso principal)
+        run: npm run smoke

@@ -61,8 +61,14 @@ async function fetchJson(url, maxBytes = MAX_MANIFEST_BYTES) {
 }
 
 function sha256File(filePath) {
+  return hashFile(filePath, 'sha256')
+}
+function sha1File(filePath) {
+  return hashFile(filePath, 'sha1')
+}
+function hashFile(filePath, algorithm) {
   return new Promise((resolve, reject) => {
-    const hash = crypto.createHash('sha256')
+    const hash = crypto.createHash(algorithm)
     const stream = fs.createReadStream(filePath)
     stream.on('data', d => hash.update(d))
     stream.on('error', reject)
@@ -126,4 +132,4 @@ function downloadToFile(url, destPath, { signal, onProgress } = {}) {
   })
 }
 
-module.exports = { USER_AGENT, getWithRedirects, fetchText, fetchJson, sha256File, downloadToFile }
+module.exports = { USER_AGENT, getWithRedirects, fetchText, fetchJson, sha256File, sha1File, downloadToFile }

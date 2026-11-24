@@ -14,7 +14,8 @@ function getLogPath(server) {
 }
 
 // Marca de tiempo que escribe Minecraft al inicio de cada línea: [HH:MM:SS]
-const LOG_TIME_RE = /^\[(\d{1,2}):(\d{2}):(\d{2})]/
+// Opcionalmente con milisegundos: [HH:MM:SS.mmm]
+const LOG_TIME_RE = /^\[(\d{1,2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?]/
 
 // Mensajes con los que ya se detectan jugadores online (mismo criterio que usa
 // el renderer para la consola): «Steve joined the game» / «Steve left the game».
@@ -36,17 +37,23 @@ function retentionEventsDays() {
   return Number.isInteger(n) && n > 0 && n <= MAX_RETENTION_DAYS ? n : DEFAULT_EVENTS_RETENTION_DAYS
 }
 
-// Un evento de jugador: { ts, type: 'join' | 'leave', player }
-function parseLogLine(line) {
+// Opciones de parseo de una línea de log.
+// baseDate: fecha (UTC/local) que se combina con la hora [HH:MM:SS] cuando el
+// log no trae año/mes/día. Se infiere del mtime del archivo.
+// allowApproximate: si es true y no hay marca de tiempo fiable, se devuelve
+// Date.now() con approximate: true en vez de descartar la línea.
+function parseLogLine(line, { baseDate, allowApproximate = false } = {}) {
   const time = line.match(LOG_TIME_RE)
   let ts = null
+  let approximate = false
   if (time) {
     const h = Number(time[1])
     const m = Number(time[2])
     const s = Number(time[3])
+    const ms = Number(time[4] || 0)
     if (h >= 0 && h <= 23 && m < 60 && s < 60) {
-      const now = new Date()
-      ts = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, s).getTime()
+      const ref = baseDate || new Date()
+      ts = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), h, m, s, ms).getTime()
     }
   }
   const join = line.match(JOIN_RE)
@@ -61,8 +68,12 @@ function parseLogLine(line) {
     player = leave[1]
   }
   if (!type || !player) return null
-  // Si el log no lleva marca de tiempo, se marca con la hora de recepción.
-  return { ts: ts || Date.now(), type, player }
+  if (ts === null) {
+    if (!allowApproximate) return null
+    ts = Date.now()
+    approximate = true
+  }
+  return { ts, type, player, approximate }
 }
 
 // Lee el final del log para no cargar todo el histórico en cada pasada. Devuelve
@@ -72,7 +83,7 @@ function readTail(filePath) {
     fs.stat(filePath, (err, stat) => {
       if (err) return reject(err)
       const start = Math.max(0, stat.size - TAIL_BYTES)
-      const cutMidLine = stat.size - start > 0
+      const cutMidLine = start > 0
       fs.open(filePath, 'r', (openErr, fd) => {
         if (openErr) return reject(openErr)
         fs.fstat(fd, (statErr, info) => {
@@ -83,7 +94,7 @@ function readTail(filePath) {
             fs.close(fd, closeErr => {
               if (closeErr) return reject(closeErr)
               if (readErr) return reject(readErr)
-              resolve({ text: buffer.toString('utf8', 0, read), cutMidLine })
+              resolve({ text: buffer.toString('utf8', 0, read), cutMidLine, mtime: stat.mtime })
             })
           })
         })
@@ -135,18 +146,24 @@ async function pollLogs() {
       continue
     }
     const entry = ensureEntry(serverId)
+    // La fecha se infiere del mtime del archivo, no del día de hoy, para que
+    // un evento a las 23:59 de ayer no se feche como hoy.
+    const baseDate = fragment.mtime ? new Date(fragment.mtime) : null
     const lines = fragment.text.split('\n')
     // Si empezamos en medio de línea, el primer fragmento se descarta.
     const first = fragment.cutMidLine ? 1 : 0
+    // Índice de claves (jugador|tipo|ts) para evitar duplicados sin comparar O(n).
+    const seenKeys = new Set(entry.events.map(e => `${e.player}|${e.type}|${e.ts}`))
     let changed = false
     for (let i = first; i < lines.length; i++) {
       const line = lines[i]
       if (!line.trim()) continue
-      const event = parseLogLine(line)
+      const event = parseLogLine(line, { baseDate, allowApproximate: true })
       if (!event) continue
       if (entry.lastTs && event.ts <= entry.lastTs) continue
-      const exists = entry.events.some(e => e.player === event.player && e.type === event.type && e.ts === event.ts)
-      if (exists) continue
+      const key = `${event.player}|${event.type}|${event.ts}`
+      if (seenKeys.has(key)) continue
+      seenKeys.add(key)
       entry.events.push(event)
       if (event.ts > entry.lastTs) entry.lastTs = event.ts
       changed = true

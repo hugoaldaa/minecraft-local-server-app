@@ -14,9 +14,15 @@ Compatible with Vanilla, Paper, Spigot, Bukkit, Fabric, and Forge.
 - Player management (kick, ban, op, gamemode).
 - Whitelist and Banlist with visual editor.
 - server.properties editor.
-- Manual and automatic world backups.
+- Manual and automatic world backups, with restore (previous copy and zip-slip
+  protection) and scheduled restarts per server.
+- Automatic restart after a crash (up to 3 attempts) with a plain-language
+  diagnosis of common failures (Java version, port in use, memory, EULA).
+- Desktop notifications for servers, players and backups.
+- Port availability check before starting a server.
 - Built-in server installer: download and set up **Vanilla**, **Paper**,
-  **Fabric** or **Forge** from inside the "Add server" dialog.
+  **Fabric** or **Forge** from inside the "Add server" dialog, with checksum
+  verification when the provider publishes one.
 
 ## Server installer
 
@@ -37,7 +43,7 @@ configured (Java 8/17/21 depending on the version).
 
 ## Requirements
 
-- Java (JRE 17 or newer) installed, to run the Minecraft servers.
+- Java (JRE) installed, to run the Minecraft servers. The required version depends on the Minecraft version: Java 8 for 1.16.5 and older, Java 17 for 1.17–1.20.4, Java 21 for 1.20.5 and newer.
 - Windows 10+ or a 64-bit Linux distribution.
 
 ## Download
@@ -68,6 +74,27 @@ Download `Minecraft-Local-Server-Manager.exe` and run the installer.
 
   Updates for the `.deb` come from your package manager, not from the app.
 
+### Verifying the download
+
+Every release includes a `SHA256SUMS` file with the SHA-256 hash of the Windows
+installer, the AppImage and the `.deb`. On Linux, put it next to the file you
+downloaded and run:
+
+```bash
+sha256sum -c SHA256SUMS --ignore-missing
+```
+
+`--ignore-missing` skips the artifacts you did not download. On Windows, compare
+the hash printed by PowerShell with the `.exe` line in `SHA256SUMS`:
+
+```powershell
+Get-Content SHA256SUMS | Select-String '\.exe'
+Get-FileHash .\Minecraft-Local-Server-Manager.exe -Algorithm SHA256
+```
+
+Both hashes must match exactly. This is especially useful while the Windows
+installer is not code-signed yet (see `FIRMADO_SIGNPATH.md`).
+
 ## Notes
 
 - The AppImage is self-contained and can update itself from inside the app.
@@ -81,7 +108,7 @@ Download `Minecraft-Local-Server-Manager.exe` and run the installer.
 ### Requirements
 
 - Node.js 20 or newer, with npm.
-- Java (JRE 17 or newer) if you want to run servers from a dev build.
+- Java (JRE) if you want to run servers from a dev build. The required version depends on the Minecraft version: Java 8 for 1.16.5 and older, Java 17 for 1.17–1.20.4, Java 21 for 1.20.5 and newer.
 
 ### Getting started
 
@@ -99,6 +126,7 @@ npm run dev      # same, passing the --dev flag
 npm run lint          # ESLint (flat config in eslint.config.js)
 npm run lint:fix      # auto-fix what can be fixed
 npm test              # Node's built-in test runner (test/*.test.js)
+npm run smoke         # Main-process smoke tests (create → start → stop)
 npm run format        # Prettier, writes the files
 npm run format:check  # Prettier, check only
 ```
@@ -113,6 +141,7 @@ npm run build           # Windows x64 NSIS installer -> dist/
 npm run build:portable  # Windows portable build
 npm run build:linux     # AppImage + .deb (Linux only)
 npm run build:ci        # alias of build:win, used by the release workflow
+npm run checksums       # writes dist/SHA256SUMS for the built installers
 ```
 
 `build:win` and `build:linux` pass `--publish always`, so they are meant for CI.
@@ -131,14 +160,18 @@ Releases are cut with `npm run release`; see [RELEASE_GUIDE.md](RELEASE_GUIDE.md
 | `main/http.js`      | HTTP helpers: redirects, text/JSON fetch, SHA-256, resumable-free download |
 | `main/versions.js`  | Pure helpers: Java thresholds, version sorting, provider parsers           |
 | `main/properties.js`| `server.properties` and whitelist/banlist/ops editing                      |
-| `main/backups.js`   | Manual and scheduled world backups (`archiver`, `node-schedule`)           |
+| `main/backups.js`   | Manual/scheduled backups and restore (`archiver`, `adm-zip`, `node-schedule`)|
+| `main/restart.js`   | Per-server scheduled restarts (6/12/24 h)                                  |
+| `main/net.js`       | Port parsing and availability check before starting a server               |
+| `main/diagnose.js`  | Crash-report/console pattern matching for common Minecraft failures        |
+| `main/notifications.js` | Native notifications plus in-app toasts, gated by user preferences      |
 | `main/window.js`    | `BrowserWindow` creation, navigation guards, window IPC                    |
 | `main/updater.js`   | Auto-update via `electron-updater` (AppImage only on Linux)                |
 | `main/stats.js`     | CPU/RAM polling (`systeminformation`)                                      |
 | `main/analytics.js` | Consent-gated anonymous usage events (see [Privacy](#privacy))             |
 | `main/crash.js`     | Local log of uncaught errors and unhandled rejections                      |
 | `preload.js`        | `contextBridge` API exposed to the renderer as `window.api`                |
-| `src/`              | Renderer: `index.html` (strict CSP), `renderer.js`, CSS in `src/css/`      |
+| `src/`              | Renderer: `index.html` (strict CSP), `renderer.js` (shared state), modules in `src/renderer/`, CSS in `src/css/` |
 | `test/`             | Unit tests run with `node --test` (validate, properties, servers, i18n…)    |
 | `assets/`           | App icons and fonts used by the builds                                     |
 | `web/`              | Static landing page, deployed separately (not part of the app bundle)      |

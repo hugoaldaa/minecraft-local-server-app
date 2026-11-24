@@ -1522,6 +1522,12 @@ code {
 
 .stats-chart-body {
   min-height: 160px;
+  overflow-x: auto;
+}
+
+.chart-svg {
+  display: block;
+  min-width: 600px;
 }
 
 .chart-bar {
@@ -1608,6 +1614,37 @@ code {
 
 .update-notes li {
   margin: 2px 0;
+}
+
+/* Notas con secciones y markdown inline (Fase 4) */
+.update-notes-section {
+  font-weight: 700;
+  color: var(--accent);
+  margin: 10px 0 4px;
+}
+
+.update-notes-text {
+  margin: 6px 0;
+}
+
+.update-notes hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 10px 0;
+}
+
+.update-notes code {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  background: rgba(127, 127, 127, 0.16);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.update-notes a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* ═══ Consentimiento ══════════════════════════════════════════════════ */

@@ -52,6 +52,24 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
         run: npm run build:linux
 
+      # Fase 4: publicamos el SHA256 de cada instalador para poder verificar
+      # la descarga (especialmente importante mientras el .exe no está firmado).
+      - name: Publicar SHA256SUMS de Windows
+        if: matrix.platform == 'win'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/checksums.mjs --platform win
+          gh release upload "${{ github.ref_name }}" dist/SHA256SUMS-win.txt --clobber
+
+      - name: Publicar SHA256SUMS de Linux
+        if: matrix.platform == 'linux'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/checksums.mjs --platform linux
+          gh release upload "${{ github.ref_name }}" dist/SHA256SUMS-linux.txt --clobber
+
   release-notes:
     needs: build
     runs-on: ubuntu-latest
@@ -68,6 +86,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Unificar los checksums de todas las plataformas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p checksums
+          gh release download "${{ github.ref_name }}" --dir checksums --pattern 'SHA256SUMS-*.txt'
+          node scripts/checksums.mjs --combine checksums
+          gh release upload "${{ github.ref_name }}" checksums/SHA256SUMS --clobber
 
       - name: Publicar nombre y notas en la release
         env:

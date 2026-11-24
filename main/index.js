@@ -8,6 +8,7 @@ const { syncTray, updateTrayLang } = require('./tray')
 const { registerServersIpc, stopAllServers } = require('./servers')
 const { registerPropertiesIpc } = require('./properties')
 const { registerBackupsIpc, scheduleAutoBackup, initAutoBackups } = require('./backups')
+const { registerRestartIpc, scheduleAutoRestart, initAutoRestarts, cancelAllAutoRestarts } = require('./restart')
 const { setupAutoUpdater, stopUpdater, registerUpdaterIpc } = require('./updater')
 const { registerDownloadsIpc } = require('./downloader')
 const { startStatsPolling, stopStatsPolling } = require('./stats')
@@ -19,6 +20,7 @@ const { isPlainObject, isStr, cleanText } = require('./validate')
 registerServersIpc()
 registerPropertiesIpc()
 registerBackupsIpc()
+registerRestartIpc()
 registerAnalyticsIpc()
 registerCrashIpc()
 registerWindowIpc()
@@ -30,7 +32,8 @@ ipcMain.handle('app:version', () => app.getVersion())
 
 // ─── Preferencias globales (Ajustes) ────────────────────────────────────────
 const PREF_KEYS = ['backupDir', 'backupKeep', 'backupLevel', 'theme', 'lang', 'defaultServerDir', 'closeToTray', 'startOnBoot', 'uiScale',
-  'defaultRam', 'defaultJava', 'defaultJvmArgs', 'autoEula', 'retentionSamples', 'retentionEvents']
+  'defaultRam', 'defaultJava', 'defaultJvmArgs', 'autoEula', 'retentionSamples', 'retentionEvents',
+  'notifyServer', 'notifyPlayers', 'notifyBackups']
 
 ipcMain.handle('prefs:get', (_, key) => (PREF_KEYS.includes(key) ? settingsStore.get(key, null) : null))
 ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
@@ -47,11 +50,11 @@ ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
     updateTrayLang() // el menú de bandeja se traduce con el idioma guardado
     return { ok: true }
   }
-  if (key === 'closeToTray' || key === 'startOnBoot') {
+  if (key === 'closeToTray' || key === 'startOnBoot' || key === 'notifyServer' || key === 'notifyPlayers' || key === 'notifyBackups') {
     if (typeof value !== 'boolean') return { ok: false, error: 'Valor no válido' }
     settingsStore.set(key, value)
     if (key === 'closeToTray') syncTray() // crea o elimina el icono de bandeja
-    else if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: value, path: process.execPath })
+    else if (key === 'startOnBoot' && app.isPackaged) app.setLoginItemSettings({ openAtLogin: value, path: process.execPath })
     // En desarrollo el ejecutable es electron.exe: no se registra nada
     return { ok: true, ...(key === 'startOnBoot' ? { applied: app.isPackaged } : {}) }
   }
@@ -126,6 +129,7 @@ ipcMain.handle('settings:set', (_, { serverId, data } = {}) => {
     if (JSON.stringify(data).length > 100 * 1024) return { ok: false, error: 'Datos demasiado grandes' }
     settingsStore.set(`server_${serverId}`, data)
     scheduleAutoBackup(serverId) // reprograma el backup automático si cambió
+    scheduleAutoRestart(serverId) // y el reinicio programado (2.2)
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err.message }
@@ -151,16 +155,34 @@ function migrateGlobalBackupDir() {
 // ─── App lifecycle ──────────────────────────────────────────────────────────
 setupCrashReporter()
 
-app.whenReady().then(() => {
-  migrateGlobalBackupDir()
-  createWindow()
-  syncTray()
-  startStatsPolling()
-  startLogPolling()
-  setupAutoUpdater()
-  initAutoBackups()
-  trackEvent('app_launch', { version: app.getVersion() })
-})
+// Instancia única: solo una ventana de la app a la vez. Si el usuario intenta
+// abrir una segunda, se enfoca/restaura la ventana existente en lugar de
+// duplicar servidores, backups y stores.
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (event, argv, cwd) => {
+    const win = getMainWindow()
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    }
+  })
+
+  app.whenReady().then(() => {
+    migrateGlobalBackupDir()
+    createWindow()
+    syncTray()
+    startStatsPolling()
+    startLogPolling()
+    setupAutoUpdater()
+    initAutoBackups()
+    initAutoRestarts()
+    trackEvent('app_launch', { version: app.getVersion() })
+  })
+}
 
 app.on('window-all-closed', () => { app.quit() })
 
@@ -168,5 +190,6 @@ app.on('will-quit', () => {
   stopUpdater()
   stopStatsPolling()
   stopLogPolling()
+  cancelAllAutoRestarts()
   stopAllServers()
 })

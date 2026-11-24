@@ -2,12 +2,14 @@ const { ipcMain } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const archiver = require('archiver')
+const AdmZip = require('adm-zip')
 const schedule = require('node-schedule')
 const { getAllServersMap, getServerSettings, getGlobalBackupDir, settingsStore } = require('./stores')
 const { activeServers, sendToRenderer, writeStdin } = require('./state')
 const { trackEvent } = require('./analytics')
 const { logCrash } = require('./crash')
-const { isStr, isServerDir, isAllowedBackupDir, isAllowedBackupFile } = require('./validate')
+const { notify } = require('./notifications')
+const { isStr, isServerDir, isAllowedBackupDir, isAllowedBackupFile, isInsideDir } = require('./validate')
 
 const AUTO_INTERVALS = { '1h': 3600e3, '6h': 6 * 3600e3, '12h': 12 * 3600e3, '24h': 24 * 3600e3 }
 const autoBackupJobs = {}
@@ -78,6 +80,8 @@ async function createBackup(serverDir, backupDir, serverId) {
     output.on('close', () => {
       pruneOldBackups(outDir)
       trackEvent('backup_created', { sizeMb: Math.round(archive.pointer() / 1024 / 1024) })
+      const server = isStr(serverId) ? getAllServersMap()[serverId] : null
+      notify('backup_done', { name: server ? server.name : path.basename(srcDir) })
       finish({ ok: true, file: outFile, size: archive.pointer() })
     })
     output.on('error', (err) => { logCrash('backup_write_error', err); finish({ ok: false, error: err.message }) })
@@ -116,6 +120,60 @@ function deleteBackupFile(filePath) {
   } catch (err) {
     logCrash('backup_delete_error', err)
     return { ok: false, error: err.message }
+  }
+}
+
+// ─── Restaurar backup ────────────────────────────────────────────────────────
+// Requiere el servidor parado, hace una copia de seguridad de la carpeta
+// actual antes de sobrescribirla, y verifica cada entrada del zip contra
+// *zip-slip* (rutas que escapen del directorio de destino).
+async function restoreBackup(backupFile, serverDir, serverId) {
+  if (isStr(serverId) && activeServers[serverId]) {
+    return { ok: false, error: 'Detén el servidor antes de restaurar el backup' }
+  }
+  if (!isAllowedBackupFile(backupFile)) return { ok: false, error: 'Ruta de backup no permitida' }
+  if (!isServerDir(serverDir)) return { ok: false, error: 'Directorio de servidor no válido' }
+
+  const zipPath = path.resolve(backupFile)
+  const destDir = path.resolve(serverDir)
+
+  if (!fs.existsSync(zipPath)) return { ok: false, error: 'El archivo de backup no existe' }
+
+  // Copia de seguridad de la carpeta actual antes de restaurar (por si algo falla).
+  const safetyDir = path.join(path.dirname(destDir), `.restore-safety-${Date.now()}`)
+  try {
+    fs.cpSync(destDir, safetyDir, { recursive: true })
+  } catch (err) {
+    logCrash('backup_restore_safety_error', err)
+    return { ok: false, error: 'No se pudo crear la copia de seguridad previa: ' + err.message }
+  }
+
+  try {
+    const zip = new AdmZip(zipPath)
+    const entries = zip.getEntries()
+    for (const entry of entries) {
+      if (entry.isDirectory) continue
+      const entryPath = path.resolve(destDir, entry.entryName)
+      if (!isInsideDir(entryPath, destDir)) {
+        throw new Error('El backup contiene rutas inseguras (zip-slip) y no se ha extraído')
+      }
+    }
+
+    zip.extractAllTo(destDir, true)
+
+    // Éxito: descarta la copia de seguridad previa.
+    fs.rmSync(safetyDir, { recursive: true, force: true })
+    trackEvent('backup_restored', { file: path.basename(zipPath) })
+    return { ok: true }
+  } catch (err) {
+    // Fallo: intentar restaurar la carpeta desde la copia de seguridad previa.
+    try {
+      fs.rmSync(destDir, { recursive: true, force: true })
+      fs.cpSync(safetyDir, destDir, { recursive: true })
+    } catch (_) { /* mejor esfuerzo */ }
+    try { fs.rmSync(safetyDir, { recursive: true, force: true }) } catch (_) { }
+    logCrash('backup_restore_error', err)
+    return { ok: false, error: err.message || 'No se pudo restaurar el backup' }
   }
 }
 
@@ -180,6 +238,7 @@ function registerBackupsIpc() {
   ipcMain.handle('backup:list', (_, backupDir) => listBackups(backupDir))
   ipcMain.handle('backup:delete', (_, filePath) => deleteBackupFile(filePath))
   ipcMain.handle('backup:dir', (_, serverId) => resolveBackupDir(serverId))
+  ipcMain.handle('backup:restore', (_, { backupFile, serverDir, serverId } = {}) => restoreBackup(backupFile, serverDir, serverId))
 }
 
-module.exports = { registerBackupsIpc, createBackup, scheduleAutoBackup, cancelAutoBackup, initAutoBackups, resolveBackupDir }
+module.exports = { registerBackupsIpc, createBackup, restoreBackup, scheduleAutoBackup, cancelAutoBackup, initAutoBackups, resolveBackupDir }

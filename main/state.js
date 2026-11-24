@@ -1,6 +1,12 @@
 // Estado compartido del proceso principal
+const { EventEmitter } = require('events')
+
 let mainWindow = null
 const activeServers = {}
+
+// Bus interno para que módulos que no se pueden requerir entre sí (p. ej.
+// servers.js y restart.js) reaccionen a cambios del mapa de servidores.
+const serverMapEvents = new EventEmitter()
 
 function getMainWindow() { return mainWindow }
 function setMainWindow(win) { mainWindow = win }
@@ -36,4 +42,4 @@ function writeStdin(proc, data) {
   }
 }
 
-module.exports = { getMainWindow, setMainWindow, activeServers, sendToRenderer, writeStdin }
+module.exports = { getMainWindow, setMainWindow, activeServers, sendToRenderer, writeStdin, serverMapEvents }

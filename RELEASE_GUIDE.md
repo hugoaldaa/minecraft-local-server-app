@@ -27,20 +27,24 @@ El script (`scripts/release.mjs`):
 
 1. **Preflight**: se niega a publicar si el working tree tiene cambios, si el
    tag ya existe y avisa si el remoto tiene commits que no tienes.
-2. Muestra los commits pendientes desde el ultimo tag.
-3. Pregunta el tipo (`patch`/`minor`/`major`), el **nombre** y la **descripcion**
-   (una linea por cambio, linea vacia para terminar).
+2. Muestra los commits pendientes desde el ultimo tag y **propone notas**
+   agrupadas en Añadido / Corregido / Cambios / Otros segun el mensaje del commit.
+3. Pregunta el tipo (`patch`/`minor`/`major`) y el **nombre**. Puedes aceptar la
+   propuesta de commits o escribir las notas **por seccion** (una linea por
+   cambio, linea vacia para terminar cada seccion).
 4. Enseña una vista previa (titulo, bump, notas y como quedara `CHANGELOG.md`)
    y pide confirmacion.
 5. Actualiza `CHANGELOG.md`, `package.json` y `package-lock.json`
    (`npm version ... --no-git-tag-version`).
 6. Crea el commit `v1.1.15 - <nombre>` y el **tag anotado** con las notas.
 7. Sube commit y tag: dispara el workflow, que compila el `.exe` (Windows) y el
-   `AppImage` + `.deb` (Linux), y publica la release en GitHub con el nombre y la
-   explicacion.
+   `AppImage` + `.deb` (Linux), publica los `SHA256SUMS` y actualiza la release
+   de GitHub con el nombre y las notas por secciones.
 
 La entrada nueva se inserta en `CHANGELOG.md` encima de la anterior, con el
-formato `## v1.1.15 - <nombre> (<fecha>)`.
+formato `## v1.1.15 - <nombre> (<fecha>)` y las mismas secciones.
+`build/release-notes.md` (la que ve GitHub y la app) añade ademas un aviso final
+recordando que la release incluye `SHA256SUMS`.
 
 ### Opciones
 
@@ -48,26 +52,49 @@ formato `## v1.1.15 - <nombre> (<fecha>)`.
 |--------|--------|
 | `patch` / `minor` / `major` | tipo de bump sin preguntar |
 | `--name "Titulo"` | nombre de la release |
-| `--notes "cambio 1;cambio 2"` | notas separadas por `;` |
+| `--added "a;b"` / `--fixed "a;b"` / `--changed "a;b"` / `--other "a;b"` | notas por seccion, separadas por `;` |
+| `--notes "cambio 1;cambio 2"` | alias de `--changed`, compatible con el flujo anterior |
+| `--from-commits` | usa directamente la propuesta de los commits pendientes |
 | `--dry-run` | no ejecuta ningun comando de git |
 | `--no-push` | deja commit y tag creados solo en local |
 | `--yes` | confirma sin preguntar |
 
-Con las tres primeras opciones el script no necesita terminal interactiva, asi
-que sirve para CI o para preparar una release a mano:
+Con tipo, nombre y notas (o `--from-commits`) el script no necesita terminal
+interactiva, asi que sirve para CI o para preparar una release a mano:
 
 ```bash
 npm run release -- patch --name "Backups automaticos" \
-  --notes "Backups cada 1/6/12/24h;se reprograman al cambiar los ajustes" --yes
+  --added "Restauracion de backups" --fixed "Puerto ocupado al arrancar" --yes
+
+npm run release -- patch --name "Mantenimiento" --from-commits --yes
 ```
 
 ### Sin descripcion
 
-Si no escribes ninguna linea de descripcion, el script pone `Sin descripcion` en
-`CHANGELOG.md`, en el tag y en `build/release-notes.md`, y la release de GitHub
-queda sin cuerpo. Escribe siempre al menos un cambio por release; el formato
-`Keep a Changelog` (`### Added` / `### Changed` / `### Fixed`) ayuda a
-ordenarlos si son muchos.
+El script se niega a publicar si no hay al menos un cambio: es mejor una release
+sin notas automaticas de GitHub que una entrada vacia en el CHANGELOG. Escribe
+siempre al menos una linea en alguna seccion.
+
+Asi se ve `build/release-notes.md` (y el cuerpo de la release en GitHub):
+
+```markdown
+## v1.10.0 - Backups automaticos
+
+### Añadido
+
+- Restauracion de backups desde la pestaña Copias de seguridad
+
+### Corregido
+
+- Aviso cuando el puerto ya esta en uso
+
+---
+
+**Verificación:** el fichero `SHA256SUMS` de esta release contiene el SHA-256 de los instaladores.
+```
+
+Dentro de la app se pinta el mismo contenido con las secciones, las negritas,
+el codigo inline y los enlaces, sin interpretar HTML.
 
 ## Modos auxiliares (CI y backfill)
 
@@ -75,7 +102,8 @@ ordenarlos si son muchos.
 |---------|----------------|
 | `node scripts/release.mjs --prepare-notes <tag>` | escribe `build/release-notes.md` a partir del tag anotado o, si no lo tiene, de la entrada de `CHANGELOG.md`. Lo ejecuta CI antes de compilar. |
 | `node scripts/release.mjs --apply-notes <tag>` | actualiza titulo y cuerpo de la release de GitHub con `gh release edit --title ... --notes-file ...`. Lo ejecuta CI al terminar. |
-| `npm run release:notes` (`--backfill`) | reconstruye **`CHANGELOG.md` entero** desde los tags: una entrada por tag con los commits de su rango, fechas y `Sin descripcion` si el tag no tiene anotacion. Solo para bootstrap o recuperacion: sobrescribe el fichero, no lo ejecutes si ya tienes entradas escritas a mano. |
+| `npm run release:notes` (`--backfill`) | reconstruye **`CHANGELOG.md` entero** desde los tags: una entrada por tag con los commits de su rango y fechas. Solo para bootstrap o recuperacion: sobrescribe el fichero, no lo ejecutes si ya tienes entradas escritas a mano. |
+| `node scripts/release.mjs --clean-changelog` | normaliza el CHANGELOG existente: cabeceras `## vX.Y.Z - nombre (fecha)`, viñetas planas ( arregla los antiguos `- - ...` ) y sin duplicados. No regenera el contenido. |
 
 Si ninguno de los dos tiene notas (`--apply-notes` sin tag anotado y sin
 entrada en `CHANGELOG.md`), CI cae al `--generate-notes` de GitHub.
@@ -91,6 +119,8 @@ gh release edit v1.1.15 --title "v1.1.15 - Backups automaticos" --notes-file bui
 ```
 
 Si `gh` falla, la release se publica igualmente: solo queda poner el titulo a mano.
+Ademas, cada job sube su `SHA256SUMS-<plataforma>.txt` y el job final los une en
+un `SHA256SUMS` unico, que es el que enlaza la web de descarga.
 
 ## Builds por sistema
 

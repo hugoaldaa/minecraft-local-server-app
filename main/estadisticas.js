@@ -6,7 +6,7 @@
 // Fase 4: los eventos y totales se podan según la retención configurada, y las
 //   consultas admiten un rango [desde, hasta] para filtrar por fechas.
 const { ipcMain } = require('electron')
-const { getSamples, getPlayerEvents, savePlayerTotals, getRunTime, statsStore, settingsStore } = require('./stores')
+const { getSamples, getPlayerEvents, getPlayerTotals, savePlayerTotals, getRunTime, statsStore, settingsStore } = require('./stores')
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 const DEFAULT_RETENTION_DAYS = 730
@@ -38,8 +38,8 @@ function splitByDay(startTs, endTs) {
   let cursor = startTs
   while (cursor < endTs) {
     const d = new Date(cursor)
-    const day = d.toISOString().slice(0, 10)
-    const nextDay = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1)
+    const day = dayKey(cursor)
+    const nextDay = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime()
     const stop = Math.min(endTs, nextDay)
     parts.push({ day, ms: stop - cursor })
     cursor = stop
@@ -61,10 +61,26 @@ function addDuration(totals, player, startTs, endTs) {
 // Los jugadores que siguen conectados al final se cierran en el momento en que
 // se detiene el servidor (parámetro serverEndTs).
 function computePlayerTotals(events, serverEndTs) {
+  const { totals, lastSeen } = computePlayerSessions(events, serverEndTs)
+  // lastSeen se persiste con los totales para sobrevivir a la poda de eventos.
+  for (const player of Object.keys(totals)) {
+    totals[player].lastSeen = lastSeen[player] || null
+  }
+  return totals
+}
+
+// Calcula las sesiones de juego y el último instante visto por jugador.
+// Devuelve { totals, lastSeen } donde totals tiene la misma forma que
+// computePlayerTotals y lastSeen mapea jugador -> ts del último evento (join
+// o leave) o del cierre de sesión abierta en serverEndTs.
+function computePlayerSessions(events, serverEndTs) {
   const totals = {}
   const open = new Map() // player -> ts de entrada
+  const lastSeen = {} // player -> ts
   const sorted = [...events].sort((a, b) => a.ts - b.ts)
   for (const event of sorted) {
+    const prev = lastSeen[event.player]
+    if (prev === undefined || event.ts > prev) lastSeen[event.player] = event.ts
     if (event.type === 'join') {
       // Si ya estaba abierto (evento duplicado), se ignora.
       if (!open.has(event.player)) open.set(event.player, event.ts)
@@ -76,11 +92,16 @@ function computePlayerTotals(events, serverEndTs) {
       }
     }
   }
-  // Sesiones abiertas al detenerse el servidor: se cierran ahí.
+  // Sesiones abiertas al detenerse el servidor: se cierran ahí, y el jugador
+  // se considera visto hasta ese instante (no se queda con la hora del join).
   for (const [player, start] of open) {
+    if (serverEndTs > start) {
+      const prev = lastSeen[player]
+      if (prev === undefined || serverEndTs > prev) lastSeen[player] = serverEndTs
+    }
     addDuration(totals, player, start, serverEndTs)
   }
-  return totals
+  return { totals, lastSeen }
 }
 
 // Fase 4: los totales son una caché derivada de los eventos, así que solo se
@@ -90,10 +111,13 @@ function prunePlayerTotals(totals) {
   for (const player of Object.keys(totals)) {
     const total = totals[player]
     for (const day of Object.keys(total.days)) {
-      const ts = new Date(day + 'T00:00:00Z').getTime()
+      const [y, m, d] = day.split('-').map(Number)
+      const ts = new Date(y, m - 1, d).getTime() // día en zona local
       if (ts < cutoff) delete total.days[day]
     }
     total.totalMs = Object.values(total.days).reduce((sum, ms) => sum + ms, 0)
+    // lastSeen no se poda: es el último instante conocido del jugador, aunque
+    // sea anterior al corte de retención.
   }
 }
 
@@ -115,13 +139,22 @@ function deleteServerStats(serverId) {
 // ─── Fase 2: agregación por servidor ──────────────────────────────────────────
 
 function dayKey(ts) {
-  return new Date(ts).toISOString().slice(0, 10)
+  const d = new Date(ts)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// Horas encendido: de la primera vez que arrancó el servidor hasta que paró
-// (o hasta ahora si sigue en marcha).
+// Horas encendido: suma de sesiones cerradas (totalMs) más la sesión actual
+// si el servidor sigue en marcha. Soporta tanto el formato nuevo
+// ({totalMs, currentSessionStart}) como el antiguo ({startedAt, stoppedAt}).
 function computeUptimeMs(run) {
-  const startedAt = run && run.startedAt
+  if (!run) return 0
+  if (run.totalMs !== undefined) {
+    const base = Math.max(0, run.totalMs || 0)
+    const active = run.currentSessionStart ? Math.max(0, Date.now() - run.currentSessionStart) : 0
+    return base + active
+  }
+  // Formato antiguo: { startedAt, stoppedAt }
+  const startedAt = run.startedAt
   if (!startedAt) return 0
   const end = run.stoppedAt || Date.now()
   return Math.max(0, end - startedAt)
@@ -207,23 +240,32 @@ function filterResourceSamples(samples, filters) {
 // ─── Métricas por jugador ─────────────────────────────────────────────────────
 
 function getPlayerList(serverId, filters) {
-  const events = filterPlayerEvents(getPlayerEvents(serverId), filters)
+  const allEvents = getPlayerEvents(serverId)
   const run = getRunTime(serverId)
-  const endTs = run && (run.stoppedAt || Date.now())
-  const totals = computePlayerTotals(events, endTs)
-  // Último evento conocido por jugador (join o leave) para mostrar cuándo se le vio por última vez.
-  const lastSeen = {}
-  for (const event of events) {
-    const prev = lastSeen[event.player]
-    if (prev === undefined || event.ts > prev) lastSeen[event.player] = event.ts
-  }
+  const isRunning = run && run.currentSessionStart != null
+  const endTsReal = isRunning ? Date.now() : (run && run.stoppedAt ? run.stoppedAt : null)
+  const savedTotals = getPlayerTotals(serverId)
+  // Los totales (tiempo jugado, días activos) respetan el filtro de rango.
+  const events = filterPlayerEvents(allEvents, filters)
+  const endTs = filters && filters.hasta !== undefined && endTsReal !== null
+    ? Math.min(endTsReal, filters.hasta)
+    : endTsReal
+  const { totals, lastSeen: lastSeenFromEvents } = computePlayerSessions(events, endTs)
+  // Última vez vista ABSOLUTA: se calcula sobre todos los eventos (sin filtro)
+  // para que el selector de período no cambie el significado de la columna.
+  const { lastSeen: lastSeenAbsolute } = computePlayerSessions(allEvents, endTsReal)
   const list = Object.keys(totals).map(player => {
     const total = totals[player]
+    const seen =
+      lastSeenAbsolute[player] ??
+      lastSeenFromEvents[player] ??
+      (savedTotals[player] && savedTotals[player].lastSeen) ??
+      null
     return {
       player,
       totalMs: total.totalMs,
       daysActive: Object.keys(total.days).length,
-      lastSeen: lastSeen[player] || null
+      lastSeen: seen || null
     }
   })
   list.sort((a, b) => b.totalMs - a.totalMs)
@@ -260,9 +302,14 @@ function csvEscape(value) {
   return str
 }
 
-function buildServerCsv(serverId) {
-  const metrics = getServerMetrics(serverId)
-  const players = getPlayerList(serverId)
+function formatExportDate(ts) {
+  if (!ts) return ''
+  return new Date(ts).toISOString()
+}
+
+function buildServerCsv(serverId, filters) {
+  const metrics = getServerMetrics(serverId, filters)
+  const players = getPlayerList(serverId, filters)
   const rows = []
 
   const addRow = cells => rows.push(cells.map(csvEscape).join(','))
@@ -279,7 +326,7 @@ function buildServerCsv(serverId) {
 
   addRow(['jugador', 'tiempo_jugado', 'diasactivos', 'ultima_vez_visto'])
   for (const player of players) {
-    addRow([player.player, formatDuration(player.totalMs), player.daysActive, player.lastSeen || ''])
+    addRow([player.player, formatDuration(player.totalMs), player.daysActive, formatExportDate(player.lastSeen) || ''])
   }
 
   return rows.join('\r\n')
@@ -287,9 +334,9 @@ function buildServerCsv(serverId) {
 
 // Exportación a JSON: mismo contenido estructurado de forma legible. La
 // interfaz descarga el que elijas (CSV o JSON).
-function buildServerJson(serverId) {
-  const metrics = getServerMetrics(serverId)
-  const players = getPlayerList(serverId)
+function buildServerJson(serverId, filters) {
+  const metrics = getServerMetrics(serverId, filters)
+  const players = getPlayerList(serverId, filters)
   return {
     servidor: serverId,
     horasEncendidoMs: metrics.uptimeMs,
@@ -301,7 +348,7 @@ function buildServerJson(serverId) {
       jugador: p.player,
       tiempoJugado: formatDuration(p.totalMs),
       diasActivos: p.daysActive,
-      ultimaVezVisto: p.lastSeen
+      ultimaVezVisto: formatExportDate(p.lastSeen) || null
     }))
   }
 }
@@ -317,15 +364,16 @@ function registerEstadisticasIpc() {
     return getPlayerList(serverId, filters)
   })
 
-  ipcMain.handle('estadisticas:export', (_, serverId) => {
+  ipcMain.handle('estadisticas:export', (_, serverId, filters) => {
     if (!isValidServerId(serverId)) return { ok: false, error: 'Datos inválidos' }
-    return { ok: true, csv: buildServerCsv(serverId), json: buildServerJson(serverId) }
+    return { ok: true, csv: buildServerCsv(serverId, filters), json: buildServerJson(serverId, filters) }
   })
 }
 
 module.exports = {
   splitByDay,
   computePlayerTotals,
+  computePlayerSessions,
   prunePlayerTotals,
   closeServerSessions,
   deleteServerStats,
