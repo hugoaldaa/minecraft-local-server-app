@@ -3,6 +3,32 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.2.0 - Upgrade Electron 28 → 45 (2026-11-24)
+
+### Añadido
+
+- Nuevo script npm run build:linux:local para generar AppImage/.deb sin publicar en GitHub (build:linux sigue publicando).
+- Entrada de changelog para esta actualización.
+
+### Corregido
+
+- Resueltos los avisos de severidad alta de systeminformation y brace-expansion.
+- Eliminado el error de validación de configuración al empaquetar con electron-builder 26.
+
+### Cambios
+
+- Actualización de runtime: Electron 28.3.3 → 45.4.1, electron-builder 24.13.3 → 26.18.1 y electron-updater → 6.8.11.
+- Seguridad: systeminformation actualizado a 5.33.26 y brace-expansion fijado a 5.1.0 mediante overrides.
+- Build/Linux: la configuración antigua linux.desktop no es válida en electron-builder 26; se sustituye por desktopName + linux.syncDesktopName para mantener la asociación de la ventana con el archivo .desktop.
+- CI: Node 20 → 22 en los workflows de lint y release.
+- Documentación: se actualizan los requisitos de desarrollo en README.md.
+
+### Otros
+
+- No hay migración de datos ni borrado: los JSON de %APPDATA%\minecraft-local-server-app (servers.json, settings.json, serverStats.json, analytics.json, crashes.json) se leen igual.
+- Único cambio para desarrolladores: hace falta Node 22+.
+- Quedan 6 avisos moderados en la cadena de dependencias de desarrollo de electron-builder; corregirlos exige bajar a electron-builder 25.1.0, así que se dejaron.
+
 ## Sin publicar
 
 ### Cambios
