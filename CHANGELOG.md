@@ -3,6 +3,32 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.1.0 - Privacy Features (2026-11-24)
+
+### Añadido
+
+- Selector “Período de jugadores” en Estadísticas → Jugadores (por defecto Todo), independiente del período del gráfico.
+- El selector superior ahora se identifica como “Período del gráfico” y solo afecta a Jugadores por día y a su lista de conexiones diarias.
+- Política de privacidad en PRIVACY.md, en español e inglés.
+
+### Corregido
+
+- La gráfica de jugadores por día ya no se corta: se eliminó el <svg> anidado y ahora se dibuja directamente en el contenedor con overflow-x, por lo que aparece la barra horizontal.
+- El período superior ya no filtra las tarjetas de resumen (horas encendido, picos CPU/RAM) ni los momentos con más jugadores.
+- README de privacidad actualizado: faltaban los eventos backup_restored y server_downloaded, y no se avisaba de que los stack traces pueden incluir rutas locales.
+
+### Cambios
+
+- El nuevo período de jugadores afecta solo a tiempo jugado y días activos; Última vez visto sigue siendo absoluto.
+- El encabezado de Ajustes admite 여러 líneas para acomodar los nuevos controles.
+- La exportación refleja lo que se ve en pantalla: gráfica con su período, jugadores con el suyo y el resto sin filtrar.
+
+### Otros
+
+- No se borra ningún archivo ni dato del usuario.
+- Se quitó el <svg> estático que había dentro de .stats-chart-body.
+- Se eliminó el comportamiento anterior de un único período global que afectaba a toda la pestaña de estadísticas.
+
 ## v2.0.0 - Major release v2.0.0 (2026-11-24)
 
 ### Añadido
