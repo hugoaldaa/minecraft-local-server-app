@@ -3,6 +3,20 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.2.1 - Logo background fix (2026-11-24)
+
+### Añadido
+
+- New app icon.
+
+### Corregido
+
+- Old app icon.
+
+### Cambios
+
+- Assets icon for Win & Linux builds.
+
 ## v2.2.0 - Upgrade Electron 28 → 45 (2026-11-24)
 
 ### Añadido
