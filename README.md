@@ -198,6 +198,8 @@ Releases are cut with `npm run release`; see [RELEASE_GUIDE.md](RELEASE_GUIDE.md
 
 The app runs entirely locally: servers, backups, console and settings never
 leave your machine. Usage analytics are optional and **off by default**.
+The full policy is in [PRIVACY.md](PRIVACY.md) and can also be opened inside
+the app from the consent screen and **Settings → Privacy & data**.
 
 ### Consent
 
@@ -214,9 +216,10 @@ leave your machine. Usage analytics are optional and **off by default**.
   personal data attached.
 - App version, platform, architecture and OS release.
 - Technical events: `app_launch`, `server_created`, `server_started`,
-  `server_stopped`, `backup_created` and `analytics_enabled`.
+  `server_stopped`, `backup_created`, `backup_restored`, `server_downloaded`
+  and `analytics_enabled`.
 - Small technical values attached to some events (for example server startup
-  time, uptime or backup size in MB).
+  time, uptime, backup size in MB, provider/version or backup filename).
 
 Server names, IPs, player names, console output and any other personal data
 are never collected.
@@ -231,8 +234,8 @@ are never collected.
   inside the app data folder, limited to the 500 most recent ones.
 - Crash reports are always written locally to `crashes.json` in the same
   folder (last 100 entries) and can be cleared from the Settings screen.
-  They are only sent if a separate `crashEndpoint` is configured; the app
-  provides no UI for that setting.
+  A stack trace may include local file paths. They are only sent if a separate
+  `crashEndpoint` is configured; the app provides no UI for that setting.
 
 Nothing is sold or shared with third parties: no data leaves your computer
 unless you configure an endpoint yourself.

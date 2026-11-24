@@ -74,8 +74,8 @@ contextBridge.exposeInMainWorld('api', {
   getEstadisticasResumen: (serverId, filters) => ipcRenderer.invoke('estadisticas:resumen', serverId, filters),
   getEstadisticasJugadores: (serverId, filters) => ipcRenderer.invoke('estadisticas:jugadores', serverId, filters),
 
-  // Exportar estadísticas a CSV (Fase 4). El segundo parámetro es opcional y
-  // permite filtrar por un rango [desde, hasta].
+  // Exportar estadísticas a CSV/JSON. El segundo parámetro es opcional: admite
+  // { chartFilters, playersFilters } o el filtro único [desde, hasta] anterior.
   exportEstadisticas: (serverId, filters) => ipcRenderer.invoke('estadisticas:export', serverId, filters),
 
   // Dialogs

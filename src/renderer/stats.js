@@ -21,6 +21,7 @@ function initStats() {
   document.getElementById('btn-refresh-stats').onclick = loadServerStats
   document.getElementById('btn-export-stats').onclick = exportServerStats
   document.getElementById('stats-filter-period').addEventListener('change', loadServerStats)
+  document.getElementById('stats-players-filter-period').addEventListener('change', loadServerStats)
   // Auto-refresco mientras el servidor esté en marcha y se vea la pestaña.
   if (state.isRunning) startStatsRefresh()
 }
@@ -104,18 +105,30 @@ function periodMs(period) {
   return null
 }
 
+// Cada selector tiene su propio alcance: el del gráfico y el de la tabla de
+// jugadores se aplican por separado; el resto del resumen queda sin filtrar.
+function periodFilters(selectId) {
+  const select = document.getElementById(selectId)
+  if (!select || select.value === 'all') return null
+  const ms = periodMs(select.value)
+  return ms ? { desde: Date.now() - ms } : null
+}
+
 async function loadServerStats() {
   const serverId = state.currentServerId
   if (!serverId) return
-  const period = document.getElementById('stats-filter-period')
-  const filters = period && period.value !== 'all' ? { desde: Date.now() - periodMs(period.value) } : null
-  const summary = await run(T('run.statsResumen'), () => window.api.getEstadisticasResumen(serverId, filters), null)
-  const players = await run(T('run.statsJugadores'), () => window.api.getEstadisticasJugadores(serverId, filters), null) || []
-  if (summary) renderStatsSummary(summary)
-  renderStatsPlayers(players)
+  const chartFilters = periodFilters('stats-filter-period')
+  const playersFilters = periodFilters('stats-players-filter-period')
+  const [summary, chartSummary, players] = await Promise.all([
+    run(T('run.statsResumen'), () => window.api.getEstadisticasResumen(serverId, null), null),
+    run(T('run.statsResumen'), () => window.api.getEstadisticasResumen(serverId, chartFilters), null),
+    run(T('run.statsJugadores'), () => window.api.getEstadisticasJugadores(serverId, playersFilters), [])
+  ])
+  if (summary) renderStatsSummary(summary, chartSummary && chartSummary.dailyPlayerActivity)
+  renderStatsPlayers(players || [])
 }
 
-function renderStatsSummary(data) {
+function renderStatsSummary(data, dailyActivity) {
   const uptimeEl = document.getElementById('stats-uptime')
   uptimeEl.textContent = data.uptimeMs > 0 ? formatDuration(data.uptimeMs) : '—'
 
@@ -132,7 +145,9 @@ function renderStatsSummary(data) {
   const ramWhenEl = document.getElementById('stats-ram-peak-at')
   ramWhenEl.textContent = hasSamples && ramPeak > 0 ? T('stats.ramPeakAt', { time: formatDateTime(data.resources.ramAt) }) : ''
 
-  const daily = data.dailyPlayerActivity
+  // La gráfica y su listado de conexiones diarias usan el período del gráfico;
+  // las tarjetas y los momentos concurrentes se muestran sin filtrar.
+  const daily = dailyActivity || data.dailyPlayerActivity
   const points = Object.keys(daily).sort().map((day) => {
     const entry = daily[day]
     return { label: day.slice(5), value: Object.keys(entry.players).length }
@@ -197,8 +212,10 @@ function renderStatsMoments(moments) {
 async function exportServerStats() {
   const serverId = state.currentServerId
   if (!serverId) return
-  const period = document.getElementById('stats-filter-period')
-  const filters = period && period.value !== 'all' ? { desde: Date.now() - periodMs(period.value) } : null
+  const filters = {
+    chartFilters: periodFilters('stats-filter-period'),
+    playersFilters: periodFilters('stats-players-filter-period')
+  }
   let res = null
   try {
     res = await window.api.exportEstadisticas(serverId, filters)

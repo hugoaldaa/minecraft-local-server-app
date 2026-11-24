@@ -173,6 +173,30 @@ test('buildServerJson devuelve el export en formato JSON', () => {
   assert.equal(json.jugadores.length, 0)
 })
 
+test('buildServerJson aplica filtros distintos a la gráfica y a los jugadores', () => {
+  const serverId = `srv-export-filters-${Date.now()}`
+  const antiguo = new Date(2026, 0, 1, 12, 0, 0).getTime()
+  const reciente = new Date(2026, 0, 10, 12, 0, 0).getTime()
+  savePlayerEvents(serverId, [
+    { ts: antiguo, type: 'join', player: 'Old' },
+    { ts: antiguo + 60000, type: 'leave', player: 'Old' },
+    { ts: reciente, type: 'join', player: 'Recent' },
+    { ts: reciente + 60000, type: 'leave', player: 'Recent' }
+  ])
+
+  const json = estadisticas.buildServerJson(serverId, {
+    chartFilters: { desde: new Date(2026, 0, 5).getTime() },
+    playersFilters: { desde: reciente - 1000 }
+  })
+  assert.deepEqual(Object.keys(json.jugadoresPorDia), ['2026-01-10'])
+  assert.deepEqual(json.jugadores.map(p => p.jugador), ['Recent'])
+
+  // El filtro único de versiones anteriores sigue aplicándose a ambas partes.
+  const legacy = estadisticas.buildServerJson(serverId, { desde: new Date(2026, 0, 5).getTime() })
+  assert.deepEqual(Object.keys(legacy.jugadoresPorDia), ['2026-01-10'])
+  assert.deepEqual(legacy.jugadores.map(p => p.jugador), ['Recent'])
+})
+
 test('pruneEvents respeta los días de retención configurados', () => {
   const hace = dias => Date.now() - dias * 24 * 60 * 60 * 1000
   const events = [

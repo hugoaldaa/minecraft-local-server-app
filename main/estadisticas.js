@@ -307,9 +307,24 @@ function formatExportDate(ts) {
   return new Date(ts).toISOString()
 }
 
+// La interfaz usa dos períodos independientes (gráfico y jugadores). Se mantiene
+// compatibilidad con el filtro único que usaban las versiones anteriores.
+function normalizeExportFilters(filters) {
+  if (!filters) return { chartFilters: null, playersFilters: null }
+  if ('chartFilters' in filters || 'playersFilters' in filters) {
+    return {
+      chartFilters: filters.chartFilters || null,
+      playersFilters: filters.playersFilters || null
+    }
+  }
+  return { chartFilters: filters, playersFilters: filters }
+}
+
 function buildServerCsv(serverId, filters) {
-  const metrics = getServerMetrics(serverId, filters)
-  const players = getPlayerList(serverId, filters)
+  const { chartFilters, playersFilters } = normalizeExportFilters(filters)
+  const metrics = getServerMetrics(serverId, null)
+  const chartMetrics = chartFilters ? getServerMetrics(serverId, chartFilters) : metrics
+  const players = getPlayerList(serverId, playersFilters)
   const rows = []
 
   const addRow = cells => rows.push(cells.map(csvEscape).join(','))
@@ -318,7 +333,7 @@ function buildServerCsv(serverId, filters) {
   addRow([serverId, metrics.uptimeMs, metrics.resources.cpuPeak, metrics.resources.ramPeak])
 
   addRow(['jugadores_por_dia'])
-  const daily = metrics.dailyPlayerActivity
+  const daily = chartMetrics.dailyPlayerActivity
   for (const day of Object.keys(daily).sort()) {
     const entry = daily[day]
     addRow([day, Object.keys(entry.players).length, entry.joins])
@@ -335,14 +350,16 @@ function buildServerCsv(serverId, filters) {
 // Exportación a JSON: mismo contenido estructurado de forma legible. La
 // interfaz descarga el que elijas (CSV o JSON).
 function buildServerJson(serverId, filters) {
-  const metrics = getServerMetrics(serverId, filters)
-  const players = getPlayerList(serverId, filters)
+  const { chartFilters, playersFilters } = normalizeExportFilters(filters)
+  const metrics = getServerMetrics(serverId, null)
+  const chartMetrics = chartFilters ? getServerMetrics(serverId, chartFilters) : metrics
+  const players = getPlayerList(serverId, playersFilters)
   return {
     servidor: serverId,
     horasEncendidoMs: metrics.uptimeMs,
     picoCpuPct: metrics.resources.cpuPeak,
     picoRamMb: metrics.resources.ramPeak,
-    jugadoresPorDia: metrics.dailyPlayerActivity,
+    jugadoresPorDia: chartMetrics.dailyPlayerActivity,
     momentosConMasJugadores: metrics.concurrentMoments,
     jugadores: players.map(p => ({
       jugador: p.player,

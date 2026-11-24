@@ -478,6 +478,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 18px 20px 14px;
   border-bottom: 2px solid var(--line);
   flex-shrink: 0;
@@ -1239,6 +1241,47 @@
   color: var(--text-inverse);
 }
 
+.privacy-modal {
+  width: 620px;
+}
+
+.privacy-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 58vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.privacy-content h4 {
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: var(--accent);
+  margin: 8px 0 0;
+}
+
+.privacy-content p {
+  margin: 0;
+}
+
+.privacy-link {
+  align-self: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  font-family: var(--pixel);
+  font-size: 10px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.privacy-link:hover {
+  color: var(--text);
+}
+
 /* ═══ Varios ══════════════════════════════════════════════════════════ */
 .empty-state {
   color: var(--text2);
@@ -1521,13 +1564,16 @@ code {
 }
 
 .stats-chart-body {
+  width: 100%;
   min-height: 160px;
   overflow-x: auto;
+  padding-bottom: 6px;
 }
 
 .chart-svg {
   display: block;
   min-width: 600px;
+  max-width: none;
 }
 
 .chart-bar {
@@ -1579,7 +1625,7 @@ code {
   font-family: var(--pixel);
 }
 
-#stats-filter-period {
+.stats-filter-select {
   margin-left: 4px;
   margin-right: 10px;
   font-size: 11px;
@@ -1588,6 +1634,13 @@ code {
   border: 2px solid var(--line);
   border-radius: var(--radius);
   color: var(--text);
+}
+
+.stats-players-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .stats-players {

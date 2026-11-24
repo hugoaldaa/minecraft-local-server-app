@@ -54,6 +54,8 @@
         </div>
         <p class="consent-note" data-i18n="consent.note">Puedes cambiar esto en cualquier momento desde
           Diagnóstico</p>
+        <button type="button" class="privacy-link" id="btn-consent-privacy"
+          data-i18n="privacy.viewPolicy">Ver política de privacidad</button>
         <div class="consent-btns">
           <button class="btn-consent-no" id="btn-consent-no" data-i18n="consent.no">No, gracias</button>
           <button class="btn-consent-yes" id="btn-consent-yes" data-i18n="consent.yes">Aceptar y continuar</button>
@@ -140,8 +142,8 @@
       <div class="panel-header">
         <h2 data-i18n="stats.title">Estadísticas del servidor</h2>
         <button class="btn-secondary" id="btn-refresh-stats" data-i18n="common.refresh">Actualizar</button>
-        <label class="stats-filter-label" data-i18n="stats.filterPeriod">Período</label>
-        <select id="stats-filter-period" aria-label="Filter period">
+        <label class="stats-filter-label" data-i18n="stats.filterChartPeriod">Período del gráfico</label>
+        <select id="stats-filter-period" class="stats-filter-select" aria-label="Chart period">
           <option value="7d" data-i18n="stats.filter7d" selected>Últimos 7 días</option>
           <option value="14d" data-i18n="stats.filter14d">Últimos 14 días</option>
           <option value="30d" data-i18n="stats.filter30d">Últimos 30 días</option>
@@ -182,9 +184,7 @@
         </div>
         <div class="stats-chart">
           <h3 data-i18n="stats.playersPerDay">Jugadores por día</h3>
-          <div class="stats-chart-body">
-            <svg id="stats-chart-players-day" viewBox="0 0 600 160" preserveAspectRatio="none" class="chart-svg"></svg>
-          </div>
+          <div class="stats-chart-body" id="stats-chart-players-day"></div>
           <ul class="stats-days" id="stats-days"></ul>
         </div>
       </section>
@@ -196,7 +196,19 @@
       </section>
 
       <section class="stats-section">
-        <h3 data-i18n="stats.playersList">Jugadores</h3>
+        <div class="stats-players-header">
+          <h3 data-i18n="stats.playersList">Jugadores</h3>
+          <label class="stats-filter-label" data-i18n="stats.filterPlayersPeriod">Período de jugadores</label>
+          <select id="stats-players-filter-period" class="stats-filter-select" aria-label="Players period">
+            <option value="all" data-i18n="stats.filterAll" selected>Todo</option>
+            <option value="7d" data-i18n="stats.filter7d">Últimos 7 días</option>
+            <option value="14d" data-i18n="stats.filter14d">Últimos 14 días</option>
+            <option value="30d" data-i18n="stats.filter30d">Últimos 30 días</option>
+            <option value="90d" data-i18n="stats.filter90d">Últimos 90 días</option>
+            <option value="6m" data-i18n="stats.filter6m">Últimos 6 meses</option>
+            <option value="1y" data-i18n="stats.filter1y">Último año</option>
+          </select>
+        </div>
         <div class="stats-players">
           <table class="stats-table" id="stats-players-table">
             <thead>
@@ -648,6 +660,17 @@
                   eventos de uso</button>
               </div>
             </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="privacy.viewPolicy">Ver política de privacidad</span>
+                <p class="set-row-hint" data-i18n="privacy.viewPolicyHint">Qué se guarda, qué se envía y cómo
+                  borrarlo.</p>
+              </div>
+              <div class="set-row-control">
+                <button class="btn-secondary" id="btn-privacy-policy"
+                  data-i18n="privacy.viewPolicy">Ver política de privacidad</button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -718,6 +741,17 @@
           </div>
         </section>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: privacy policy ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop hidden" id="modal-privacy" role="dialog" aria-modal="true" aria-labelledby="modal-privacy-title">
+    <div class="modal modal-wide privacy-modal">
+      <h3 id="modal-privacy-title" data-i18n="privacy.title">Política de privacidad</h3>
+      <div class="privacy-content" id="privacy-content"></div>
+      <div class="modal-actions">
+        <button id="privacy-close" data-i18n="privacy.close">Cerrar</button>
       </div>
     </div>
   </div>

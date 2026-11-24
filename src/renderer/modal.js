@@ -89,12 +89,50 @@ function initModal() {
   }
   document.getElementById('modal-confirm').onclick = () => window.api.close()
 
-  // Accesibilidad: Escape cierra el modal de servidor (salvo si está instalando)
+  // Política de privacidad: disponible en el consentimiento y en Ajustes.
+  document.getElementById('btn-consent-privacy').onclick = openPrivacyModal
+  document.getElementById('btn-privacy-policy').onclick = openPrivacyModal
+  document.getElementById('privacy-close').onclick = closePrivacyModal
+  document.getElementById('modal-privacy').addEventListener('click', (e) => {
+    if (e.target.id === 'modal-privacy') closePrivacyModal()
+  })
+
+  // Accesibilidad: Escape cierra el modal abierto (salvo si está instalando)
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || e.defaultPrevented) return
+    const privacy = document.getElementById('modal-privacy')
+    if (privacy && !privacy.classList.contains('hidden')) {
+      closePrivacyModal()
+      return
+    }
     const modal = document.getElementById('modal-server')
     if (modal && !modal.classList.contains('hidden') && !state.dl.installing) closeServerModal()
   })
+}
+
+function closePrivacyModal() {
+  document.getElementById('modal-privacy').classList.add('hidden')
+}
+
+function openPrivacyModal() {
+  const content = document.getElementById('privacy-content')
+  fill(content,
+    h('p', { text: T('privacy.intro') }),
+    h('h4', { text: T('privacy.storedTitle') }),
+    h('p', { text: T('privacy.storedServers') }),
+    h('p', { text: T('privacy.storedStats') }),
+    h('p', { text: T('privacy.storedUsage') }),
+    h('p', { text: T('privacy.storedCrashes') }),
+    h('h4', { text: T('privacy.sentTitle') }),
+    h('p', { text: T('privacy.sentDefault') }),
+    h('p', { text: T('privacy.sentEndpoints') }),
+    h('p', { text: T('privacy.sentNetwork') }),
+    h('h4', { text: T('privacy.controlsTitle') }),
+    h('p', { text: T('privacy.controlsText') }),
+    h('p', { text: T('privacy.docs') })
+  )
+  document.getElementById('modal-privacy').classList.remove('hidden')
+  document.getElementById('privacy-close').focus()
 }
 
 function renderColorOptions(containerId, selectedColor) {
