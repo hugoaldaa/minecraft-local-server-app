@@ -3,6 +3,30 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.4.2 - Fix GitHub release publishing race and release notes path (2026-11-25)
+
+### Añadido
+
+- Añadido el job prepare-release, que crea la release en GitHub antes de que empiecen los builds en paralelo.
+- Añadido scripts/upload-release-assets.mjs para subir los ficheros de dist/ con gh release upload --clobber.
+- Añadidos los scripts build:win:local y build:linux:ci para compilar sin publicar desde electron-builder.
+
+### Corregido
+
+- Corregida la carrera entre Windows y Linux al crear la misma release, que causaba Unexpected end of JSON input al publicar.
+- Corregida la ruta de las notas: release-notes.md → build/release-notes.md. Desaparece el aviso ENOENT y los instaladores vuelven a incluir las notas.
+- Corregidos los reintentos cuando la release ya tenía assets parciales: ahora se sobrescriben con --clobber.
+
+### Cambios
+
+- build:ci ya no usa --publish always; la subida la hace gh.
+- Los jobs de compilación ya no reciben GH_TOKEN para publicar; solo lo reciben los jobs de subida y notas.
+- RELEASE_GUIDE.md documenta el nuevo flujo y releaseInfo.releaseNotesFile.
+
+### Otros
+
+- Verificado en local: lint, 91 tests y build de Windows sin avisos; latest.yml contiene releaseNotes.
+
 ## v2.4.1 - Improve backups tab spacing and item layout (2026-11-25)
 
 ### Añadido
