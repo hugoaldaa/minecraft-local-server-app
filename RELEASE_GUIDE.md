@@ -43,8 +43,25 @@ El script (`scripts/release.mjs`):
 
 La entrada nueva se inserta en `CHANGELOG.md` encima de la anterior, con el
 formato `## v1.1.15 - <nombre> (<fecha>)` y las mismas secciones.
-`build/release-notes.md` (la que ve GitHub y la app) añade ademas un aviso final
-recordando que la release incluye `SHA256SUMS`.
+`build/release-notes.md` (la que incrusta la app en `latest.yml`) conserva las
+notas en espanol y añade un aviso final recordando que la release incluye
+`SHA256SUMS`.
+
+### Notas bilingües en GitHub
+
+El cuerpo de la release de GitHub se publica en espanol e ingles. Tras cada
+seccion en espanol se inserta su traduccion (`Añadido`/`Added`, `Corregido`/`Fixed`,
+`Cambios`/`Changed`, `Otros`/`Other`) y el aviso final tambien aparece en los dos
+idiomas. Las viñetas se traducen con Gemini (tier gratuito de Google AI Studio)
+desde `scripts/release.mjs`, en el paso `--apply-notes` (una sola llamada por
+release, sin coste mientras el proyecto no tenga facturación vinculada).
+
+Configura el secreto del repositorio `GEMINI_API_KEY` en
+*Settings → Secrets and variables → Actions*. Consigue la clave gratis en
+https://aistudio.google.com/apikey (no pide tarjeta). Opcionalmente
+`GEMINI_MODEL` puede definirse como variable (default `gemini-3.5-flash-lite`).
+Si el secreto falta o la API falla, la release se publica igualmente solo en
+espanol y el workflow avisa; nunca se bloquea por la traduccion.
 
 ### Opciones
 

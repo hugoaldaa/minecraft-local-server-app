@@ -14,15 +14,16 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CHANGELOG_FILE = path.join(ROOT, 'CHANGELOG.md')
 const BUILD_DIR = path.join(ROOT, 'build')
 const NOTES_FILE = path.join(BUILD_DIR, 'release-notes.md')
+const BILINGUAL_NOTES_FILE = path.join(BUILD_DIR, 'release-notes-bilingual.md')
 const COMMIT_FILE = path.join(BUILD_DIR, 'release-commit.txt')
 const TAG_FILE = path.join(BUILD_DIR, 'release-tag.txt')
 const CHANGELOG_HEADER = '# Changelog'
 
 export const SECTIONS = [
-  { id: 'added', label: 'Añadido' },
-  { id: 'fixed', label: 'Corregido' },
-  { id: 'changed', label: 'Cambios' },
-  { id: 'other', label: 'Otros' }
+  { id: 'added', label: 'Añadido', labelEn: 'Added' },
+  { id: 'fixed', label: 'Corregido', labelEn: 'Fixed' },
+  { id: 'changed', label: 'Cambios', labelEn: 'Changed' },
+  { id: 'other', label: 'Otros', labelEn: 'Other' }
 ]
 
 const SECTION_ALIASES = {
@@ -33,6 +34,15 @@ const SECTION_ALIASES = {
 }
 
 const VERIFY_NOTE = '**Verificación:** el fichero `SHA256SUMS` de esta release contiene el SHA-256 de los instaladores.'
+const VERIFY_NOTE_EN = '**Verification:** the `SHA256SUMS` file for this release contains the SHA-256 of the installers.'
+
+// Términos que no deben traducirse: son nombres de archivo, tecnologías o
+// conceptos propios del proyecto.
+const KEEP_TERMS = [
+  'SQLite', 'better-sqlite3', 'JSON', 'CSV', 'JAR', 'IPC', 'ASAR', 'WAL',
+  'SHA256SUMS', 'SHA-256', 'Minecraft', 'Electron', 'GitHub', 'localStorage',
+  'app.db'
+]
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -170,6 +180,97 @@ export function changelogMarkdown(version, name, data, date = today()) {
   return renderSections(version, name, data, { footer: false, date })
 }
 
+// ─── Notas bilingües ────────────────────────────────────────────────────────
+
+// Aplana las viñetas en un array para traducirlas de una sola vez y poder
+// reconstruir las secciones exactamente en el mismo orden.
+export function translationRequest(sections) {
+  const normalized = normalizeNotes(sections)
+  const items = []
+  for (const { id } of SECTIONS) items.push(...normalized[id])
+  const system = [
+    'You translate release notes from Spanish to English.',
+    'Return ONLY a JSON object with the shape {"items": ["..."]}.',
+    'The "items" array must contain exactly the same number of strings as the input, in the same order.',
+    'Translate each string as a standalone bullet point: keep inline Markdown, links, code and punctuation.',
+    'Do not add bullet dashes, headings, explanations or extra keys.',
+    `Do not translate these terms: ${KEEP_TERMS.join(', ')}.`
+  ].join(' ')
+  return { system, user: JSON.stringify({ items }), items }
+}
+
+export function parseTranslation(text, items) {
+  let data
+  try {
+    data = JSON.parse(text)
+  } catch {
+    throw new Error('la respuesta de traducción no es JSON válido')
+  }
+  const translated = data && data.items
+  if (!Array.isArray(translated) || translated.length !== items.length ||
+      translated.some(value => typeof value !== 'string' || !value.trim())) {
+    throw new Error('la respuesta de traducción no conserva el número de viñetas')
+  }
+  return translated
+}
+
+export async function translateSections(sections) {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) throw new Error('GEMINI_API_KEY no configurado')
+  const { system, user, items } = translationRequest(sections)
+  if (!items.length) return emptySections()
+
+  // gemini-3.5-flash-lite está en el tier gratuito de Google AI Studio.
+  const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite'
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: 'user', parts: [{ text: user }] }],
+        generationConfig: { temperature: 0, responseMimeType: 'application/json' }
+      })
+    }
+  )
+  if (!response.ok) throw new Error(`la API de traducción devolvió ${response.status}`)
+
+  const payload = await response.json()
+  const parts = payload && payload.candidates && payload.candidates[0] &&
+    payload.candidates[0].content && payload.candidates[0].content.parts
+  const part = Array.isArray(parts) && parts.find(candidate => typeof candidate.text === 'string')
+  const translated = parseTranslation(part && part.text, items)
+
+  const result = emptySections()
+  let index = 0
+  for (const { id } of SECTIONS) {
+    result[id] = (sections[id] || []).map(() => translated[index++])
+  }
+  return result
+}
+
+// Español e inglés se intercalan sección por sección, tal como se muestra en
+// la release de GitHub.
+export function bilingualNotesMarkdown(version, name, es, en, { footer = true } = {}) {
+  const spanish = normalizeNotes(es)
+  const english = normalizeNotes(en)
+  const heading = `## v${version} - ${name}`
+  const lines = [heading, '']
+  let count = 0
+  for (const { id, label, labelEn } of SECTIONS) {
+    const items = spanish[id]
+    if (!items.length) continue
+    count++
+    const translated = english[id] || []
+    lines.push(`### ${label}`, '', ...items.map(item => `- ${item}`), '')
+    lines.push(`### ${labelEn}`, '', ...translated.map(item => `- ${item}`), '')
+  }
+  if (!count) lines.push('- Sin descripción', '')
+  if (footer) lines.push('---', '', VERIFY_NOTE, '', VERIFY_NOTE_EN, '')
+  return lines.join('\n').trimEnd() + '\n'
+}
+
 function writeBuildFiles(version, name, data) {
   fs.mkdirSync(BUILD_DIR, { recursive: true })
   const safeName = (name || '').trim() || 'Actualizaciones'
@@ -304,7 +405,7 @@ function runGh(args) {
   }
 }
 
-function applyNotes(tag) {
+async function applyNotes(tag) {
   const info = prepareNotes(tag)
   if (!info) {
     console.log('[release] Usando notas generadas automaticamente por GitHub.')
@@ -312,7 +413,22 @@ function applyNotes(tag) {
     return
   }
   const { title } = writeBuildFiles(info.version, info.name, info.sections)
-  if (runGh(['release', 'edit', tag, '--title', title, '--notes-file', NOTES_FILE])) {
+
+  let notesFile = NOTES_FILE
+  try {
+    const english = await translateSections(info.sections)
+    fs.writeFileSync(
+      BILINGUAL_NOTES_FILE,
+      bilingualNotesMarkdown(info.version, info.name, info.sections, english),
+      'utf8'
+    )
+    notesFile = BILINGUAL_NOTES_FILE
+    console.log(`[release] Notas bilingües generadas en ${path.relative(ROOT, BILINGUAL_NOTES_FILE)}`)
+  } catch (err) {
+    console.warn(`[release] No se pudieron traducir las notas (${err.message}). Se publican solo en español.`)
+  }
+
+  if (runGh(['release', 'edit', tag, '--title', title, '--notes-file', notesFile])) {
     console.log(`[release] Release ${tag} actualizada: "${title}"`)
   }
 }
@@ -533,7 +649,7 @@ async function main() {
     prepareNotes(tag)
   } else if (mode === '--apply-notes') {
     if (!tag) { console.error('Uso: node scripts/release.mjs --apply-notes <tag>'); process.exit(1) }
-    applyNotes(tag)
+    await applyNotes(tag)
   } else if (mode === '--backfill') {
     backfill()
   } else if (mode === '--clean-changelog') {

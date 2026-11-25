@@ -99,4 +99,5 @@ jobs:
       - name: Publicar nombre y notas en la release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node scripts/release.mjs --apply-notes "${{ github.ref_name }}"

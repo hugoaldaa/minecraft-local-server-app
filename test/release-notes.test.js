@@ -56,6 +56,77 @@ test('notesMarkdown genera secciones, omite las vacías y añade la verificació
   assert.equal(tagBody.includes('### Añadido'), true)
 })
 
+test('bilingualNotesMarkdown intercala cada sección en español e inglés', async () => {
+  const { bilingualNotesMarkdown } = await releasePromise
+  const es = { added: ['Migración a SQLite'], fixed: [], changed: ['Actualizar Electron'], other: [] }
+  const en = { added: ['SQLite migration'], changed: ['Update Electron'] }
+  const notes = bilingualNotesMarkdown('2.3.0', 'Migración', es, en)
+  assert.match(notes, /^## v2\.3\.0 - Migración\n/)
+  assert.match(notes, /### Añadido\n\n- Migración a SQLite\n\n### Added\n\n- SQLite migration/)
+  assert.match(notes, /### Cambios\n\n- Actualizar Electron\n\n### Changed\n\n- Update Electron/)
+  assert.equal(notes.includes('### Corregido'), false)
+  assert.match(notes, /\*\*Verificación:\*\*[\s\S]*\*\*Verification:\*\*/)
+
+  const tagBody = bilingualNotesMarkdown('2.3.0', 'Migración', es, en, { footer: false })
+  assert.equal(tagBody.includes('SHA256SUMS'), false)
+})
+
+test('translationRequest y parseTranslation conservan el orden de las viñetas', async () => {
+  const { translationRequest, parseTranslation } = await releasePromise
+  const request = translationRequest({ added: ['Uno', 'Dos'], changed: ['Tres'] })
+  assert.deepEqual(request.items, ['Uno', 'Dos', 'Tres'])
+  assert.equal(JSON.parse(request.user).items.length, 3)
+  assert.match(request.system, /SQLite/)
+  assert.throws(() => parseTranslation('{"items":["One","Two"]}', request.items), /conserva el número/)
+  assert.deepEqual(
+    parseTranslation('{"items":["One","Two","Three"]}', request.items),
+    ['One', 'Two', 'Three']
+  )
+})
+
+test('translateSections traduce las viñetas con Gemini y reconstruye las secciones', async () => {
+  const { translateSections } = await releasePromise
+  const originalFetch = globalThis.fetch
+  const originalKey = process.env.GEMINI_API_KEY
+  let captured = null
+  globalThis.fetch = async (url, options) => {
+    captured = { url, options }
+    return {
+      ok: true,
+      json: async () => ({
+        candidates: [{
+          content: { parts: [{ text: JSON.stringify({ items: ['Added one', 'Fixed one'] }) }] }
+        }]
+      })
+    }
+  }
+  process.env.GEMINI_API_KEY = 'test-key'
+  try {
+    const out = await translateSections({ added: ['Añadir uno'], fixed: ['Arreglar uno'] })
+    assert.deepEqual(out, { added: ['Added one'], fixed: ['Fixed one'], changed: [], other: [] })
+    assert.match(captured.url, /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-3\.5-flash-lite:generateContent$/)
+    assert.equal(captured.options.headers['x-goog-api-key'], 'test-key')
+    const body = JSON.parse(captured.options.body)
+    assert.equal(body.generationConfig.responseMimeType, 'application/json')
+    assert.match(body.systemInstruction.parts[0].text, /Spanish to English/)
+  } finally {
+    globalThis.fetch = originalFetch
+    if (originalKey === undefined) delete process.env.GEMINI_API_KEY
+    else process.env.GEMINI_API_KEY = originalKey
+  }
+})
+
+test('translateSections falla con claridad si no hay GEMINI_API_KEY', async () => {
+  const { translateSections } = await releasePromise
+  const originalKey = process.env.GEMINI_API_KEY
+  delete process.env.GEMINI_API_KEY
+  try {
+    await assert.rejects(() => translateSections({ added: ['Cambio'] }), /GEMINI_API_KEY/)
+  } finally {
+    if (originalKey !== undefined) process.env.GEMINI_API_KEY = originalKey
+  }
+})
+
 test('changelogMarkdown usa cabecera con fecha y sin pie de verificación', async () => {
   const { changelogMarkdown } = await releasePromise
   const entry = changelogMarkdown('1.10.0', 'Mejoras', { fixed: ['Fix'] }, '2026-11-24')
