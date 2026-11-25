@@ -13,8 +13,8 @@ and include:
 - OS and version (Windows 10/11, distro and kernel on Linux) and Java version.
 - Steps to reproduce, expected behaviour and actual behaviour.
 - Any error text. Crash reports are listed in the app under **Ajustes**
-  (Settings) and stored in `crashes.json` inside the app data folder —
-  paste the relevant message or stack trace.
+  (Settings) and stored in the `app.db` SQLite database inside the app data
+  folder — paste the relevant message or stack trace.
 
 Search the existing issues first, and use the latest release if you can.
 
@@ -29,6 +29,11 @@ npm install
 npm start        # run the app
 npm run dev      # run with the --dev flag
 ```
+
+`better-sqlite3` is a native module: `npm start`/`npm run dev` rebuild it for
+Electron, while `npm test`/`npm run smoke` rebuild it for Node automatically.
+Building it from source needs a C++ toolchain (Visual Studio Build Tools on
+Windows); electron-builder handles the rebuild when packaging.
 
 Before pushing, run:
 

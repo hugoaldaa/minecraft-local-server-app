@@ -78,6 +78,12 @@ contextBridge.exposeInMainWorld('api', {
   // { chartFilters, playersFilters } o el filtro único [desde, hasta] anterior.
   exportEstadisticas: (serverId, filters) => ipcRenderer.invoke('estadisticas:export', serverId, filters),
 
+  // Backup global (SQLite). Solo se usa cuando el usuario lo pide.
+  exportAllData: () => ipcRenderer.invoke('data:export'),
+  importAllData: (payload) => ipcRenderer.invoke('data:import', payload),
+  exportAllDataToFile: () => ipcRenderer.invoke('data:exportFile'),
+  importAllDataFromFile: () => ipcRenderer.invoke('data:importFile'),
+
   // Dialogs
   openJarDialog: () => ipcRenderer.invoke('dialog:openJar'),
   openDirDialog: () => ipcRenderer.invoke('dialog:openDir'),

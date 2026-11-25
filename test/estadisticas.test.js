@@ -1,8 +1,12 @@
 const test = require('node:test')
 const assert = require('node:assert')
+const { setupTestDb, teardownTestDb } = require('./helpers/db')
+setupTestDb('estadisticas')
 const logs = require('../main/logs')
 const estadisticas = require('../main/estadisticas')
 const { savePlayerEvents, saveRunTime } = require('../main/stores')
+
+test.after(() => teardownTestDb())
 
 // ─── parseLogLine ──────────────────────────────────────────────────────────
 test('detecta join y leave con el timestamp del log', () => {

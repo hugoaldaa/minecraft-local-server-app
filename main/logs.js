@@ -5,7 +5,9 @@
 // del juego; eso es más fiable que la salida por stdout, que no tiene timestamps.
 const fs = require('fs')
 const path = require('path')
-const { getAllServersMap, getPlayerEvents, savePlayerEvents, settingsStore } = require('./stores')
+const {
+  getAllServersMap, getPlayerEvents, insertPlayerEvents, prunePlayerEvents, settingsStore
+} = require('./stores')
 
 // Log de actividad actual del servidor (ruta relativa a la carpeta del .jar).
 function getLogPath(server) {
@@ -115,13 +117,13 @@ const ensureEntry = serverId => {
   return entry
 }
 
-function persistEntry(serverId) {
-  const entry = ensureEntry(serverId)
-  savePlayerEvents(serverId, pruneEvents(entry.events))
+function persistEntry(serverId, newEvents) {
+  insertPlayerEvents(serverId, newEvents)
+  prunePlayerEvents(serverId, Date.now() - retentionEventsDays() * MS_PER_DAY, MAX_EVENTS_PER_SERVER)
 }
 
-// Fase 4: poda los eventos antiguos para no crecer indefinidamente. Se aplican
-// también el tope por número de eventos.
+// Poda en memoria con los mismos criterios que la BD; se usa en los tests y
+// para mantener el caché acotado sin reescribir la tabla completa.
 function pruneEvents(events, retentionDays) {
   const days = retentionDays || retentionEventsDays()
   const cutoff = Date.now() - days * MS_PER_DAY
@@ -154,6 +156,7 @@ async function pollLogs() {
     const first = fragment.cutMidLine ? 1 : 0
     // Índice de claves (jugador|tipo|ts) para evitar duplicados sin comparar O(n).
     const seenKeys = new Set(entry.events.map(e => `${e.player}|${e.type}|${e.ts}`))
+    const newEvents = []
     let changed = false
     for (let i = first; i < lines.length; i++) {
       const line = lines[i]
@@ -165,13 +168,14 @@ async function pollLogs() {
       if (seenKeys.has(key)) continue
       seenKeys.add(key)
       entry.events.push(event)
+      newEvents.push(event)
       if (event.ts > entry.lastTs) entry.lastTs = event.ts
       changed = true
-      if (entry.events.length > MAX_EVENTS_PER_SERVER) {
-        entry.events.splice(0, entry.events.length - MAX_EVENTS_PER_SERVER)
-      }
     }
-    if (changed) persistEntry(serverId)
+    if (changed) {
+      persistEntry(serverId, newEvents)
+      entry.events = pruneEvents(entry.events)
+    }
   }
 }
 

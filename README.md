@@ -153,7 +153,8 @@ Releases are cut with `npm run release`; see [RELEASE_GUIDE.md](RELEASE_GUIDE.md
 | ------------------- | -------------------------------------------------------------------------- |
 | `main/index.js`     | Entry point of the main process: IPC registration and app lifecycle        |
 | `main/state.js`     | Shared main-process state (window reference, active servers)               |
-| `main/stores.js`    | `electron-store` instances: servers, settings, analytics, crashes          |
+| `main/db.js`        | SQLite database (`app.db`), one-time JSON migration, export/import        |
+| `main/stores.js`    | Persistence facade over SQLite: servers, settings, stats, analytics, crashes |
 | `main/validate.js`  | Validation of IPC payloads and allow-lists for paths from the renderer     |
 | `main/servers.js`   | Create/start/stop servers, console commands, player management             |
 | `main/downloader.js`| Server installer: Vanilla/Paper/Fabric/Forge download, Forge install, IPC  |
@@ -230,10 +231,10 @@ are never collected.
   settings store (`analyticsEndpoint`). The request uses a 5 second timeout
   and failures are ignored silently. The app does not ship with an endpoint,
   so by default nothing is sent anywhere.
-- With no endpoint configured, events are kept locally in `analytics.json`
-  inside the app data folder, limited to the 500 most recent ones.
-- Crash reports are always written locally to `crashes.json` in the same
-  folder (last 100 entries) and can be cleared from the Settings screen.
+- With no endpoint configured, events are kept locally in the `app.db` SQLite
+  database inside the app data folder, limited to the 500 most recent ones.
+- Crash reports are always written locally to the same database (last 100
+  entries) and can be cleared from the Settings screen.
   A stack trace may include local file paths. They are only sent if a separate
   `crashEndpoint` is configured; the app provides no UI for that setting.
 

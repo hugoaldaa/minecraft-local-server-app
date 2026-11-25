@@ -3,6 +3,21 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## Sin publicar
+
+### Cambios
+
+- Toda la persistencia local pasa de `electron-store` a una base de datos SQLite (`app.db`): servidores, ajustes, estadísticas, analytics y errores. Ya no se escriben datos de la app en JSON; `electron-store` se elimina de las dependencias.
+- Las muestras de CPU/RAM y los eventos de jugadores se insertan en transacciones y se podan con consultas por rango, en lugar de reescribir un array completo cada 15 segundos.
+- Tema e idioma se guardan en la base de datos; los valores antiguos de `localStorage` se migran una sola vez y se eliminan.
+- La configuración de empaquetado desempaqueta `better-sqlite3` del ASAR para asegurar que el módulo nativo funcione en la app instalada. La dependencia se actualiza a v13 para soportar la V8 de Electron 45; `npm start`/`npm run dev` recompilan el módulo para Electron y `npm test`/`npm run smoke` para Node.
+
+### Añadido
+
+- Migración automática desde los cinco JSON anteriores: se importan en una transacción, se verifica el contenido y solo entonces se eliminan. Se conserva `app.db.bak` como copia de seguridad en SQLite.
+- Exportación e importación global de todos los datos (`data:export` / `data:import`), sin sustituir los formatos CSV/JSON de estadísticas ya existentes.
+- Tests de migración, exportación e importación de la base de datos.
+
 ## v2.2.2 - Release fix (2026-11-24)
 
 ### Corregido

@@ -71,15 +71,26 @@ window.addEventListener('unhandledrejection', (e) => {
   console.error(T('log.unhandledRejection'), e.reason)
 })
 
-// ─── Tema (claro/oscuro): se aplica antes del primer pintado ─────────────────
-const THEME_KEY = 'app-theme'
-function currentTheme() {
-  const saved = localStorage.getItem(THEME_KEY)
-  return saved === 'light' ? 'light' : 'dark'
-}
+// ─── Tema (claro/oscuro): se lee de la BD; el valor antiguo de localStorage se
+// migra una sola vez y se elimina. Ningún ajuste se guarda en localStorage.
+let activeTheme = 'dark'
+function currentTheme() { return activeTheme }
 function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme
-  localStorage.setItem(THEME_KEY, theme)
+  activeTheme = theme === 'light' ? 'light' : 'dark'
+  document.documentElement.dataset.theme = activeTheme
 }
-applyTheme(currentTheme())
+;(async () => {
+  let saved = null
+  let old = null
+  try { saved = await window.api.getPref('theme') } catch (_) {}
+  try {
+    old = localStorage.getItem('app-theme')
+    localStorage.removeItem('app-theme')
+  } catch (_) {}
+  if (saved !== 'light' && saved !== 'dark' && (old === 'light' || old === 'dark')) {
+    saved = old
+    try { await window.api.setPref('theme', old) } catch (_) {}
+  }
+  applyTheme(saved)
+})()
 

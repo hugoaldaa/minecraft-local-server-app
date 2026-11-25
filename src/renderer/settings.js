@@ -9,6 +9,13 @@ function initSettings() {
     await run(T('run.settings'), () => window.api.clearAnalyticsEvents())
     loadSettings()
   }
+  document.getElementById('btn-export-data').onclick = () => {
+    run(T('settings.exportData'), () => window.api.exportAllDataToFile())
+  }
+  document.getElementById('btn-import-data').onclick = async () => {
+    const res = await run(T('settings.importData'), () => window.api.importAllDataFromFile())
+    if (res && res.ok) loadSettings()
+  }
   document.getElementById('diag-analytics-toggle').onchange = async (e) => {
     await run(T('run.consent'), () => window.api.setAnalyticsConsent(e.target.checked))
     loadSettings()

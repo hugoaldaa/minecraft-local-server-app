@@ -17,15 +17,20 @@ Para consultas o solicitudes, abre un *issue* en ese repositorio.
 
 ### 2. Datos que se guardan en tu equipo
 
-La app usa `electron-store` dentro de la carpeta de datos de la aplicación:
+La app usa una base de datos SQLite (`app.db`) dentro de la carpeta de datos de
+la aplicación. No guarda servidores, ajustes ni estadísticas en archivos JSON.
+Los archivos `.json` de versiones anteriores se leen una sola vez al migrar y se
+eliminan después de verificar la migración; se conserva una copia `app.db.bak` en
+SQLite por si hubiera que recuperarla.
 
 | Archivo | Contenido |
 | --- | --- |
-| `servers.json` | Nombre del servidor, ruta absoluta al `.jar` y a Java, RAM, argumentos JVM, versión de Minecraft, color y fecha de creación. |
-| `settings.json` | Preferencias (idioma, tema, escala, notificaciones, carpetas, retención) y ajustes por servidor. |
-| `serverStats.json` | Muestras de CPU/RAM, eventos de entrada/salida con **nombre de jugador** y marca de tiempo, horas encendido y tiempos por jugador. |
-| `analytics.json` | Solo si aceptas la telemetría: ID aleatorio de instalación, versión de la app, plataforma, arquitectura, versión del SO y hasta 500 eventos técnicos. |
-| `crashes.json` | Hasta 100 errores con mensaje y traza de pila. La traza puede incluir rutas locales de archivos. |
+| `app.db` | Servidores (nombre, ruta absoluta al `.jar` y a Java, RAM, argumentos JVM, versión de Minecraft, color y fecha de creación), preferencias (idioma, tema, escala, notificaciones, carpetas, retención), ajustes por servidor, muestras de CPU/RAM, eventos de entrada/salida con **nombre de jugador** y marca de tiempo, horas encendido, tiempos por jugador, eventos técnicos y hasta 100 errores con mensaje y traza de pila. |
+| `app.db-wal`, `app.db-shm` | Archivos temporales de SQLite mientras la app está abierta. |
+| `app.db.bak` | Copia de seguridad SQLite creada al migrar desde la versión anterior. |
+
+Solo si exportas manualmente un backup desde la app se genera un archivo JSON con
+todos esos datos; la app no lo usa para funcionar ni lo escribe por su cuenta.
 
 Retención por defecto: muestras de CPU/RAM 30 días, eventos y totales de
 jugadores 730 días, y errores 100 entradas. Los dos primeros periodos se pueden
@@ -89,15 +94,19 @@ For questions or requests, open an issue in that repository.
 
 ### 2. Data stored on your device
 
-The app uses `electron-store` inside its application data folder:
+The app uses a SQLite database (`app.db`) inside its application data folder.
+It does not store servers, settings or statistics in JSON files. JSON files from
+older versions are read once during migration and deleted after verification; a
+SQLite copy named `app.db.bak` is kept in case recovery is needed.
 
 | File | Contents |
 | --- | --- |
-| `servers.json` | Server name, absolute paths to the JAR and Java, RAM, JVM args, Minecraft version, color and creation date. |
-| `settings.json` | Preferences (language, theme, scale, notifications, folders, retention) and per-server settings. |
-| `serverStats.json` | CPU/RAM samples, join/leave events with **player name** and timestamp, uptime and time played per player. |
-| `analytics.json` | Only if you opt in: random install ID, app version, platform, architecture, OS release and up to 500 technical events. |
-| `crashes.json` | Up to 100 errors with message and stack trace. Stack traces may include local file paths. |
+| `app.db` | Servers (name, absolute paths to the JAR and Java, RAM, JVM args, Minecraft version, color and creation date), preferences (language, theme, scale, notifications, folders, retention), per-server settings, CPU/RAM samples, join/leave events with **player name** and timestamp, uptime, time played per player, technical events and up to 100 errors with message and stack trace. |
+| `app.db-wal`, `app.db-shm` | Temporary SQLite files while the app is running. |
+| `app.db.bak` | SQLite backup created when migrating from the previous version. |
+
+A JSON file containing all of this is created only when you manually export a
+backup from the app; the app does not use it to run and never writes it on its own.
 
 Default retention: CPU/RAM samples 30 days, player events and totals 730 days,
 and errors 100 entries. The first two periods can be changed in Settings.

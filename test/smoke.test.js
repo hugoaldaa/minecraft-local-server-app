@@ -12,19 +12,10 @@ const Module = require('node:module')
 const handlers = {}
 const rendererEvents = []
 const spawnedProcesses = []
-const storeData = {}
 
-class FakeStore {
-  constructor(opts) {
-    this.name = (opts && opts.name) || 'settings'
-    if (!storeData[this.name]) storeData[this.name] = new Map()
-    this.data = storeData[this.name]
-  }
-  get(key, fallback) { return this.data.has(key) ? this.data.get(key) : fallback }
-  set(key, value) { this.data.set(key, value); return this }
-  has(key) { return this.data.has(key) }
-  delete(key) { return this.data.delete(key) }
-}
+const { setupTestDb, teardownTestDb } = require('./helpers/db')
+setupTestDb('smoke')
+const { settingsStore } = require('../main/stores')
 
 const electronMock = {
   app: { getVersion: () => '1.9.7-test', isPackaged: false, setLoginItemSettings: () => {} },
@@ -75,7 +66,6 @@ Module._load = function (request, parent, isMain) {
   const fromMain = parent && parent.filename && parent.filename.includes(path.sep + 'main' + path.sep)
   if (fromMain) {
     if (request === 'electron') return electronMock
-    if (request === 'electron-store') return FakeStore
     if (request === 'node-schedule') return scheduleMock
     if (request === 'child_process') return childProcessMock
   }
@@ -143,7 +133,7 @@ test('smoke: reinicio programado se activa y se cancela', async () => {
   const id = created.server.id
   // settings:set vive en index.js; aquí se simula escribiendo el store que
   // lee scheduleAutoRestart (mismo efecto que la llamada IPC real).
-  new FakeStore({ name: 'settings' }).set(`server_${id}`, { autoRestartEnabled: true, autoRestartInterval: '6h' })
+  settingsStore.set(`server_${id}`, { autoRestartEnabled: true, autoRestartInterval: '6h' })
   scheduleAutoRestart(id)
   const status = await handlers['restart:status'](null, id)
   assert.equal(status.enabled, true)
@@ -162,3 +152,5 @@ test('smoke: las notificaciones respetan las preferencias', () => {
   assert.equal(n.title, 'Servidor caído')
   assert.equal(n.body, 'Mundo se ha caído. sin memoria')
 })
+
+test.after(() => teardownTestDb())

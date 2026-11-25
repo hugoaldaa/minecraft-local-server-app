@@ -262,6 +262,10 @@ const MESSAGES = {
     'settings.analyticsHint': 'Sin nombres, IPs ni datos de tu servidor. Puedes desactivarlo cuando quieras.',
     'settings.clearAnalytics': 'Borrar eventos de uso',
     'settings.clearAnalyticsHint': 'Elimina los eventos guardados sin desactivar el envío.',
+    'settings.exportData': 'Exportar todos los datos',
+    'settings.exportDataHint': 'Guarda servidores, ajustes y estadísticas en un JSON que puedes conservar donde quieras.',
+    'settings.importData': 'Importar datos',
+    'settings.importDataHint': 'Sustituye los datos actuales por los de un backup exportado por esta app. Se crea una copia antes.',
     'privacy.viewPolicy': 'Ver política de privacidad',
     'privacy.viewPolicyHint': 'Qué se guarda, qué se envía y cómo borrarlo.',
     'privacy.title': 'Política de privacidad',
@@ -634,6 +638,10 @@ const MESSAGES = {
     'settings.analyticsHint': 'No names, IPs or server data. You can turn it off at any time.',
     'settings.clearAnalytics': 'Clear usage events',
     'settings.clearAnalyticsHint': 'Deletes stored events without disabling sending.',
+    'settings.exportData': 'Export all data',
+    'settings.exportDataHint': 'Saves servers, settings and statistics to a JSON file you can keep anywhere.',
+    'settings.importData': 'Import data',
+    'settings.importDataHint': 'Replaces current data with a backup exported by this app. A copy is created first.',
     'privacy.viewPolicy': 'View privacy policy',
     'privacy.viewPolicyHint': 'What is stored, what is sent and how to delete it.',
     'privacy.title': 'Privacy policy',
@@ -751,16 +759,32 @@ const MESSAGES = {
 let currentLang = detectLang()
 const langListeners = []
 
+// El idioma se guarda en SQLite vía IPC. El valor antiguo de localStorage se
+// migra una sola vez al arrancar y después se elimina.
 function detectLang() {
-  let stored = null
-  try {
-    stored = localStorage.getItem('app-lang')
-  } catch (e) {
-    stored = null
-  }
-  if (stored === 'es' || stored === 'en') return stored
   return navigator.language && navigator.language.toLowerCase().startsWith('en') ? 'en' : 'es'
 }
+
+async function migrateLangFromStorage() {
+  let saved = null
+  let old = null
+  try { saved = await window.api.getPref('lang') } catch (_) {}
+  try {
+    old = localStorage.getItem('app-lang')
+    localStorage.removeItem('app-lang')
+  } catch (_) {}
+  if (saved !== 'es' && saved !== 'en' && (old === 'es' || old === 'en')) {
+    saved = old
+    try { await window.api.setPref('lang', old) } catch (_) {}
+  }
+  if (saved === 'es' || saved === 'en') {
+    currentLang = saved
+    // Si el DOM aún no está listo, el listener de DOMContentLoaded aplicará
+    // el idioma ya migrado.
+    if (document.readyState !== 'loading') apply()
+  }
+}
+migrateLangFromStorage()
 
 function t(key, vars) {
   const table = MESSAGES[currentLang] || MESSAGES.es
@@ -792,9 +816,7 @@ function apply() {
 function setLang(next) {
   if (next !== 'es' && next !== 'en') return
   currentLang = next
-  try {
-    localStorage.setItem('app-lang', currentLang)
-  } catch (e) {}
+  // La preferencia ya se guarda en SQLite desde Ajustes (prefs:set).
   apply()
   langListeners.forEach(cb => {
     try {

@@ -6,7 +6,10 @@
 // Fase 4: los eventos y totales se podan según la retención configurada, y las
 //   consultas admiten un rango [desde, hasta] para filtrar por fechas.
 const { ipcMain } = require('electron')
-const { getSamples, getPlayerEvents, getPlayerTotals, savePlayerTotals, getRunTime, statsStore, settingsStore } = require('./stores')
+const {
+  getSamples, getPlayerEvents, getSamplesRange, getPlayerEventsRange,
+  getPlayerTotals, savePlayerTotals, deleteServerStats, getRunTime, settingsStore
+} = require('./stores')
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 const DEFAULT_RETENTION_DAYS = 730
@@ -130,12 +133,6 @@ function closeServerSessions(serverId, serverEndTs) {
   savePlayerTotals(serverId, totals)
 }
 
-// Borra todo lo guardado para un servidor (Fase 4: al eliminar el servidor).
-function deleteServerStats(serverId) {
-  const keys = [`samples_${serverId}`, `playerEvents_${serverId}`, `playerTotals_${serverId}`, `run_${serverId}`]
-  for (const key of keys) statsStore.delete(key)
-}
-
 // ─── Fase 2: agregación por servidor ──────────────────────────────────────────
 
 function dayKey(ts) {
@@ -219,22 +216,24 @@ function computeConcurrentMoments(events, limit) {
 
 // ─── Fase 4: filtros por rango ────────────────────────────────────────────────
 
-function inRange(ts, filters) {
-  if (filters.desde !== undefined && ts < filters.desde) return false
-  if (filters.hasta !== undefined && ts > filters.hasta) return false
-  return true
+// Aplica el rango [desde, hasta]. Acepta tanto un serverId (consulta SQL) como
+// un array de eventos/muestras (útil para funciones puras y tests).
+function filterPlayerEvents(eventsOrId, filters) {
+  if (typeof eventsOrId === 'string') {
+    return getPlayerEventsRange(eventsOrId, filters && filters.desde, filters && filters.hasta)
+  }
+  if (!filters) return eventsOrId
+  return eventsOrId.filter(e => !filters.desde || e.ts >= filters.desde)
+    .filter(e => !filters.hasta || e.ts <= filters.hasta)
 }
 
-// Aplica el rango [desde, hasta] a los eventos de jugadores.
-function filterPlayerEvents(events, filters) {
-  if (!filters) return events
-  return events.filter(e => inRange(e.ts, filters))
-}
-
-// Aplica el rango a las muestras de CPU/RAM.
-function filterResourceSamples(samples, filters) {
-  if (!filters) return samples
-  return samples.filter(s => inRange(s.ts, filters))
+function filterResourceSamples(samplesOrId, filters) {
+  if (typeof samplesOrId === 'string') {
+    return getSamplesRange(samplesOrId, filters && filters.desde, filters && filters.hasta)
+  }
+  if (!filters) return samplesOrId
+  return samplesOrId.filter(s => !filters.desde || s.ts >= filters.desde)
+    .filter(s => !filters.hasta || s.ts <= filters.hasta)
 }
 
 // ─── Métricas por jugador ─────────────────────────────────────────────────────
@@ -246,7 +245,7 @@ function getPlayerList(serverId, filters) {
   const endTsReal = isRunning ? Date.now() : (run && run.stoppedAt ? run.stoppedAt : null)
   const savedTotals = getPlayerTotals(serverId)
   // Los totales (tiempo jugado, días activos) respetan el filtro de rango.
-  const events = filterPlayerEvents(allEvents, filters)
+  const events = filters ? filterPlayerEvents(serverId, filters) : allEvents
   const endTs = filters && filters.hasta !== undefined && endTsReal !== null
     ? Math.min(endTsReal, filters.hasta)
     : endTsReal
@@ -277,9 +276,9 @@ function getPlayerList(serverId, filters) {
 // pasa, recorta los eventos y muestras a [desde, hasta]; las horas encendido
 // siempre se calculan desde la hora de arranque del servidor.
 function getServerMetrics(serverId, filters) {
-  const samples = filterResourceSamples(getSamples(serverId), filters)
+  const samples = filters ? filterResourceSamples(serverId, filters) : getSamples(serverId)
   const run = getRunTime(serverId)
-  const events = filterPlayerEvents(getPlayerEvents(serverId), filters)
+  const events = filters ? filterPlayerEvents(serverId, filters) : getPlayerEvents(serverId)
   return {
     uptimeMs: computeUptimeMs(run),
     resources: computeResourcePeaks(samples),

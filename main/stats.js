@@ -1,7 +1,7 @@
 const si = require('systeminformation')
 const os = require('os')
 const { getMainWindow, activeServers, sendToRenderer } = require('./state')
-const { getSamples, saveSamples, settingsStore } = require('./stores')
+const { insertSamples, pruneSamples, settingsStore } = require('./stores')
 
 let statsInterval = null
 let flushInterval = null
@@ -39,17 +39,6 @@ function retentionSamplesDays() {
   return Number.isInteger(n) && n > 0 && n <= MAX_RETENTION_DAYS ? n : DEFAULT_SAMPLES_RETENTION_DAYS
 }
 
-// Conserva solo las muestras del servidor y un tope por seguridad.
-function pruneSamples(samples, retentionDays) {
-  const days = retentionDays || retentionSamplesDays()
-  const cutoff = Date.now() - days * MS_PER_DAY
-  let kept = samples.filter(s => s.ts >= cutoff)
-  if (kept.length > MAX_SAMPLES_PER_SERVER) {
-    kept = kept.slice(-MAX_SAMPLES_PER_SERVER)
-  }
-  return kept
-}
-
 function pushPending(sample) {
   let buf = pendingSamples.get(sample.serverId)
   if (!buf) {
@@ -67,8 +56,8 @@ async function flushSamples(force) {
       pendingSamples.delete(serverId)
       continue
     }
-    const all = getSamples(serverId).concat(buf)
-    saveSamples(serverId, pruneSamples(all))
+    insertSamples(serverId, buf)
+    pruneSamples(serverId, Date.now() - retentionSamplesDays() * MS_PER_DAY, MAX_SAMPLES_PER_SERVER)
     pendingSamples.delete(serverId)
     buf.length = 0
   }
@@ -158,4 +147,4 @@ async function stopStatsPolling() {
   await flushSamples(true).catch(() => {})
 }
 
-module.exports = { startStatsPolling, stopStatsPolling, pruneSamples }
+module.exports = { startStatsPolling, stopStatsPolling }

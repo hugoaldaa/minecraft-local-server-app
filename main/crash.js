@@ -36,8 +36,10 @@ function logCrash(type, err) {
   // Notifica al renderer si la ventana existe
   sendToRenderer('crash-logged', crash)
 
-  // Envía si hay endpoint configurado
-  const endpoint = settingsStore.get('crashEndpoint')
+  // Envía si hay endpoint configurado. Durante el arranque la BD puede no
+  // existir todavía (p. ej. si falla la migración): no se debe ocultar el error.
+  let endpoint = null
+  try { endpoint = settingsStore.get('crashEndpoint') } catch (_) {}
   if (endpoint) sendAnalyticsPayload(endpoint, { type: 'crash', ...crash })
 }
 

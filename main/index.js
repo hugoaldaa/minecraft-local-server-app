@@ -1,4 +1,6 @@
-const { app, ipcMain } = require('electron')
+const fs = require('fs')
+const { app, dialog, ipcMain } = require('electron')
+const { initDb, closeDb, exportAll, importAll } = require('./db')
 const { settingsStore, getAllServersMap } = require('./stores')
 const { getMainWindow } = require('./state')
 const { trackEvent, registerAnalyticsIpc } = require('./analytics')
@@ -29,6 +31,48 @@ registerDownloadsIpc()
 registerEstadisticasIpc()
 
 ipcMain.handle('app:version', () => app.getVersion())
+
+// Exportación/importación global: archivos que el usuario descarga o carga
+// expresamente. No intervienen en el arranque ni en la persistencia interna.
+ipcMain.handle('data:export', () => exportAll())
+ipcMain.handle('data:import', (_, payload) => {
+  try {
+    importAll(payload)
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err.message }
+  }
+})
+ipcMain.handle('data:exportFile', async () => {
+  const stamp = new Date().toISOString().slice(0, 10)
+  const { canceled, filePath } = await dialog.showSaveDialog(getMainWindow(), {
+    title: 'Exportar datos de la app',
+    defaultPath: `minecraft-local-server-app-${stamp}.json`,
+    filters: [{ name: 'JSON', extensions: ['json'] }]
+  })
+  if (canceled || !filePath) return { ok: false, canceled: true }
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(exportAll(), null, 2), 'utf8')
+    return { ok: true, filePath }
+  } catch (err) {
+    return { ok: false, error: err.message }
+  }
+})
+ipcMain.handle('data:importFile', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(getMainWindow(), {
+    title: 'Importar datos de la app',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+    properties: ['openFile']
+  })
+  if (canceled || !filePaths.length) return { ok: false, canceled: true }
+  try {
+    const payload = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'))
+    importAll(payload)
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err.message }
+  }
+})
 
 // ─── Preferencias globales (Ajustes) ────────────────────────────────────────
 const PREF_KEYS = ['backupDir', 'backupKeep', 'backupLevel', 'theme', 'lang', 'defaultServerDir', 'closeToTray', 'startOnBoot', 'uiScale',
@@ -172,6 +216,7 @@ if (!gotTheLock) {
   })
 
   app.whenReady().then(() => {
+    initDb()
     migrateGlobalBackupDir()
     createWindow()
     syncTray()
@@ -187,6 +232,7 @@ if (!gotTheLock) {
 app.on('window-all-closed', () => { app.quit() })
 
 app.on('will-quit', () => {
+  closeDb()
   stopUpdater()
   stopStatsPolling()
   stopLogPolling()
