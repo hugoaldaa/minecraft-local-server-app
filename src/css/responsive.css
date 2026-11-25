@@ -82,6 +82,26 @@
     padding: 28px;
   }
 
+  .consent-details {
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .consent-item {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .consent-btns {
+    gap: 10px;
+  }
+
+  .btn-consent-yes,
+  .btn-consent-no {
+    padding: 12px;
+    font-size: 11px;
+  }
+
   .modal {
     padding: 22px;
   }

@@ -9,7 +9,8 @@
 }
 
 .auth-card {
-  width: 400px;
+  max-width: 520px;
+  width: 100%;
   background: var(--bg2);
   border: 2px solid var(--line);
   border-radius: var(--radius-lg);

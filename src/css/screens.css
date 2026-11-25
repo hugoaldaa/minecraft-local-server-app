@@ -1702,49 +1702,68 @@ code {
 
 /* ═══ Consentimiento ══════════════════════════════════════════════════ */
 .consent-card {
-  max-width: 460px;
+  max-width: 520px;
 }
 
 .consent-details {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   background: var(--bg0);
   border: 2px solid var(--line);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 20px;
 }
 
 .consent-item {
-  font-size: 12px;
-  padding: 3px 0;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.consent-item:hover {
+  background: var(--bg1);
 }
 
 .consent-item.yes {
   color: var(--accent2);
+  border-color: rgba(143, 209, 79, 0.25);
+}
+
+.consent-item.yes:hover {
+  background: rgba(143, 209, 79, 0.08);
 }
 
 .consent-item.no {
-  color: var(--text2);
+  color: var(--danger-text);
+  border-color: rgba(194, 54, 43, 0.25);
+}
+
+.consent-item.no:hover {
+  background: rgba(194, 54, 43, 0.08);
 }
 
 .consent-btns {
   display: flex;
-  gap: 12px;
+  gap: 14px;
+  margin-top: 8px;
 }
 
 .btn-consent-yes {
   flex: 1;
-  font-size: 11px;
-  padding: 12px;
+  font-size: 12px;
+  padding: 14px;
 }
 
 .btn-consent-no {
   flex: 1;
   font-family: var(--pixel);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
-  padding: 12px;
+  padding: 14px;
   background: transparent;
   border: 2px solid var(--line2);
   border-radius: var(--radius);
@@ -1755,12 +1774,14 @@ code {
 .btn-consent-no:hover {
   color: var(--text);
   border-color: var(--text3);
+  background: var(--bg1);
 }
 
 .consent-note {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text2);
   text-align: center;
+  margin-top: 10px;
 }
 
 /* ═══ Ajustes ══════════════════════════════════════════════════════════ */
