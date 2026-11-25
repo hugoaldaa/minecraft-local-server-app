@@ -145,7 +145,8 @@ un `SHA256SUMS` unico, que es el que enlaza la web de descarga.
 
 `npm run build:win` y `npm run build:linux` siguen compilando con `--publish always`
 para publicar a mano si hace falta. En CI se usan `build:ci` y `build:linux:ci`,
-que no publican y dejan que `gh` suba los assets. En local solo se puede generar
+que fuerzan `--publish never` (electron-builder publica implícitamente si
+detecta un tag) y dejan que `gh` suba los assets. En local solo se puede generar
 el `.exe`: `AppImage` necesita `mksquashfs` y el `.deb` necesita `fpm`,
 herramientas Linux. Los dos targets de Linux se compilan en GitHub Actions
 (`ubuntu-latest`); el `.exe` en `windows-latest`. El job `release-notes` espera
