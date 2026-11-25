@@ -3,6 +3,34 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.4.1 - Improve backups tab spacing and item layout (2026-11-25)
+
+### Añadido
+
+- Estado :hover en .backup-item (fondo y borde más claros al pasar el mouse).
+- Transición suave (background, border-color) en los ítems de backup.
+- flex: 1 y min-width: 0 en .backup-info para que los nombres largos se recorten con puntos suspensivos en lugar de desbordarse.
+
+### Corregido
+
+- Ítems de lista de backups muy pegados entre sí y con poco espacio interno.
+- Controles de "Backup automático" y "Reinicio programado" demasiado juntos (checkbox, select y botón "Guardar").
+- Nombres de archivos de backup largos que se salían del contenedor.
+
+### Cambios
+
+- .backup-item: padding interno 12px 14px → 14px 16px
+- .backups-list: padding 14px 20px → 16px 20px y gap entre backups 8px → 12px
+- .auto-backup-row: gap entre controles 10px → 14px
+- .backup-auto-config: padding inferior 18px → 22px
+- .backup-info .bname: fuente 12px → 13px, color de texto y recorte por puntos suspensivos
+- .backup-actions: gap entre iconos 8px → 10px
+- Ajustes proporcionales en media queries (≤1300px y ≤1100px) para pantallas estrechas.
+
+### Otros
+
+- Solo se modificaron archivos CSS (src/css/screens.css y src/css/responsive.css). No se tocó HTML ni JavaScript.
+
 ## v2.4.0 - Add bilingual release notes with free Gemini translation & Improve consent dialog spacing and button layout (2026-11-25)
 
 ### Añadido
