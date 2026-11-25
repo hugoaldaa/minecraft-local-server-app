@@ -17,6 +17,13 @@ jobs:
       contents: write
 
     steps:
+      # gh necesita un repositorio Git para crear la release; sin checkout
+      # falla con "fatal: not a git repository".
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Crear release si no existe
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
