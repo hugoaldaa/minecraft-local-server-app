@@ -222,18 +222,26 @@ export async function translateSections(sections) {
 
   // gemini-3.5-flash-lite está en el tier gratuito de Google AI Studio.
   const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite'
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: 'user', parts: [{ text: user }] }],
-        generationConfig: { temperature: 0, responseMimeType: 'application/json' }
-      })
-    }
-  )
+  const request = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: 'user', parts: [{ text: user }] }],
+      generationConfig: { temperature: 0, responseMimeType: 'application/json' }
+    })
+  }
+  // El tier gratuito de Gemini devuelve 503 de vez en cuando. Reintentamos
+  // los fallos transitorios antes de caer al cuerpo solo en español.
+  let response
+  for (let attempt = 0; attempt < 3; attempt++) {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      request
+    )
+    if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) break
+    if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+  }
   if (!response.ok) throw new Error(`la API de traducción devolvió ${response.status}`)
 
   const payload = await response.json()
