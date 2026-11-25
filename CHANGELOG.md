@@ -3,6 +3,30 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.4.0 - Add bilingual release notes with free Gemini translation & Improve consent dialog spacing and button layout (2026-11-25)
+
+### Añadido
+
+- Notas de release bilingües en GitHub: cada sección en español se reproduce justo debajo en inglés (Añadido/Added, Corregido/Fixed, Cambios/Changed, Otros/Other) y el aviso de verificación aparece en ambos idiomas.
+- Traducción automática de las viñetas con Gemini, en el tier gratuito de Google AI Studio: sin coste mientras el proyecto no tenga facturación vinculada. Si falta GEMINI_API_KEY o la API falla, la release se publica igualmente solo en español y el workflow avisa sin bloquearse.
+- Validación de la traducción: se comprueba que el número y el orden de las viñetas se conserven antes de publicar.
+- Secreto GEMINI_API_KEY en el workflow y procedimiento de configuración documentado en RELEASE_GUIDE.md.
+
+### Corregido
+
+- El workflow de CI instala el binario de Electron antes de ejecutar los tests en paralelo, evitando el error resources.pak: File exists en GitHub Actions.
+
+### Cambios
+
+- Se sustituye OpenAI por Gemini como proveedor de traducción para que la traducción no tenga coste.
+- El cuerpo de la release se genera en build/release-notes-bilingual.md; build/release-notes.md sigue alimentando el banner de actualización de la app en español.
+- Ajuste de espaciado y botones del diálogo de consentimiento.
+
+### Otros
+
+- Añadidos 4 tests: formato bilingüe, orden de viñetas, llamada a Gemini simulada y ausencia de clave. npm run lint y npm test (91/91) pasan.
+- El banner de actualización de la app continúa en español; la traducción afecta solo al cuerpo de la release de GitHub.
+
 ## v2.3.0 - Migrate app data from JSON to SQLite (better-sqlite3 13.2.0) (2026-11-25)
 
 ### Añadido
