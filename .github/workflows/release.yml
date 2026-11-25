@@ -6,7 +6,31 @@ on:
       - 'v*.*.*'
 
 jobs:
+  # Los builds de Windows y Linux corren en paralelo. electron-builder no
+  # publica nada (no hay `--publish always`): primero creamos la release aquí
+  # y cada job sube sus ficheros con `gh release upload --clobber`. Así no hay
+  # carrera creando la release ni respuestas vacías que electron-builder no
+  # sabe parsear.
+  prepare-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Crear release si no existe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "Publicando instaladores..." \
+              --target "${{ github.sha }}"
+          fi
+
   build:
+    needs: prepare-release
     strategy:
       fail-fast: false
       matrix:
@@ -41,16 +65,26 @@ jobs:
       - name: Compilar .exe
         if: matrix.platform == 'win'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
         run: npm run build:ci
 
       - name: Compilar AppImage y .deb
         if: matrix.platform == 'linux'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npm run build:linux
+        run: npm run build:linux:ci
+
+      - name: Subir instaladores de Windows
+        if: matrix.platform == 'win'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/upload-release-assets.mjs "${{ github.ref_name }}"
+
+      - name: Subir instaladores de Linux
+        if: matrix.platform == 'linux'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/upload-release-assets.mjs "${{ github.ref_name }}"
 
       # Fase 4: publicamos el SHA256 de cada instalador para poder verificar
       # la descarga (especialmente importante mientras el .exe no está firmado).

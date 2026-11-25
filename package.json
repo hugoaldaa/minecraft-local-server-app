@@ -27,10 +27,13 @@
     "format:check": "prettier --check .",
     "build": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64",
     "build:portable": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win portable",
-    "build:ci": "npm run build:win",
+    "build:ci": "npm run build:win:local",
     "build:win": "electron-builder --win --x64 --publish always",
+    "build:win:local": "electron-builder --win --x64",
     "build:linux": "electron-builder --linux AppImage deb --x64 --publish always",
+    "build:linux:ci": "npm run build:linux:local",
     "build:linux:local": "electron-builder --linux AppImage deb --x64",
+    "upload:release": "node scripts/upload-release-assets.mjs",
     "release": "node scripts/release.mjs",
     "release:notes": "node scripts/release.mjs --backfill"
   },
@@ -43,7 +46,7 @@
       "releaseType": "release"
     },
     "releaseInfo": {
-      "releaseNotesFile": "release-notes.md"
+      "releaseNotesFile": "build/release-notes.md"
     },
     "win": {
       "icon": "assets/icon.ico",

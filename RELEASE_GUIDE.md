@@ -127,25 +127,29 @@ entrada en `CHANGELOG.md`), CI cae al `--generate-notes` de GitHub.
 
 ## Como queda en GitHub
 
-El workflow compila con `electron-builder --publish always`, que sube los assets y
-crea la release con el nombre plano de la version. Despues el paso
-`--apply-notes` ejecuta:
+El workflow crea la release antes de compilar (`gh release create`), compila sin
+publicar desde `electron-builder` y sube los ficheros de `dist/` con
+`node scripts/upload-release-assets.mjs <tag>` (`gh release upload --clobber`).
+Despues el paso `--apply-notes` ejecuta:
 
 ```
-gh release edit v1.1.15 --title "v1.1.15 - Backups automaticos" --notes-file build/release-notes.md
+gh release edit v1.1.15 --title "v1.1.15 - Backups automaticos" --notes-file build/release-notes-bilingual.md
 ```
 
+Si Gemini no responde o no hay clave, usa `build/release-notes.md` (solo español).
 Si `gh` falla, la release se publica igualmente: solo queda poner el titulo a mano.
 Ademas, cada job sube su `SHA256SUMS-<plataforma>.txt` y el job final los une en
 un `SHA256SUMS` unico, que es el que enlaza la web de descarga.
 
 ## Builds por sistema
 
-`npm run build:win` y `npm run build:linux` compilan con `--publish always`. En local
-solo se puede generar el `.exe`: `AppImage` necesita `mksquashfs` y el `.deb`
-necesita `fpm`, herramientas Linux. Los dos targets de Linux se compilan en GitHub
-Actions (`ubuntu-latest`); el `.exe` en `windows-latest`. El job `release-notes`
-espera a los dos.
+`npm run build:win` y `npm run build:linux` siguen compilando con `--publish always`
+para publicar a mano si hace falta. En CI se usan `build:ci` y `build:linux:ci`,
+que no publican y dejan que `gh` suba los assets. En local solo se puede generar
+el `.exe`: `AppImage` necesita `mksquashfs` y el `.deb` necesita `fpm`,
+herramientas Linux. Los dos targets de Linux se compilan en GitHub Actions
+(`ubuntu-latest`); el `.exe` en `windows-latest`. El job `release-notes` espera
+a los dos.
 
 Assets resultantes:
 
@@ -163,7 +167,7 @@ icono no aparece en la barra de tareas.
 
 ## Notas dentro de la app
 
-`build/release-notes.md` se lee al compilar (`publish.releaseNotesFile`) y viaja en
+`build/release-notes.md` se lee al compilar (`releaseInfo.releaseNotesFile`) y viaja en
 `latest.yml` como `releaseNotes`. `main/updater.js` lo reenvia al renderer y el
 banner de actualizacion muestra el nombre y la lista de cambios.
 
