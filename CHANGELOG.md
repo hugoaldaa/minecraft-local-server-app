@@ -3,6 +3,34 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.3.0 - Migrate app data from JSON to SQLite (better-sqlite3 13.2.0) (2026-11-25)
+
+### Añadido
+
+- Migración automática desde los cinco JSON anteriores: se importan en una transacción, se verifica el contenido contra los archivos de origen y solo entonces se eliminan. Se conserva app.db.bak como copia de seguridad en SQLite.
+- Exportación e importación global de todos los datos (data:export / data:import), con diálogos de archivo y validación del formato, sin sustituir los formatos CSV/JSON de estadísticas ya existentes.
+- Botones para exportar e importar los datos en Ajustes → Privacidad y datos.
+- Tests de migración, rollback, exportación e importación de la base de datos, incluido el caso en que la migración falla y debe conservar los JSON.
+
+### Corregido
+
+- logCrash ya no intenta usar la base de datos antes de inicializarla, por lo que no oculta el error real si falla la migración.
+- Al eliminar un servidor, saveServerMap() ahora borra también sus filas antiguas; antes INSERT OR REPLACE dejaba registros huérfanos.
+- Tema e idioma se migran desde localStorage y la clave antigua se elimina siempre, incluso cuando ya existía la preferencia en la base de datos.
+- La importación solo acepta columnas conocidas, evitando que un JSON manipulado pueda construir SQL arbitrario.
+- El módulo nativo se recompila para Electron en npm start/npm run dev y para Node en npm test/npm run smoke; antes fallaba por incompatibilidad de ABI.
+
+### Cambios
+
+- Toda la persistencia local pasa de electron-store a SQLite (app.db): servidores, ajustes, estadísticas, analytics y errores. La app ya no escribe datos en JSON salvo exportación explícita del usuario, y electron-store se elimina de las dependencias.
+- Las muestras de CPU/RAM y los eventos de jugadores se insertan en lotes y se podan con consultas por rango, en lugar de reescribir un array completo cada 15 segundos.
+- better-sqlite3 se actualiza a v13 para soportar la V8 de Electron 45, se desempaqueta del ASAR y se documenta la reconstrucción del nativo.
+- PRIVACY.md, README.md, CONTRIBUTING.md y CHANGELOG.md se actualizan para describir app.db, WAL y app.db.bak.
+
+### Otros
+
+- Si no hay prebuild disponible, hace falta un toolchain de C++ (Visual Studio Build Tools en Windows) para compilar better-sqlite3; electron-builder ya hace el rebuild al empaquetar.
+
 ## Sin publicar
 
 ### Cambios
