@@ -55,10 +55,15 @@
 
   .backups-list {
     padding: 12px 16px;
+    gap: 10px;
   }
 
   .backup-auto-config {
-    padding: 12px 16px 14px;
+    padding: 14px 16px 16px;
+  }
+
+  .auto-backup-row {
+    gap: 10px;
   }
 
   .console-wrap {
@@ -271,6 +276,7 @@
 
   .backups-list {
     padding: 10px 12px;
+    gap: 8px;
   }
 
   .backup-auto-config {

@@ -824,14 +824,14 @@
 }
 
 .backup-auto-config {
-  padding: 14px 20px 18px;
+  padding: 18px 20px 22px;
   border-bottom: 2px solid var(--line);
   flex-shrink: 0;
 }
 
 .auto-backup-row {
   display: flex;
-  gap: 10px;
+  gap: 14px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -864,10 +864,10 @@
 }
 
 .backups-list {
-  padding: 14px 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .backup-item {
@@ -877,12 +877,28 @@
   background: var(--bg2);
   border: 2px solid var(--line);
   border-radius: var(--radius);
-  padding: 12px 14px;
+  padding: 14px 16px;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.backup-item:hover {
+  background: var(--bg1);
+  border-color: var(--line2);
+}
+
+.backup-info {
+  min-width: 0;
+  flex: 1;
 }
 
 .backup-info .bname {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
 }
 
 .backup-info .bmeta {
@@ -893,7 +909,8 @@
 
 .backup-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .btn-icon {
