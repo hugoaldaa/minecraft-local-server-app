@@ -4,6 +4,36 @@ Historial de versiones de **Minecraft Local Server Manager**, reconstruido a par
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 
+## v2.5.2 - Add maintenance chat warnings and per-server notification history (2026-11-27)
+
+### Añadido
+
+- Avisos automáticos por chat del servidor de Minecraft 5 minutos y 1 minuto antes del mantenimiento programado, tanto para backup como para reinicio.
+- Tabla notificaciones en SQLite con server_id, tipo, mensaje y ts, con índice por servidor y fecha.
+- Registro automático de eventos de encendido, apagado, reinicio y backup; cada evento se guarda una sola vez.
+- Nueva pestaña «Notificaciones» entre «Backups» y «Ajustes», con historial por servidor, botón de actualizar y botón de limpiar.
+- Traducciones completas en español e inglés para la nueva pestaña y sus textos.
+
+### Corregido
+
+- Se eliminaron las entradas duplicadas de apagado, encendido y backup que podían generarse al programar backup y reinicio a la misma hora.
+- Los avisos de chat ahora se envían realmente con el comando say del servidor y se reflejan también en la consola de la app.
+
+### Cambios
+
+- main/maintenance.js programa los avisos de chat junto al trabajo de mantenimiento y adapta el mensaje según se vaya a apagar el servidor o solo a crear el backup.
+- main/backups.js guarda la notificación de backup en un único punto, incluidos los backups manuales.
+- main/servers.js guarda encendido y apagado, y elimina las notificaciones del servidor cuando este se borra.
+- main/notificaciones.js expone la lectura, limpieza e inserción de notificaciones mediante IPC.
+- main/db.js sube el esquema a la versión 2, mantiene compatibilidad con exportaciones antiguas y evita repetir la migración en cada arranque.
+- preload.js, src/index.html, src/renderer/detail.js, src/renderer/servers-ui.js y src/css/screens.css integran la nueva pestaña en la interfaz.
+
+### Otros
+
+- Linter limpio: npx eslint . sin errores ni advertencias.
+- Pruebas pasando: 95 tests correctos con node --test.
+- Se añadieron pruebas de persistencia, export/import, historial por servidor y avisos de 5 y 1 minuto.
+
 ## v2.5.1 - Unify backup and restart scheduling into a single maintenance scheduler v2 (2026-11-27)
 
 ### Añadido
