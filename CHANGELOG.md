@@ -3,6 +3,31 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+
+## v2.5.1 - Unify backup and restart scheduling into a single maintenance scheduler v2 (2026-11-27)
+
+### Añadido
+
+- Nuevo programador unificado main/maintenance.js que ejecuta backup automático y reinicio programado en un solo trabajo por servidor con node-schedule, soportando intervalos (1h/6h/12h) y diario.
+- Exportación de stopServer y startServer desde main/servers.js.
+
+### Corregido
+
+- Error stopServer is not a function al ejecutar el mantenimiento programado.
+
+### Cambios
+
+- main/backups.js y main/restart.js: se eliminó la programación antigua (se unificó en maintenance.js); backups.js conserva createBackup, restoreBackup, resolveBackupDir e IPC.
+- main/index.js usa initMaintenance(), scheduleServerMaintenance() y cancelAllServerMaintenance(); al guardar ajustes y al cambiar la carpeta de backups se reprograma el mantenimiento.
+- main/servers.js: ya no cancela el backup al eliminar un servidor (lo hace maintenance desde el evento delete).
+- test/smoke.test.js adaptado a la nueva API de mantenimiento.
+- scripts/release.mjs: el commit de release empieza ahora con v2.x.x - nombre de la release como primera línea.
+- scripts/release.mjs: se eliminó la pregunta interactiva "¿Usar la propuesta de commits como notas? (s/N):" (se usa automáticamente si hay commits pendientes).
+
+### Otros
+
+- Linter limpio y pruebas pasando (91 tests).
+
 ## v2.5.0 - Add daily time picker and unified backup+restart scheduling with server-off backup (2026-11-27)
 
 ### Añadido
