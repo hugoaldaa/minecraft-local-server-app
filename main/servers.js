@@ -494,4 +494,4 @@ function registerServersIpc() {
 }
 
 // Nota: la validación de rutas compartida vive en validate.js (isServerDir…)
-module.exports = { registerServersIpc, stopAllServers, cancelAllRestarts, isJarRunning, classifyLine, buildServerRecord, detectJavaVersion }
+module.exports = { registerServersIpc, stopAllServers, cancelAllRestarts, stopServer, startServer, isJarRunning, classifyLine, buildServerRecord, detectJavaVersion }

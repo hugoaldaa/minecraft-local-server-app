@@ -824,9 +824,18 @@
 }
 
 .backup-auto-config {
-  padding: 18px 20px 22px;
+  padding: 18px 20px 10px;
   border-bottom: 2px solid var(--line);
   flex-shrink: 0;
+}
+
+.backup-auto-config .field-hint {
+  margin-bottom: 14px;
+}
+
+.backup-auto-config .auto-backup-row + .field-hint {
+  margin-top: 10px;
+  margin-bottom: 0;
 }
 
 .auto-backup-row {
