@@ -11,6 +11,7 @@ function initDetailNav() {
         if (state.isRunning) startStatsRefresh()
       } else {
         stopStatsRefresh()
+        if (btn.dataset.tab === 'notificaciones') loadNotificacionesTab()
       }
     }
   })

@@ -69,6 +69,7 @@ async function openServer(serverId) {
   loadPropertiesTab(server)
   loadListsTab(server)
   loadBackupsTab(server, settings || {})
+  loadNotificacionesTab()
   renderPlayers()
   loadServerStats()
 

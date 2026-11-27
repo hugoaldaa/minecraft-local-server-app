@@ -6,7 +6,7 @@ const os = require('os')
 const crypto = require('crypto')
 const Database = require('better-sqlite3')
 
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2
 const LEGACY_FILES = ['servers', 'settings', 'serverStats', 'analytics', 'crashes']
 
 let db = null
@@ -111,6 +111,14 @@ function createSchema(database) {
       os_version TEXT,
       ts INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS notificaciones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      mensaje TEXT,
+      ts INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_notificaciones_server_ts ON notificaciones(server_id, ts);
   `)
 }
 
@@ -134,7 +142,8 @@ function countAll() {
     totals: db.prepare('SELECT COUNT(*) AS n FROM player_totals').get().n,
     runs: db.prepare('SELECT COUNT(*) AS n FROM server_runs').get().n,
     analytics: db.prepare('SELECT COUNT(*) AS n FROM analytics_events').get().n,
-    crashes: db.prepare('SELECT COUNT(*) AS n FROM crashes').get().n
+    crashes: db.prepare('SELECT COUNT(*) AS n FROM crashes').get().n,
+    notificaciones: db.prepare('SELECT COUNT(*) AS n FROM notificaciones').get().n
   }
 }
 
@@ -257,26 +266,33 @@ function initDb() {
 
   const version = metaGet('schemaVersion')
   if (version !== SCHEMA_VERSION) {
-    // Si hay datos legacy, se importan en una transacción; si algo falla se
-    // descarta la BD recién creada y los JSON quedan intactos.
-    const backupFile = dbPath() + '.bak'
-    try {
-      const counts = importLegacy()
-      verifyMigration(counts)
-      if (fs.existsSync(backupFile)) fs.unlinkSync(backupFile)
-      db.close()
-      db = null
-      fs.copyFileSync(dbPath(), backupFile)
-      db = new Database(dbPath())
-      db.pragma('journal_mode = WAL')
-      db.pragma('synchronous = NORMAL')
-      removeLegacyFiles()
-    } catch (err) {
-      if (db) { try { db.close() } catch (_) {}; db = null }
-      removeDbFiles()
-      throw new Error(`No se pudo migrar la persistencia a SQLite: ${err.message}`)
+    if (version !== undefined) {
+      // BD ya migrada de una versión anterior: createSchema ya añadió las
+      // tablas nuevas, así que solo hay que marcar la versión actual.
+      metaSet('schemaVersion', SCHEMA_VERSION)
+    } else {
+      // Primera creación: importa los JSON legacy en una transacción; si algo
+      // falla se descarta la BD recién creada y los JSON quedan intactos.
+      const backupFile = dbPath() + '.bak'
+      try {
+        const counts = importLegacy()
+        verifyMigration(counts)
+        if (fs.existsSync(backupFile)) fs.unlinkSync(backupFile)
+        db.close()
+        db = null
+        fs.copyFileSync(dbPath(), backupFile)
+        db = new Database(dbPath())
+        db.pragma('journal_mode = WAL')
+        db.pragma('synchronous = NORMAL')
+        removeLegacyFiles()
+      } catch (err) {
+        if (db) { try { db.close() } catch (_) {}; db = null }
+        removeDbFiles()
+        throw new Error(`No se pudo migrar la persistencia a SQLite: ${err.message}`)
+      }
     }
   }
+  metaSet('schemaVersion', SCHEMA_VERSION)
   return db
 }
 
@@ -302,19 +318,21 @@ function resetDbForTests() {
 function exportAll() {
   const database = getDb()
   const tables = ['meta', 'servers', 'settings', 'samples', 'player_events', 'player_totals',
-    'server_runs', 'analytics_events', 'crashes']
+    'server_runs', 'analytics_events', 'crashes', 'notificaciones']
   const result = { format: 'minecraft-local-server-app', schemaVersion: SCHEMA_VERSION, exportedAt: Date.now() }
   for (const table of tables) result[table] = database.prepare(`SELECT * FROM ${table}`).all()
   return result
 }
 
 function importAll(payload) {
-  if (!payload || payload.format !== 'minecraft-local-server-app' || payload.schemaVersion !== SCHEMA_VERSION) {
+  // Se aceptan exportaciones v1 (sin tabla notificaciones): las filas ausentes
+  // simplemente se omiten y la tabla queda vacía.
+  if (!payload || payload.format !== 'minecraft-local-server-app' || ![1, SCHEMA_VERSION].includes(payload.schemaVersion)) {
     throw new Error('Archivo de backup no compatible')
   }
   const database = getDb()
   const tables = ['meta', 'servers', 'settings', 'samples', 'player_events', 'player_totals',
-    'server_runs', 'analytics_events', 'crashes']
+    'server_runs', 'analytics_events', 'crashes', 'notificaciones']
   // Solo columnas conocidas: el payload viene de un archivo y no debe poder
   // construir SQL arbitrario a partir de sus claves.
   const columnsByTable = {
@@ -326,7 +344,8 @@ function importAll(payload) {
     player_totals: ['server_id', 'player', 'total_ms', 'last_seen', 'days_json'],
     server_runs: ['server_id', 'started_at', 'stopped_at', 'total_ms', 'current_session_start'],
     analytics_events: ['id', 'payload', 'ts'],
-    crashes: ['id', 'type', 'message', 'stack', 'app_version', 'platform', 'os_version', 'ts']
+    crashes: ['id', 'type', 'message', 'stack', 'app_version', 'platform', 'os_version', 'ts'],
+    notificaciones: ['id', 'server_id', 'tipo', 'mensaje', 'ts']
   }
   const backupFile = dbPath() + '.import-backup'
   database.pragma('wal_checkpoint(TRUNCATE)')
@@ -361,6 +380,20 @@ function importAll(payload) {
   }
 }
 
+function insertNotificacion(serverId, tipo, mensaje = '') {
+  const database = getDb()
+  const insert = database.prepare('INSERT INTO notificaciones(server_id, tipo, mensaje, ts) VALUES (?, ?, ?, ?)')
+  return insert.run(serverId, tipo, mensaje, Date.now())
+}
+
+function listNotificaciones(serverId, limit = 100) {
+  const database = getDb()
+  return database.prepare(
+    'SELECT * FROM notificaciones WHERE server_id = ? ORDER BY ts DESC LIMIT ?'
+  ).all(serverId, limit)
+}
+
 module.exports = {
-  initDb, getDb, closeDb, metaGet, metaSet, dbPath, exportAll, importAll, resetDbForTests, SCHEMA_VERSION
+  initDb, getDb, closeDb, metaGet, metaSet, dbPath, exportAll, importAll, resetDbForTests, SCHEMA_VERSION,
+  insertNotificacion, listNotificaciones
 }

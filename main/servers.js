@@ -9,6 +9,8 @@ const { trackEvent } = require('./analytics')
 const { closeServerSessions, deleteServerStats } = require('./estadisticas')
 const { getRunTime } = require('./stores')
 const { logCrash } = require('./crash')
+const { insertNotificacion } = require('./db')
+const { clearNotificaciones } = require('./notificaciones')
 const {
   isStr, isIntInRange, isValidColor, cleanText, isValidJavaPath, isPlainObject, splitArgs
 } = require('./validate')
@@ -182,6 +184,7 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
           if (!notifiedReady) {
             notifiedReady = true
             notify('server_started', { name: config.name })
+            insertNotificacion(serverId, 'start', 'Servidor encendido')
           }
         }
         const join = JOIN_RE.exec(line)
@@ -297,6 +300,7 @@ async function stopServer(serverId) {
     return { ok: false, error: 'No está en ejecución' }
   }
   s.stopping = true
+  insertNotificacion(serverId, 'stop', 'Servidor detenido')
   try {
     writeStdin(s.process, 'stop\n')
   } catch (err) {
@@ -440,8 +444,9 @@ function registerServersIpc() {
     delete map[serverId]
     saveServerMap(map)
     serverMapEvents.emit('changed', serverId, 'delete')
-    // Las estadísticas propias de este servidor también se descartan.
+    // Las estadísticas y notificaciones propias de este servidor también se descartan.
     deleteServerStats(serverId)
+    clearNotificaciones(serverId)
     return { ok: true }
   })
 

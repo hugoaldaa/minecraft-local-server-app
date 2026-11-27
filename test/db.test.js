@@ -89,6 +89,62 @@ test('exportAll e importAll conservan los datos y rechazan formatos ajenos', () 
   }
 })
 
+test('notificaciones se guardan por servidor y viajan en el export', () => {
+  const dir = tempDir()
+  const oldEnv = process.env.MCLSM_TEST_DATA_DIR
+  try {
+    process.env.MCLSM_TEST_DATA_DIR = dir
+    dbModule.resetDbForTests()
+    dbModule.initDb()
+
+    dbModule.insertNotificacion('srv-1', 'start', 'Servidor encendido')
+    dbModule.insertNotificacion('srv-1', 'backup', 'Backup creado')
+    dbModule.insertNotificacion('srv-2', 'stop', 'Servidor detenido')
+
+    const list = dbModule.listNotificaciones('srv-1')
+    assert.equal(list.length, 2)
+    assert.deepEqual(list.map(n => n.tipo).sort(), ['backup', 'start'])
+    assert.equal(dbModule.listNotificaciones('srv-2')[0].tipo, 'stop')
+
+    const dump = dbModule.exportAll()
+    assert.equal(dump.notificaciones.length, 3)
+    dbModule.importAll(dump)
+    assert.equal(dbModule.listNotificaciones('srv-1').length, 2)
+
+    // Un export anterior a la tabla (v1) sigue siendo importable.
+    dbModule.importAll({ ...dump, schemaVersion: 1, notificaciones: [] })
+    assert.equal(dbModule.listNotificaciones('srv-1').length, 0)
+  } finally {
+    dbModule.resetDbForTests()
+    if (oldEnv === undefined) delete process.env.MCLSM_TEST_DATA_DIR
+    else process.env.MCLSM_TEST_DATA_DIR = oldEnv
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('una BD ya migrada actualiza su versión sin repetir la importación legacy', () => {
+  const dir = tempDir()
+  const oldEnv = process.env.MCLSM_TEST_DATA_DIR
+  try {
+    process.env.MCLSM_TEST_DATA_DIR = dir
+    dbModule.resetDbForTests()
+    dbModule.initDb()
+    dbModule.metaSet('schemaVersion', 1)
+    dbModule.resetDbForTests()
+    const backupFile = path.join(dir, 'app.db.bak')
+    fs.rmSync(backupFile, { force: true })
+
+    dbModule.initDb()
+    assert.equal(dbModule.metaGet('schemaVersion'), dbModule.SCHEMA_VERSION)
+    assert.equal(fs.existsSync(backupFile), false, 'no debe repetir la migración')
+  } finally {
+    dbModule.resetDbForTests()
+    if (oldEnv === undefined) delete process.env.MCLSM_TEST_DATA_DIR
+    else process.env.MCLSM_TEST_DATA_DIR = oldEnv
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('si la migración falla, descarta la BD y conserva los JSON intactos', () => {
   const dir = tempDir()
   const oldEnv = process.env.MCLSM_TEST_DATA_DIR

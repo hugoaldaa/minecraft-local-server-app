@@ -100,8 +100,9 @@
       <button class="nav-item" data-tab="players" data-i18n="tab.players">Jugadores</button>
       <button class="nav-item" data-tab="stats" data-i18n="tab.stats">Estadísticas</button>
       <button class="nav-item" data-tab="lists" data-i18n="tab.lists">Listas</button>
-      <button class="nav-item" data-tab="properties" data-i18n="tab.properties">Propiedades</button>
+      <button class="nav-item" data-tab="notificaciones" data-i18n="tab.notificaciones">Notificaciones</button>
       <button class="nav-item" data-tab="backups" data-i18n="tab.backups">Backups</button>
+      <button class="nav-item" data-tab="properties" data-i18n="tab.properties">Propiedades</button>
       <button class="nav-item" data-tab="config" data-i18n="tab.config">Ajustes</button>
     </nav>
 
@@ -299,6 +300,18 @@
         <p class="field-hint" id="auto-restart-next" data-i18n="backups.restartNone">Sin reinicio programado</p>
       </div>
       <div class="backups-list" id="backups-list"></div>
+    </div>
+
+    <div class="tab" id="tab-notificaciones">
+      <div class="panel-header">
+        <h2 data-i18n="notificaciones.title">Notificaciones del servidor</h2>
+        <div class="backup-actions">
+          <button class="btn-icon" id="btn-notificaciones-refresh" title="Actualizar" data-i18n-title="common.refresh">🔄</button>
+          <button class="btn-primary" id="btn-notificaciones-clear" data-i18n="notificaciones.clear">Limpiar</button>
+        </div>
+      </div>
+      <p class="field-hint" data-i18n="notificaciones.hint">Encendido, apagado, reinicios y backups de este servidor.</p>
+      <div class="notificaciones-list" id="notificaciones-list"></div>
     </div>
 
     <div class="tab" id="tab-config">
@@ -889,6 +902,7 @@
   <script src="renderer/lists.js"></script>
   <script src="renderer/properties.js"></script>
   <script src="renderer/backups.js"></script>
+  <script src="renderer/notificaciones.js"></script>
   <script src="renderer/config.js"></script>
   <script src="renderer/late.js"></script>
 </body>

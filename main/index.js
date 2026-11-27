@@ -16,6 +16,7 @@ const { registerDownloadsIpc } = require('./downloader')
 const { startStatsPolling, stopStatsPolling } = require('./stats')
 const { startLogPolling, stopLogPolling } = require('./logs')
 const { registerEstadisticasIpc } = require('./estadisticas')
+const { registerNotificacionesIpc } = require('./notificaciones')
 const { isPlainObject, isStr, cleanText } = require('./validate')
 
 // ─── Registro de IPC ────────────────────────────────────────────────────────
@@ -29,6 +30,7 @@ registerWindowIpc()
 registerUpdaterIpc()
 registerDownloadsIpc()
 registerEstadisticasIpc()
+registerNotificacionesIpc()
 
 ipcMain.handle('app:version', () => app.getVersion())
 

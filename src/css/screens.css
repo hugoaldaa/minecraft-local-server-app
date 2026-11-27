@@ -889,6 +889,65 @@
   color: var(--accent);
 }
 
+/* ═══ Notificaciones ══════════════════════════════════════════════════ */
+#tab-notificaciones {
+  overflow-y: auto;
+}
+
+#tab-notificaciones .field-hint {
+  margin: 14px 20px 4px;
+}
+
+.notificaciones-list {
+  padding: 12px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notificacion-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg2);
+  border: 2px solid var(--line);
+  border-left: 4px solid var(--line2);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.notificacion-start { border-left-color: var(--accent); }
+.notificacion-stop { border-left-color: var(--danger, #e2685c); }
+.notificacion-restart { border-left-color: #e5c454; }
+.notificacion-backup { border-left-color: #8fd1ff; }
+
+.notificacion-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.notificacion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.notificacion-title {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.notificacion-msg {
+  font-size: 12px;
+  color: var(--text2);
+  overflow-wrap: anywhere;
+}
+
+.notificacion-time {
+  font-size: 11px;
+  color: var(--text2);
+  white-space: nowrap;
+}
+
 .backups-list {
   padding: 16px 20px;
   display: flex;

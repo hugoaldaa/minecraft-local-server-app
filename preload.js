@@ -30,6 +30,10 @@ contextBridge.exposeInMainWorld('api', {
   getBackupDir: (serverId) => ipcRenderer.invoke('backup:dir', serverId),
   getRestartStatus: (serverId) => ipcRenderer.invoke('restart:status', serverId),
 
+  // Notificaciones guardadas por servidor (encendido, apagado, reinicio, backup)
+  listNotificaciones: (serverId, limit) => ipcRenderer.invoke('notificaciones:list', { serverId, limit }),
+  clearNotificaciones: (serverId) => ipcRenderer.invoke('notificaciones:clear', serverId),
+
   // Settings
   getSettings: (serverId) => ipcRenderer.invoke('settings:get', serverId),
   saveSettings: (serverId, data) => ipcRenderer.invoke('settings:set', { serverId, data }),

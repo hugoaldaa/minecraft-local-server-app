@@ -8,6 +8,7 @@ const { activeServers, writeStdin } = require('./state')
 const { trackEvent } = require('./analytics')
 const { logCrash } = require('./crash')
 const { notify } = require('./notifications')
+const { insertNotificacion } = require('./db')
 const { isStr, isServerDir, isAllowedBackupDir, isAllowedBackupFile, isInsideDir } = require('./validate')
 
 // ─── Backup manual ───────────────────────────────────────────────────────────
@@ -78,6 +79,9 @@ async function createBackup(serverDir, backupDir, serverId) {
       trackEvent('backup_created', { sizeMb: Math.round(archive.pointer() / 1024 / 1024) })
       const server = isStr(serverId) ? getAllServersMap()[serverId] : null
       notify('backup_done', { name: server ? server.name : path.basename(srcDir) })
+      if (isStr(serverId)) {
+        insertNotificacion(serverId, 'backup', `Backup creado: ${path.basename(outFile)}`)
+      }
       finish({ ok: true, file: outFile, size: archive.pointer() })
     })
     output.on('error', (err) => { logCrash('backup_write_error', err); finish({ ok: false, error: err.message }) })

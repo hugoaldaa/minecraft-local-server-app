@@ -2,15 +2,17 @@
 // reinicio programado en un solo trabajo por servidor.
 // Cuando ambos están programados a la misma hora, se para el servidor, se
 // hace el backup con el servidor apagado y se vuelve a encender.
+// Avisos por chat de Minecraft: 5 min y 1 min antes del mantenimiento.
 'use strict'
 
 const { ipcMain } = require('electron')
 const path = require('path')
 const schedule = require('node-schedule')
 const { getAllServersMap, settingsStore } = require('./stores')
-const { activeServers, sendToRenderer, serverMapEvents } = require('./state')
+const { activeServers, sendToRenderer, serverMapEvents, writeStdin } = require('./state')
 const { stopServer, startServer } = require('./servers')
 const { createBackup, resolveBackupDir } = require('./backups')
+const { insertNotificacion } = require('./db')
 const { isStr } = require('./validate')
 const { notify } = require('./notifications')
 const { logCrash } = require('./crash')
@@ -20,17 +22,30 @@ const RESTART_MS = { '6h': 6 * 3600e3, '12h': 12 * 3600e3, '24h': 24 * 3600e3 }
 const DAY_MS = 24 * 3600e3
 const STOP_DEADLINE_MS = 12000
 const DUE_TOLERANCE_MS = 60000
+const WARN_5_MIN_MS = 5 * 60000
+const WARN_1_MIN_MS = 60000
 
 const jobs = {}
+const warnJobs = {} // avisos de chat (5 min / 1 min antes)
 const pending = {} // evita solapar un mantenimiento con otro
+
+function cancelWarnings(serverId) {
+  const w = warnJobs[serverId]
+  if (!w) return
+  if (w.job5) w.job5.cancel()
+  if (w.job1) w.job1.cancel()
+  delete warnJobs[serverId]
+}
 
 function cancelServerMaintenance(serverId) {
   const job = jobs[serverId]
   if (job) { job.cancel(); delete jobs[serverId] }
+  cancelWarnings(serverId)
 }
 
 function cancelAllServerMaintenance() {
   Object.keys(jobs).forEach(id => { jobs[id].cancel(); delete jobs[id] })
+  Object.keys(warnJobs).forEach(id => cancelWarnings(id))
   Object.keys(pending).forEach(id => { delete pending[id] })
 }
 
@@ -89,6 +104,40 @@ function waitUntilStopped(serverId) {
   })
 }
 
+function chatSay(serverId, message) {
+  const s = activeServers[serverId]
+  if (!s) return false
+  return writeStdin(s.process, `say ${message}\n`)
+}
+
+// Avisos en el chat del servidor: 5 y 1 minuto antes del mantenimiento.
+function scheduleWarnings(serverId, dueAt, { stop, backup, restart }) {
+  const now = Date.now()
+  cancelWarnings(serverId)
+
+  const t5 = dueAt - WARN_5_MIN_MS
+  const t1 = dueAt - WARN_1_MIN_MS
+  const phrase = stop
+    ? (backup && restart ? 'El servidor se apagará para backup y reinicio' : 'El servidor se apagará para el reinicio programado')
+    : 'Se creará una copia de seguridad del mundo (el servidor seguirá en línea)'
+  const short = stop ? 'apagado' : 'backup'
+
+  if (t5 > now) {
+    const w = warnJobs[serverId] || (warnJobs[serverId] = {})
+    w.job5 = schedule.scheduleJob(new Date(t5), () => {
+      const sent = chatSay(serverId, `§e[Mantenimiento] ${phrase} en 5 minutos.`)
+      line(serverId, sent ? `Aviso enviado al chat: ${short} en 5 minutos` : `No se pudo enviar el aviso de 5 minutos (servidor apagado)`, sent ? 'info' : 'warn')
+    })
+  }
+  if (t1 > now) {
+    const w = warnJobs[serverId] || (warnJobs[serverId] = {})
+    w.job1 = schedule.scheduleJob(new Date(t1), () => {
+      const sent = chatSay(serverId, `§e[Mantenimiento] ${phrase} en 1 minuto. ¡Guardad vuestro progreso!`)
+      line(serverId, sent ? `Aviso enviado al chat: ${short} en 1 minuto` : `No se pudo enviar el aviso de 1 minuto (servidor apagado)`, sent ? 'info' : 'warn')
+    })
+  }
+}
+
 function scheduleServerMaintenance(serverId) {
   cancelServerMaintenance(serverId)
   if (!isStr(serverId)) return
@@ -106,6 +155,8 @@ function scheduleServerMaintenance(serverId) {
   if (bDue !== null && rDue !== null) dueAt = Math.min(bDue, rDue)
   else dueAt = bDue !== null ? bDue : rDue
   if (!dueAt) return
+
+  scheduleWarnings(serverId, dueAt, { stop: rDue !== null, backup: bDue !== null, restart: rDue !== null })
 
   const run = async () => {
     if (pending[serverId]) return
@@ -133,16 +184,17 @@ function scheduleServerMaintenance(serverId) {
         if (startRes && startRes.ok === false) {
           line(serverId, `No se pudo reiniciar: ${startRes.error}`, 'error')
           notify('server_crash', { name: server.name, detail: startRes.error })
+          insertNotificacion(serverId, 'restart', `No se pudo reiniciar: ${startRes.error}`)
         } else {
           notify('server_restart', { name: server.name })
+          insertNotificacion(serverId, 'restart', 'Reinicio programado completado (backup + reinicio).')
         }
       } else if (dueB) {
         const res = await createBackup(serverDir, backupDir, serverId)
-        sendToRenderer('console-line', {
-          serverId,
-          text: res.ok ? `Backup automático creado: ${path.basename(res.file)}` : `Error en backup automático: ${res.error}`,
-          type: res.ok ? 'success' : 'error'
-        })
+        line(serverId, res.ok
+          ? `Backup automático creado: ${path.basename(res.file)}`
+          : `Error en backup automático: ${res.error}`,
+          res.ok ? 'success' : 'error')
       } else if (dueR) {
         line(serverId, 'Reinicio programado: deteniendo el servidor...', 'warn')
         if (activeServers[serverId]) {
@@ -154,8 +206,10 @@ function scheduleServerMaintenance(serverId) {
         if (res && res.ok === false) {
           line(serverId, `No se pudo reiniciar: ${res.error}`, 'error')
           notify('server_crash', { name: server.name, detail: res.error })
+          insertNotificacion(serverId, 'restart', `No se pudo reiniciar: ${res.error}`)
         } else {
           notify('server_restart', { name: server.name })
+          insertNotificacion(serverId, 'restart', 'Reinicio programado completado.')
         }
       }
     } catch (err) {
