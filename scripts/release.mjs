@@ -565,12 +565,13 @@ async function interactiveRelease(argv) {
 
     if (!hasNotes(sections) && stdin.isTTY) {
       if (pending.length) {
-        sections = proposeSections(pending)
-        console.log('\nNotas generadas automáticamente desde los commits pendientes.')
-      } else {
-        console.log('\nEscribe las notas por sección:')
-        for (const { id, label } of SECTIONS) sections[id] = await askSection(rl, label)
+        console.log('\nCommits pendientes (solo referencia, no se usan automáticamente):')
+        for (const { id, label } of SECTIONS) {
+          for (const item of proposeSections(pending)[id]) console.log(`  [${label}] ${item}`)
+        }
       }
+      console.log('\nEscribe las notas por sección:')
+      for (const { id, label } of SECTIONS) sections[id] = await askSection(rl, label)
     }
     if (!hasNotes(sections)) {
       console.error('[release] No hay notas: escribe al menos un cambio o usa --from-commits.')
