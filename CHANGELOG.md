@@ -4,6 +4,35 @@ Historial de versiones de **Minecraft Local Server Manager**, reconstruido a par
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 
+## v2.5.3 - Configure per-server maintenance warning minutes (2026-11-27)
+
+### Añadido
+
+- Campo «Minutos de aviso» en la pestaña «Backups» para configurar varios avisos antes del backup o reinicio.
+- Acepta minutos separados por comas, por ejemplo 10, 5, 1, con un máximo de 6 avisos y valores entre 1 y 120 minutos.
+- Valor por defecto [5, 1] para servidores sin configuración previa o exportaciones antiguas.
+- Traducciones en español e inglés para el campo, la pista y el error de validación.
+- Pruebas de normalización de minutos y de envío de varios avisos por chat.
+
+### Corregido
+
+- El límite de avisos ya no descarta el aviso más próximo al mantenimiento.
+- Los minutos duplicados, fuera de rango o no válidos se ignoran sin romper la programación.
+
+### Cambios
+
+- main/maintenance.js sustituye los avisos fijos de 5 y 1 minuto por una lista configurable de trabajos y conserva elrecordatorio «¡Guardad vuestro progreso!» en el aviso final.
+- src/renderer/backups.js carga, valida y guarda maintenanceWarnMinutes junto al resto de ajustes de backup y reinicio.
+- src/index.html, src/css/screens.css y src/i18n.js incorporan el nuevo campo en la interfaz.
+- Si se introducen más de 6 minutos, se conservan los más cercanos al mantenimiento.
+
+### Otros
+
+- No se amplió la base de datos: settings ya almacena el JSON por servidor y exportAll / importAll ya lo incluyen.
+- Linter limpio: npx eslint . sin errores ni advertencias.
+- Pruebas pasando: 96 tests correctos con node --test.
+- Los cambios siguen pendientes en el árbol de trabajo; no se ha creado el commit.
+
 ## v2.5.2 - Add maintenance chat warnings and per-server notification history (2026-11-27)
 
 ### Añadido
