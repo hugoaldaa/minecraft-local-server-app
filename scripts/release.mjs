@@ -564,13 +564,9 @@ async function interactiveRelease(argv) {
     if (fromCommits && !hasPresetSections) sections = proposeSections(pending)
 
     if (!hasNotes(sections) && stdin.isTTY) {
-      let useProposed = false
       if (pending.length) {
-        const answer = (await rl.question('\n¿Usar la propuesta de commits como notas? (s/N): ')).trim().toLowerCase()
-        useProposed = ['s', 'si', 'y'].includes(answer)
-      }
-      if (useProposed) {
         sections = proposeSections(pending)
+        console.log('\nNotas generadas automáticamente desde los commits pendientes.')
       } else {
         console.log('\nEscribe las notas por sección:')
         for (const { id, label } of SECTIONS) sections[id] = await askSection(rl, label)
@@ -582,7 +578,9 @@ async function interactiveRelease(argv) {
     }
 
     const { title, notes, tagBody } = writeBuildFiles(newVersion, name, sections)
-    fs.writeFileSync(COMMIT_FILE, tagBody, 'utf8')
+    // El commit empieza con el título de la release: v2.x.x - nombre
+    const commitBody = `${title}\n\n${tagBody.replace(/^##\s*/, '').trim()}`
+    fs.writeFileSync(COMMIT_FILE, commitBody, 'utf8')
     fs.writeFileSync(TAG_FILE, tagBody, 'utf8')
 
     const changelogEntry = changelogMarkdown(newVersion, name, sections)
