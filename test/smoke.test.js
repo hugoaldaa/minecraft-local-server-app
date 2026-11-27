@@ -83,7 +83,7 @@ const { registerServersIpc } = require('../main/servers')
 const { registerBackupsIpc } = require('../main/backups')
 const { registerRestartIpc } = require('../main/restart')
 const { registerNotificacionesIpc } = require('../main/notificaciones')
-const { scheduleServerMaintenance, cancelServerMaintenance, getRestartStatus } = require('../main/maintenance')
+const { scheduleServerMaintenance, cancelServerMaintenance, getRestartStatus, warningMinutes } = require('../main/maintenance')
 const { buildNotification, shouldNotify } = require('../main/notifications')
 
 setMainWindow({
@@ -195,6 +195,43 @@ test('smoke: avisa por chat 5 y 1 minutos antes del mantenimiento', async () => 
   assert.equal(chatLines.length, 2)
   assert.ok(chatLines.some(w => /5 minutos/.test(w) && /copia de seguridad/.test(w)))
   assert.ok(chatLines.some(w => /1 minuto/.test(w)))
+
+  cancelServerMaintenance(id)
+  assert.equal((await handlers['server:stop'](null, id)).ok, true)
+  proc.emit('exit', 0)
+  await tick()
+  assert.equal((await handlers['servers:delete'](null, id)).ok, true)
+  fs.rmSync(dir, { recursive: true, force: true })
+})
+
+test('smoke: normaliza y permite varios minutos de aviso por servidor', async () => {
+  assert.deepEqual(warningMinutes({}), [5, 1])
+  assert.deepEqual(warningMinutes({ maintenanceWarnMinutes: [0, 999, 5, 5, 1] }), [5, 1])
+  assert.deepEqual(warningMinutes({ maintenanceWarnMinutes: [1, 2, 3, 4, 5, 6, 7, 130] }), [6, 5, 4, 3, 2, 1])
+
+  const dir = tempServerDir()
+  const created = await handlers['servers:create'](null, { name: 'Smoke avisos configurados', jarPath: path.join(dir, 'server.jar') })
+  const id = created.server.id
+  assert.equal((await handlers['server:start'](null, { serverId: id, acceptEula: true })).ok, true)
+  const proc = spawnedProcesses[spawnedProcesses.length - 1]
+  await tick()
+
+  settingsStore.set(`server_${id}`, {
+    autoBackupEnabled: true,
+    autoBackupInterval: '6h',
+    maintenanceWarnMinutes: [12, 4, 1]
+  })
+  scheduleMock.jobs.length = 0
+  scheduleServerMaintenance(id)
+  const warns = scheduleMock.jobs.filter(j => j.nextInvocation() < Date.now() + 6 * 3600e3 - 1000)
+  assert.equal(warns.length, 3, 'debe programar los tres avisos configurados')
+  warns.forEach(j => j._run())
+
+  const chatLines = proc.stdin.writes.filter(w => w.startsWith('say '))
+  assert.equal(chatLines.length, 3)
+  assert.ok(chatLines.some(w => /12 minutos/.test(w)))
+  assert.ok(chatLines.some(w => /4 minutos/.test(w)))
+  assert.ok(chatLines.some(w => /1 minuto/.test(w) && /Guardad/.test(w)))
 
   cancelServerMaintenance(id)
   assert.equal((await handlers['server:stop'](null, id)).ok, true)

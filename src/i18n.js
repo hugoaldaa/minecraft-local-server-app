@@ -142,6 +142,11 @@ const MESSAGES = {
     'backups.atTime': 'A las',
     'backups.backupTime': 'Hora del backup',
     'backups.restartTime': 'Hora del reinicio',
+    'backups.warnTitle': 'Avisos antes del mantenimiento',
+    'backups.warnHint': 'Minutos antes del backup o reinicio, separados por comas (1-120, máximo 6).',
+    'backups.warnMinutes': 'Minutos de aviso',
+    'backups.warnPlaceholder': '5, 1',
+    'backups.warnInvalid': 'Introduce al menos un minuto válido (entre 1 y 120).',
 
     'notificaciones.title': 'Notificaciones del servidor',
     'notificaciones.hint': 'Encendido, apagado, reinicios y backups de este servidor.',
@@ -537,6 +542,11 @@ const MESSAGES = {
     'backups.atTime': 'At',
     'backups.backupTime': 'Backup time',
     'backups.restartTime': 'Restart time',
+    'backups.warnTitle': 'Notifications before maintenance',
+    'backups.warnHint': 'Minutes before backup or restart, separated by commas (1-120, up to 6).',
+    'backups.warnMinutes': 'Warning minutes',
+    'backups.warnPlaceholder': '5, 1',
+    'backups.warnInvalid': 'Enter at least one valid minute (between 1 and 120).',
 
     'notificaciones.title': 'Server notifications',
     'notificaciones.hint': 'Start, stop, restarts and backups for this server.',

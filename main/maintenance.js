@@ -2,7 +2,7 @@
 // reinicio programado en un solo trabajo por servidor.
 // Cuando ambos están programados a la misma hora, se para el servidor, se
 // hace el backup con el servidor apagado y se vuelve a encender.
-// Avisos por chat de Minecraft: 5 min y 1 min antes del mantenimiento.
+// Avisos por chat de Minecraft: minutos configurables antes del mantenimiento.
 'use strict'
 
 const { ipcMain } = require('electron')
@@ -22,18 +22,36 @@ const RESTART_MS = { '6h': 6 * 3600e3, '12h': 12 * 3600e3, '24h': 24 * 3600e3 }
 const DAY_MS = 24 * 3600e3
 const STOP_DEADLINE_MS = 12000
 const DUE_TOLERANCE_MS = 60000
-const WARN_5_MIN_MS = 5 * 60000
-const WARN_1_MIN_MS = 60000
+const DEFAULT_WARN_MINUTES = [5, 1]
+const MAX_WARNINGS = 6
+const MIN_WARN_MINUTES = 1
+const MAX_WARN_MINUTES = 120
 
 const jobs = {}
-const warnJobs = {} // avisos de chat (5 min / 1 min antes)
+const warnJobs = {} // listas de trabajos de avisos por chat
 const pending = {} // evita solapar un mantenimiento con otro
 
+// Minutos de aviso configurados por servidor. Se normaliza porque el valor
+// viene de un JSON editable por el usuario (y de exportaciones antiguas).
+function warningMinutes(settings) {
+  const raw = settings && settings.maintenanceWarnMinutes
+  if (!Array.isArray(raw)) return [...DEFAULT_WARN_MINUTES]
+  const minutes = [...new Set(raw.map(Number))]
+    .filter(n => Number.isInteger(n) && n >= MIN_WARN_MINUTES && n <= MAX_WARN_MINUTES)
+    .sort((a, b) => a - b)
+    .slice(0, MAX_WARNINGS)
+    .reverse() // se programan de mayor a menor minutos de antelación
+  return minutes.length ? minutes : [...DEFAULT_WARN_MINUTES]
+}
+
+function minuteWord(n) {
+  return n === 1 ? 'minuto' : 'minutos'
+}
+
 function cancelWarnings(serverId) {
-  const w = warnJobs[serverId]
-  if (!w) return
-  if (w.job5) w.job5.cancel()
-  if (w.job1) w.job1.cancel()
+  const list = warnJobs[serverId]
+  if (!Array.isArray(list)) return
+  list.forEach(job => { try { job.cancel() } catch (_) {} })
   delete warnJobs[serverId]
 }
 
@@ -110,32 +128,34 @@ function chatSay(serverId, message) {
   return writeStdin(s.process, `say ${message}\n`)
 }
 
-// Avisos en el chat del servidor: 5 y 1 minuto antes del mantenimiento.
-function scheduleWarnings(serverId, dueAt, { stop, backup, restart }) {
+// Avisos en el chat del servidor en los minutos configurados antes del
+// mantenimiento (por defecto 5 y 1).
+function scheduleWarnings(serverId, dueAt, { stop, backup, restart }, minutes) {
   const now = Date.now()
   cancelWarnings(serverId)
 
-  const t5 = dueAt - WARN_5_MIN_MS
-  const t1 = dueAt - WARN_1_MIN_MS
   const phrase = stop
     ? (backup && restart ? 'El servidor se apagará para backup y reinicio' : 'El servidor se apagará para el reinicio programado')
     : 'Se creará una copia de seguridad del mundo (el servidor seguirá en línea)'
   const short = stop ? 'apagado' : 'backup'
+  const list = []
+  const last = minutes[minutes.length - 1]
 
-  if (t5 > now) {
-    const w = warnJobs[serverId] || (warnJobs[serverId] = {})
-    w.job5 = schedule.scheduleJob(new Date(t5), () => {
-      const sent = chatSay(serverId, `§e[Mantenimiento] ${phrase} en 5 minutos.`)
-      line(serverId, sent ? `Aviso enviado al chat: ${short} en 5 minutos` : `No se pudo enviar el aviso de 5 minutos (servidor apagado)`, sent ? 'info' : 'warn')
+  for (const min of minutes) {
+    const at = dueAt - min * 60000
+    if (at <= now) continue
+    const word = minuteWord(min)
+    const job = schedule.scheduleJob(new Date(at), () => {
+      const reminder = min === last ? ' ¡Guardad vuestro progreso!' : ''
+      const sent = chatSay(serverId, `§e[Mantenimiento] ${phrase} en ${min} ${word}.${reminder}`)
+      line(serverId, sent
+        ? `Aviso enviado al chat: ${short} en ${min} ${word}`
+        : `No se pudo enviar el aviso de ${min} ${word} (servidor apagado)`,
+        sent ? 'info' : 'warn')
     })
+    if (job) list.push(job)
   }
-  if (t1 > now) {
-    const w = warnJobs[serverId] || (warnJobs[serverId] = {})
-    w.job1 = schedule.scheduleJob(new Date(t1), () => {
-      const sent = chatSay(serverId, `§e[Mantenimiento] ${phrase} en 1 minuto. ¡Guardad vuestro progreso!`)
-      line(serverId, sent ? `Aviso enviado al chat: ${short} en 1 minuto` : `No se pudo enviar el aviso de 1 minuto (servidor apagado)`, sent ? 'info' : 'warn')
-    })
-  }
+  if (list.length) warnJobs[serverId] = list
 }
 
 function scheduleServerMaintenance(serverId) {
@@ -156,7 +176,7 @@ function scheduleServerMaintenance(serverId) {
   else dueAt = bDue !== null ? bDue : rDue
   if (!dueAt) return
 
-  scheduleWarnings(serverId, dueAt, { stop: rDue !== null, backup: bDue !== null, restart: rDue !== null })
+  scheduleWarnings(serverId, dueAt, { stop: rDue !== null, backup: bDue !== null, restart: rDue !== null }, warningMinutes(settings))
 
   const run = async () => {
     if (pending[serverId]) return
@@ -255,5 +275,6 @@ module.exports = {
   cancelAllServerMaintenance,
   initMaintenance,
   nextMaintenanceAt,
-  getRestartStatus
+  getRestartStatus,
+  warningMinutes
 }

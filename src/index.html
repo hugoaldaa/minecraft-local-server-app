@@ -299,6 +299,16 @@
         </div>
         <p class="field-hint" id="auto-restart-next" data-i18n="backups.restartNone">Sin reinicio programado</p>
       </div>
+      <div class="backup-auto-config">
+        <h3 data-i18n="backups.warnTitle">Avisos antes del mantenimiento</h3>
+        <p class="field-hint" data-i18n="backups.warnHint">Minutos antes del backup o reinicio, separados por comas.</p>
+        <div class="auto-backup-row">
+          <label class="time-label" for="maintenance-warn-minutes" data-i18n="backups.warnMinutes">Minutos de aviso</label>
+          <input type="text" id="maintenance-warn-minutes" class="warn-minutes-input" placeholder="5, 1"
+            data-i18n-placeholder="backups.warnPlaceholder" />
+          <button class="btn-primary" id="btn-save-warn" data-i18n="common.save">Guardar</button>
+        </div>
+      </div>
       <div class="backups-list" id="backups-list"></div>
     </div>
 

@@ -851,7 +851,8 @@
   white-space: nowrap;
 }
 
-.auto-backup-row .daily-time {
+.auto-backup-row .daily-time,
+.auto-backup-row .warn-minutes-input {
   background: var(--bg0);
   border: 2px solid var(--line);
   border-radius: var(--radius);
