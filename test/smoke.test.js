@@ -75,7 +75,8 @@ Module._load = function (request, parent, isMain) {
 const { setMainWindow } = require('../main/state')
 const { registerServersIpc } = require('../main/servers')
 const { registerBackupsIpc } = require('../main/backups')
-const { registerRestartIpc, scheduleAutoRestart, cancelAutoRestart } = require('../main/restart')
+const { registerRestartIpc } = require('../main/restart')
+const { scheduleServerMaintenance, cancelServerMaintenance, getRestartStatus } = require('../main/maintenance')
 const { buildNotification, shouldNotify } = require('../main/notifications')
 
 setMainWindow({
@@ -132,14 +133,14 @@ test('smoke: reinicio programado se activa y se cancela', async () => {
   const created = await handlers['servers:create'](null, { name: 'Smoke restart', jarPath: path.join(dir, 'server.jar') })
   const id = created.server.id
   // settings:set vive en index.js; aquí se simula escribiendo el store que
-  // lee scheduleAutoRestart (mismo efecto que la llamada IPC real).
+  // lee scheduleServerMaintenance (mismo efecto que la llamada IPC real).
   settingsStore.set(`server_${id}`, { autoRestartEnabled: true, autoRestartInterval: '6h' })
-  scheduleAutoRestart(id)
-  const status = await handlers['restart:status'](null, id)
+  scheduleServerMaintenance(id)
+  const status = getRestartStatus(id)
   assert.equal(status.enabled, true)
   assert.equal(status.interval, '6h')
   assert.ok(status.nextAt, 'debe exponer la próxima ejecución')
-  cancelAutoRestart(id)
+  cancelServerMaintenance(id)
   await handlers['servers:delete'](null, id)
   fs.rmSync(dir, { recursive: true, force: true })
 })

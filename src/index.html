@@ -277,6 +277,8 @@
             <option value="12h" data-i18n="backups.every12h">Cada 12 horas</option>
             <option value="24h" data-i18n="backups.daily">Una vez al día</option>
           </select>
+          <span class="time-label" data-i18n="backups.atTime" hidden>A las</span>
+          <input type="time" id="auto-backup-time" class="daily-time" hidden />
           <button class="btn-primary" id="btn-save-auto" data-i18n="common.save">Guardar</button>
         </div>
       </div>
@@ -291,6 +293,8 @@
             <option value="12h" data-i18n="backups.every12h">Cada 12 horas</option>
             <option value="24h" selected data-i18n="backups.daily">Una vez al día</option>
           </select>
+          <span class="time-label" data-i18n="backups.atTime" hidden>A las</span>
+          <input type="time" id="auto-restart-time" class="daily-time" hidden />
         </div>
         <p class="field-hint" id="auto-restart-next" data-i18n="backups.restartNone">Sin reinicio programado</p>
       </div>

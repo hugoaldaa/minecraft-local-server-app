@@ -9,7 +9,6 @@ const { trackEvent } = require('./analytics')
 const { closeServerSessions, deleteServerStats } = require('./estadisticas')
 const { getRunTime } = require('./stores')
 const { logCrash } = require('./crash')
-const { cancelAutoBackup } = require('./backups')
 const {
   isStr, isIntInRange, isValidColor, cleanText, isValidJavaPath, isPlainObject, splitArgs
 } = require('./validate')
@@ -438,7 +437,6 @@ function registerServersIpc() {
     if (activeServers[serverId]) return { ok: false, error: 'Detén el servidor antes de eliminarlo' }
     if (restartTimers[serverId]) { clearTimeout(restartTimers[serverId]); delete restartTimers[serverId] }
     delete restartAttempts[serverId]
-    cancelAutoBackup(serverId)
     delete map[serverId]
     saveServerMap(map)
     serverMapEvents.emit('changed', serverId, 'delete')

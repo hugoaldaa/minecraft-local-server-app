@@ -9,8 +9,8 @@ const { createWindow, registerWindowIpc, applyWindowTheme } = require('./window'
 const { syncTray, updateTrayLang } = require('./tray')
 const { registerServersIpc, stopAllServers } = require('./servers')
 const { registerPropertiesIpc } = require('./properties')
-const { registerBackupsIpc, scheduleAutoBackup, initAutoBackups } = require('./backups')
-const { registerRestartIpc, scheduleAutoRestart, initAutoRestarts, cancelAllAutoRestarts } = require('./restart')
+const { registerBackupsIpc } = require('./backups')
+const { registerRestartIpc, initMaintenance, scheduleServerMaintenance, cancelAllServerMaintenance } = require('./maintenance')
 const { setupAutoUpdater, stopUpdater, registerUpdaterIpc } = require('./updater')
 const { registerDownloadsIpc } = require('./downloader')
 const { startStatsPolling, stopStatsPolling } = require('./stats')
@@ -157,8 +157,8 @@ ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
   // backupDir
   if (value !== null && !isStr(value)) return { ok: false, error: 'Ruta no válida' }
   settingsStore.set('backupDir', value || '')
-  // La carpeta cambia para todos: se reprograman todos los backups automáticos
-  Object.keys(getAllServersMap()).forEach(id => scheduleAutoBackup(id))
+  // La carpeta cambia para todos: se reprograman todos los mantenimientos
+  Object.keys(getAllServersMap()).forEach((id) => scheduleServerMaintenance(id))
   return { ok: true }
 })
 
@@ -172,8 +172,7 @@ ipcMain.handle('settings:set', (_, { serverId, data } = {}) => {
     // Límite de seguridad: los settings por servidor son objetos pequeños
     if (JSON.stringify(data).length > 100 * 1024) return { ok: false, error: 'Datos demasiado grandes' }
     settingsStore.set(`server_${serverId}`, data)
-    scheduleAutoBackup(serverId) // reprograma el backup automático si cambió
-    scheduleAutoRestart(serverId) // y el reinicio programado (2.2)
+    scheduleServerMaintenance(serverId) // reprograma el mantenimiento del servidor
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err.message }
@@ -223,8 +222,7 @@ if (!gotTheLock) {
     startStatsPolling()
     startLogPolling()
     setupAutoUpdater()
-    initAutoBackups()
-    initAutoRestarts()
+    initMaintenance()
     trackEvent('app_launch', { version: app.getVersion() })
   })
 }
@@ -236,6 +234,6 @@ app.on('will-quit', () => {
   stopUpdater()
   stopStatsPolling()
   stopLogPolling()
-  cancelAllAutoRestarts()
+  cancelAllServerMaintenance()
   stopAllServers()
 })

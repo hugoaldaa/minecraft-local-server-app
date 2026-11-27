@@ -3,16 +3,12 @@ const path = require('path')
 const fs = require('fs')
 const archiver = require('archiver')
 const AdmZip = require('adm-zip')
-const schedule = require('node-schedule')
 const { getAllServersMap, getServerSettings, getGlobalBackupDir, settingsStore } = require('./stores')
-const { activeServers, sendToRenderer, writeStdin } = require('./state')
+const { activeServers, writeStdin } = require('./state')
 const { trackEvent } = require('./analytics')
 const { logCrash } = require('./crash')
 const { notify } = require('./notifications')
 const { isStr, isServerDir, isAllowedBackupDir, isAllowedBackupFile, isInsideDir } = require('./validate')
-
-const AUTO_INTERVALS = { '1h': 3600e3, '6h': 6 * 3600e3, '12h': 12 * 3600e3, '24h': 24 * 3600e3 }
-const autoBackupJobs = {}
 
 // ─── Backup manual ───────────────────────────────────────────────────────────
 // Nivel de compresión guardado en Ajustes → Copias de seguridad (1–9)
@@ -177,9 +173,6 @@ async function restoreBackup(backupFile, serverDir, serverId) {
   }
 }
 
-// ─── Backup automático (node-schedule) ───────────────────────────────────────
-function intervalToMs(interval) { return AUTO_INTERVALS[interval] || AUTO_INTERVALS['6h'] }
-
 // Carpeta de destino resuelta: preferencia por servidor (legado) → ajuste
 // global → <carpeta del servidor>/backups
 function resolveBackupDir(serverId) {
@@ -192,46 +185,6 @@ function resolveBackupDir(serverId) {
   return ''
 }
 
-function cancelAutoBackup(serverId) {
-  const job = autoBackupJobs[serverId]
-  if (job) { job.cancel(); delete autoBackupJobs[serverId] }
-}
-
-function scheduleAutoBackup(serverId) {
-  cancelAutoBackup(serverId)
-  if (!isStr(serverId)) return
-  const server = getAllServersMap()[serverId]
-  if (!server || !isStr(server.jarPath)) return
-  const settings = getServerSettings(serverId)
-  if (!settings.autoBackupEnabled) return
-
-  const ms = intervalToMs(settings.autoBackupInterval)
-  const serverDir = path.dirname(path.resolve(server.jarPath))
-  const backupDir = resolveBackupDir(serverId)
-
-  const run = async () => {
-    try {
-      const res = await createBackup(serverDir, backupDir, serverId)
-      sendToRenderer('console-line', {
-        serverId,
-        text: res.ok ? `Backup automático creado: ${path.basename(res.file)}` : `Error en backup automático: ${res.error}`,
-        type: res.ok ? 'success' : 'error'
-      })
-    } catch (err) {
-      logCrash('auto_backup_error', err)
-    }
-    scheduleNext()
-  }
-  const scheduleNext = () => {
-    autoBackupJobs[serverId] = schedule.scheduleJob(new Date(Date.now() + ms), run)
-  }
-  scheduleNext()
-}
-
-function initAutoBackups() {
-  Object.keys(getAllServersMap()).forEach(id => scheduleAutoBackup(id))
-}
-
 // ─── IPC ─────────────────────────────────────────────────────────────────────
 function registerBackupsIpc() {
   ipcMain.handle('backup:create', (_, { serverDir, backupDir, serverId } = {}) => createBackup(serverDir, backupDir, serverId))
@@ -241,4 +194,4 @@ function registerBackupsIpc() {
   ipcMain.handle('backup:restore', (_, { backupFile, serverDir, serverId } = {}) => restoreBackup(backupFile, serverDir, serverId))
 }
 
-module.exports = { registerBackupsIpc, createBackup, restoreBackup, scheduleAutoBackup, cancelAutoBackup, initAutoBackups, resolveBackupDir }
+module.exports = { registerBackupsIpc, createBackup, restoreBackup, resolveBackupDir }

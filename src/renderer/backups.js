@@ -6,6 +6,24 @@ async function loadBackupsTab(server, settings) {
   document.getElementById('auto-restart-enabled').checked = !!settings.autoRestartEnabled
   document.getElementById('auto-restart-interval').value = settings.autoRestartInterval || '24h'
 
+  // Selectores de hora (solo se usan con "Una vez al día")
+  const backupTimeEl = document.getElementById('auto-backup-time')
+  const restartTimeEl = document.getElementById('auto-restart-time')
+  const backupIntervalEl = document.getElementById('auto-backup-interval')
+  const restartIntervalEl = document.getElementById('auto-restart-interval')
+  if (backupTimeEl) backupTimeEl.value = settings.autoBackupTime || ''
+  if (restartTimeEl) restartTimeEl.value = settings.autoRestartTime || ''
+  const showTime = (intervalEl, timeEl) => {
+    const label = timeEl && timeEl.previousElementSibling
+    const daily = intervalEl.value === '24h'
+    if (timeEl) timeEl.hidden = !daily
+    if (label) label.hidden = !daily
+  }
+  showTime(backupIntervalEl, backupTimeEl)
+  showTime(restartIntervalEl, restartTimeEl)
+  backupIntervalEl.addEventListener('change', () => showTime(backupIntervalEl, backupTimeEl))
+  restartIntervalEl.addEventListener('change', () => showTime(restartIntervalEl, restartTimeEl))
+
   const showRestartStatus = async () => {
     const el = document.getElementById('auto-restart-next')
     if (!el) return
@@ -59,8 +77,10 @@ async function loadBackupsTab(server, settings) {
     const data = {
       autoBackupEnabled: document.getElementById('auto-backup-enabled').checked,
       autoBackupInterval: document.getElementById('auto-backup-interval').value,
+      autoBackupTime: document.getElementById('auto-backup-time').value,
       autoRestartEnabled: document.getElementById('auto-restart-enabled').checked,
-      autoRestartInterval: document.getElementById('auto-restart-interval').value
+      autoRestartInterval: document.getElementById('auto-restart-interval').value,
+      autoRestartTime: document.getElementById('auto-restart-time').value
     }
     const res = await run(T('run.saveBackupSettings'), () => window.api.saveSettings(state.currentServerId, { ...settings, ...data }))
     if (res && res.ok) {

@@ -138,6 +138,9 @@ const MESSAGES = {
     'backups.restartNext': 'Próximo reinicio: {at}',
     'backups.restartNone': 'Sin reinicio programado',
     'backups.restartSaved': 'Reinicio programado actualizado.',
+    'backups.atTime': 'A las',
+    'backups.backupTime': 'Hora del backup',
+    'backups.restartTime': 'Hora del reinicio',
 
     'config.title': 'Configuración del servidor',
     'config.nameLabel': 'Nombre del servidor',
@@ -514,6 +517,9 @@ const MESSAGES = {
     'backups.restartNext': 'Next restart: {at}',
     'backups.restartNone': 'No restart scheduled',
     'backups.restartSaved': 'Scheduled restart updated.',
+    'backups.atTime': 'At',
+    'backups.backupTime': 'Backup time',
+    'backups.restartTime': 'Restart time',
 
     'config.title': 'Server settings',
     'config.nameLabel': 'Server name',
