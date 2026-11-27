@@ -3,6 +3,34 @@
 Historial de versiones de **Minecraft Local Server Manager**, reconstruido a partir
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
+## v2.5.0 - Add daily time picker and unified backup+restart scheduling with server-off backup (2026-11-27)
+
+### Añadido
+
+- Selector de hora (<input type="time">) con la etiqueta "A las" para el backup automático y para el reinicio programado; solo se muestra cuando se elige "Una vez al día" en cada uno.
+- Ajustes persistentes autoBackupTime y autoRestartTime (HH:MM) por servidor.
+- Nuevo programador unificado main/maintenance.js que ejecuta backup y/o reinicio en un solo trabajo por servidor con node-schedule, soportando intervalos (1h/6h/12h) y diario a hora fija.
+- Cuando backup y reinicio coinciden a la misma hora: detiene el servidor, hace el backup con el servidor apagado y lo vuelve a encender.
+
+### Corregido
+
+- La falta de espacio entre el texto de "Backup automático" / "Reinicio programado" y sus botones.
+- Posibilidad de elegir la hora exacta cuando se selecciona "Una vez al día" en backup y reinicio.
+- Prioridad y orden cuando ambas tareas coinciden: el backup se hace primero con el servidor parado, y luego se reinicia (se vuelve a encender).
+
+### Cambios
+
+- Se aumentó el espacio (gap: 16px) entre el texto y los botones/selectores en ambas filas de la pestaña Backups, y se añadieron estilos para el selector de hora y la etiqueta "A las".
+- main/backups.js y main/restart.js: se eliminó la programación antigua (se unificó en maintenance.js); backups.js conserva createBackup, restoreBackup, resolveBackupDir e IPC.
+- main/index.js usa initMaintenance(), scheduleServerMaintenance() y cancelAllServerMaintenance(); al guardar ajustes y al cambiar la carpeta de backups se reprograma el mantenimiento.
+- main/servers.js: ya no cancela el backup al eliminar un servidor (lo hace maintenance desde el evento delete).
+- test/smoke.test.js adaptado a la nueva API de mantenimiento.
+
+### Otros
+
+- Se verificó que funcionan ambas opciones (backup y reinicio), incluida la combinada con el servidor apagado → backup → encendido.
+- Linter limpio y las 91 pruebas del suite pasan, incluida la de consistencia de claves es/en de las nuevas traducciones.
+
 ## v2.4.2 - Fix GitHub release publishing race and release notes path (2026-11-25)
 
 ### Añadido
