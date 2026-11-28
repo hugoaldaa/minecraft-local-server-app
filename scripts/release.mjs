@@ -27,10 +27,22 @@ export const SECTIONS = [
 ]
 
 const SECTION_ALIASES = {
-  añadido: 'added', agregado: 'added', added: 'added', nuevo: 'added', nuevos: 'added',
-  corregido: 'fixed', corregidos: 'fixed', fixed: 'fixed', bugfix: 'fixed', arreglado: 'fixed',
-  cambios: 'changed', changed: 'changed', mejoras: 'changed', mejorado: 'changed',
-  otros: 'other', other: 'other'
+  añadido: 'added',
+  agregado: 'added',
+  added: 'added',
+  nuevo: 'added',
+  nuevos: 'added',
+  corregido: 'fixed',
+  corregidos: 'fixed',
+  fixed: 'fixed',
+  bugfix: 'fixed',
+  arreglado: 'fixed',
+  cambios: 'changed',
+  changed: 'changed',
+  mejoras: 'changed',
+  mejorado: 'changed',
+  otros: 'other',
+  other: 'other'
 }
 
 const VERIFY_NOTE = '**Verificación:** el fichero `SHA256SUMS` de esta release contiene el SHA-256 de los instaladores.'
@@ -39,8 +51,20 @@ const VERIFY_NOTE_EN = '**Verification:** the `SHA256SUMS` file for this release
 // Términos que no deben traducirse: son nombres de archivo, tecnologías o
 // conceptos propios del proyecto.
 const KEEP_TERMS = [
-  'SQLite', 'better-sqlite3', 'JSON', 'CSV', 'JAR', 'IPC', 'ASAR', 'WAL',
-  'SHA256SUMS', 'SHA-256', 'Minecraft', 'Electron', 'GitHub', 'localStorage',
+  'SQLite',
+  'better-sqlite3',
+  'JSON',
+  'CSV',
+  'JAR',
+  'IPC',
+  'ASAR',
+  'WAL',
+  'SHA256SUMS',
+  'SHA-256',
+  'Minecraft',
+  'Electron',
+  'GitHub',
+  'localStorage',
   'app.db'
 ]
 
@@ -207,8 +231,11 @@ export function parseTranslation(text, items) {
     throw new Error('la respuesta de traducción no es JSON válido')
   }
   const translated = data && data.items
-  if (!Array.isArray(translated) || translated.length !== items.length ||
-      translated.some(value => typeof value !== 'string' || !value.trim())) {
+  if (
+    !Array.isArray(translated) ||
+    translated.length !== items.length ||
+    translated.some(value => typeof value !== 'string' || !value.trim())
+  ) {
     throw new Error('la respuesta de traducción no conserva el número de viñetas')
   }
   return translated
@@ -235,18 +262,15 @@ export async function translateSections(sections) {
   // los fallos transitorios antes de caer al cuerpo solo en español.
   let response
   for (let attempt = 0; attempt < 3; attempt++) {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      request
-    )
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, request)
     if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) break
     if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
   }
   if (!response.ok) throw new Error(`la API de traducción devolvió ${response.status}`)
 
   const payload = await response.json()
-  const parts = payload && payload.candidates && payload.candidates[0] &&
-    payload.candidates[0].content && payload.candidates[0].content.parts
+  const parts =
+    payload && payload.candidates && payload.candidates[0] && payload.candidates[0].content && payload.candidates[0].content.parts
   const part = Array.isArray(parts) && parts.find(candidate => typeof candidate.text === 'string')
   const translated = parseTranslation(part && part.text, items)
 
@@ -310,7 +334,9 @@ export function proposeSections(subjects) {
 export function commitSubjects(since) {
   const range = since ? [`${since}..HEAD`] : []
   const subjects = gitOr(['log', '--no-merges', '--pretty=format:%s', ...range])
-    .split('\n').map(s => s.trim()).filter(Boolean)
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean)
   return subjects.filter(s => !/^v?\d+\.\d+\.\d+$/.test(s))
 }
 
@@ -334,7 +360,10 @@ export function cleanChangelog(file = CHANGELOG_FILE) {
   const preamble = (firstEntry === -1 ? lines : lines.slice(0, firstEntry)).join('\n').replace(/\s+$/, '')
   const entries = []
   let current = null
-  const flush = () => { if (current) entries.push(current); current = null }
+  const flush = () => {
+    if (current) entries.push(current)
+    current = null
+  }
 
   for (const line of firstEntry === -1 ? [] : lines.slice(firstEntry)) {
     if (/^##\s+/.test(line)) {
@@ -425,11 +454,7 @@ async function applyNotes(tag) {
   let notesFile = NOTES_FILE
   try {
     const english = await translateSections(info.sections)
-    fs.writeFileSync(
-      BILINGUAL_NOTES_FILE,
-      bilingualNotesMarkdown(info.version, info.name, info.sections, english),
-      'utf8'
-    )
+    fs.writeFileSync(BILINGUAL_NOTES_FILE, bilingualNotesMarkdown(info.version, info.name, info.sections, english), 'utf8')
     notesFile = BILINGUAL_NOTES_FILE
     console.log(`[release] Notas bilingües generadas en ${path.relative(ROOT, BILINGUAL_NOTES_FILE)}`)
   } catch (err) {
@@ -453,8 +478,11 @@ function backfill() {
     const previous = ordered[i - 1]
     const range = previous ? [`${previous}..${tag}`] : [tag]
     const subjects = gitOr(['log', '--no-merges', '--pretty=format:%s', ...range])
-      .split('\n').map(s => s.trim()).filter(Boolean)
-      .filter(s => !/^v?\d+\.\d+\.\d+$/.test(s)).slice(0, 12)
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .filter(s => !/^v?\d+\.\d+\.\d+$/.test(s))
+      .slice(0, 12)
     const date = git(['log', '-1', '--format=%ad', '--date=short', tag])
     const name = stripVersionPrefix(gitOr(['tag', '-l', tag, '--format=%(contents)']).split('\n')[0])
     const version = tag.replace(/^v/, '')
@@ -509,7 +537,11 @@ async function interactiveRelease(argv) {
     const i = argv.indexOf(flag)
     return i === -1 ? null : argv[i + 1]
   }
-  const splitList = value => (value || '').split(';').map(s => s.trim()).filter(Boolean)
+  const splitList = value =>
+    (value || '')
+      .split(';')
+      .map(s => s.trim())
+      .filter(Boolean)
   const presetType = argv.find(a => ['patch', 'minor', 'major'].includes(a))
   const presetName = argValue('--name')
   const presetSections = {
@@ -589,8 +621,18 @@ async function interactiveRelease(argv) {
     console.log('\n── Vista previa ─────────────────────────────────────────')
     console.log(`Titulo:   ${title}`)
     console.log(`Tipo:     ${type}  (${currentVersion} -> ${newVersion})`)
-    console.log(`Notas (tal como se verán en GitHub y en la app):\n${notes.split('\n').map(l => '  ' + l).join('\n')}`)
-    console.log(`\nCHANGELOG.md:\n${changelogEntry.split('\n').map(l => '  ' + l).join('\n')}`)
+    console.log(
+      `Notas (tal como se verán en GitHub y en la app):\n${notes
+        .split('\n')
+        .map(l => '  ' + l)
+        .join('\n')}`
+    )
+    console.log(
+      `\nCHANGELOG.md:\n${changelogEntry
+        .split('\n')
+        .map(l => '  ' + l)
+        .join('\n')}`
+    )
     console.log(`Commit:   ${title}`)
     console.log(`Tag:      anotado v${newVersion} con nombre y notas por secciones`)
     console.log(`Push:     ${push ? `origin HEAD y origin v${newVersion}` : 'NO (--no-push)'}`)
@@ -652,10 +694,16 @@ async function main() {
   const tag = modeIndex === -1 ? null : args[modeIndex + 1]
 
   if (mode === '--prepare-notes') {
-    if (!tag) { console.error('Uso: node scripts/release.mjs --prepare-notes <tag>'); process.exit(1) }
+    if (!tag) {
+      console.error('Uso: node scripts/release.mjs --prepare-notes <tag>')
+      process.exit(1)
+    }
     prepareNotes(tag)
   } else if (mode === '--apply-notes') {
-    if (!tag) { console.error('Uso: node scripts/release.mjs --apply-notes <tag>'); process.exit(1) }
+    if (!tag) {
+      console.error('Uso: node scripts/release.mjs --apply-notes <tag>')
+      process.exit(1)
+    }
     await applyNotes(tag)
   } else if (mode === '--backfill') {
     backfill()
@@ -667,4 +715,8 @@ async function main() {
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-if (isMain) main().catch(err => { console.error(`[release] ${err.message}`); process.exit(1) })
+if (isMain)
+  main().catch(err => {
+    console.error(`[release] ${err.message}`)
+    process.exit(1)
+  })

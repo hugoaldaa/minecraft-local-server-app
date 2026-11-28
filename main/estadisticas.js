@@ -7,8 +7,15 @@
 //   consultas admiten un rango [desde, hasta] para filtrar por fechas.
 const { ipcMain } = require('electron')
 const {
-  getSamples, getPlayerEvents, getSamplesRange, getPlayerEventsRange,
-  getPlayerTotals, savePlayerTotals, deleteServerStats, getRunTime, settingsStore
+  getSamples,
+  getPlayerEvents,
+  getSamplesRange,
+  getPlayerEventsRange,
+  getPlayerTotals,
+  savePlayerTotals,
+  deleteServerStats,
+  getRunTime,
+  settingsStore
 } = require('./stores')
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
@@ -223,8 +230,7 @@ function filterPlayerEvents(eventsOrId, filters) {
     return getPlayerEventsRange(eventsOrId, filters && filters.desde, filters && filters.hasta)
   }
   if (!filters) return eventsOrId
-  return eventsOrId.filter(e => !filters.desde || e.ts >= filters.desde)
-    .filter(e => !filters.hasta || e.ts <= filters.hasta)
+  return eventsOrId.filter(e => !filters.desde || e.ts >= filters.desde).filter(e => !filters.hasta || e.ts <= filters.hasta)
 }
 
 function filterResourceSamples(samplesOrId, filters) {
@@ -232,8 +238,7 @@ function filterResourceSamples(samplesOrId, filters) {
     return getSamplesRange(samplesOrId, filters && filters.desde, filters && filters.hasta)
   }
   if (!filters) return samplesOrId
-  return samplesOrId.filter(s => !filters.desde || s.ts >= filters.desde)
-    .filter(s => !filters.hasta || s.ts <= filters.hasta)
+  return samplesOrId.filter(s => !filters.desde || s.ts >= filters.desde).filter(s => !filters.hasta || s.ts <= filters.hasta)
 }
 
 // ─── Métricas por jugador ─────────────────────────────────────────────────────
@@ -242,24 +247,18 @@ function getPlayerList(serverId, filters) {
   const allEvents = getPlayerEvents(serverId)
   const run = getRunTime(serverId)
   const isRunning = run && run.currentSessionStart != null
-  const endTsReal = isRunning ? Date.now() : (run && run.stoppedAt ? run.stoppedAt : null)
+  const endTsReal = isRunning ? Date.now() : run && run.stoppedAt ? run.stoppedAt : null
   const savedTotals = getPlayerTotals(serverId)
   // Los totales (tiempo jugado, días activos) respetan el filtro de rango.
   const events = filters ? filterPlayerEvents(serverId, filters) : allEvents
-  const endTs = filters && filters.hasta !== undefined && endTsReal !== null
-    ? Math.min(endTsReal, filters.hasta)
-    : endTsReal
+  const endTs = filters && filters.hasta !== undefined && endTsReal !== null ? Math.min(endTsReal, filters.hasta) : endTsReal
   const { totals, lastSeen: lastSeenFromEvents } = computePlayerSessions(events, endTs)
   // Última vez vista ABSOLUTA: se calcula sobre todos los eventos (sin filtro)
   // para que el selector de período no cambie el significado de la columna.
   const { lastSeen: lastSeenAbsolute } = computePlayerSessions(allEvents, endTsReal)
   const list = Object.keys(totals).map(player => {
     const total = totals[player]
-    const seen =
-      lastSeenAbsolute[player] ??
-      lastSeenFromEvents[player] ??
-      (savedTotals[player] && savedTotals[player].lastSeen) ??
-      null
+    const seen = lastSeenAbsolute[player] ?? lastSeenFromEvents[player] ?? (savedTotals[player] && savedTotals[player].lastSeen) ?? null
     return {
       player,
       totalMs: total.totalMs,

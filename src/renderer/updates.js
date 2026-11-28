@@ -102,7 +102,9 @@ function renderUpdateState() {
   pill.className = 'upd-pill ' + (UPDATE_STATE_CLASS[u.status] || 'is-idle')
   pill.textContent = T(UPDATE_PILL_KEYS[u.status] || 'upd.pill.available', { percent: u.percent || 0 })
 
-  document.getElementById('upd-hint').textContent = T('upd.hint.' + (['available', 'downloading', 'ready', 'error'].includes(u.status) ? u.status : 'available'))
+  document.getElementById('upd-hint').textContent = T(
+    'upd.hint.' + (['available', 'downloading', 'ready', 'error'].includes(u.status) ? u.status : 'available')
+  )
 
   const downloading = u.status === 'downloading'
   const progress = document.getElementById('upd-progress')
@@ -233,9 +235,7 @@ function renderUpdateNotes(raw) {
         box.appendChild(ul)
       } else {
         const el = document.createElement(block.type === 'text' ? 'p' : 'div')
-        el.className = block.type === 'text'
-          ? 'update-notes-text'
-          : `update-notes-${block.type}`
+        el.className = block.type === 'text' ? 'update-notes-text' : `update-notes-${block.type}`
         appendInline(el, block.text)
         box.appendChild(el)
       }
@@ -243,4 +243,3 @@ function renderUpdateNotes(raw) {
   }
   wrap.classList.remove('hidden')
 }
-

@@ -13,7 +13,15 @@ function loadConfigTab(server, settings) {
   }
   document.getElementById('btn-save-cfg').onclick = async () => {
     const selectedColor = document.querySelector('#color-options .color-opt.selected')
-    const data = { name: document.getElementById('cfg-name').value.trim() || server.name, jarPath: document.getElementById('cfg-jar').value.trim(), javaPath: document.getElementById('cfg-java').value.trim() || null, minRam: parseInt(document.getElementById('cfg-min-ram').value) || 1024, maxRam: parseInt(document.getElementById('cfg-max-ram').value) || 4096, extraArgs: document.getElementById('cfg-extra').value.trim(), color: selectedColor ? selectedColor.dataset.color : server.color }
+    const data = {
+      name: document.getElementById('cfg-name').value.trim() || server.name,
+      jarPath: document.getElementById('cfg-jar').value.trim(),
+      javaPath: document.getElementById('cfg-java').value.trim() || null,
+      minRam: parseInt(document.getElementById('cfg-min-ram').value) || 1024,
+      maxRam: parseInt(document.getElementById('cfg-max-ram').value) || 4096,
+      extraArgs: document.getElementById('cfg-extra').value.trim(),
+      color: selectedColor ? selectedColor.dataset.color : server.color
+    }
     let res = null
     try {
       res = await window.api.updateServer({ serverId: server.id, data })
@@ -31,12 +39,17 @@ function loadConfigTab(server, settings) {
   }
   document.getElementById('btn-delete-server').onclick = async () => {
     const status = await run(T('run.serverStatus'), () => window.api.getStatus(server.id), { running: false })
-    if (status && status.running) { appendLog(T('config.stopBeforeDelete'), 'warn'); return }
+    if (status && status.running) {
+      appendLog(T('config.stopBeforeDelete'), 'warn')
+      return
+    }
     if (confirm(T('config.deleteConfirm', { name: server.name }))) {
       const res = await run(T('run.deleteServer'), () => window.api.deleteServer(server.id))
-      if (res && res.ok === false) { appendLog(T('log.error', { msg: res.error }), 'error'); return }
+      if (res && res.ok === false) {
+        appendLog(T('log.error', { msg: res.error }), 'error')
+        return
+      }
       showScreen('servers')
     }
   }
 }
-

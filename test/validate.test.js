@@ -1,9 +1,7 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const path = require('node:path')
-const {
-  isStr, isIntInRange, isValidColor, cleanText, isValidJavaPath, isInsideDir, splitArgs
-} = require('../main/validate')
+const { isStr, isIntInRange, isValidColor, cleanText, isValidJavaPath, isInsideDir, splitArgs } = require('../main/validate')
 
 test('isStr rechaza vacíos, no strings y NUL', () => {
   assert.equal(isStr(''), false)

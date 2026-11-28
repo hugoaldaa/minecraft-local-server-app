@@ -22,4 +22,3 @@ I18N.onLangChange(() => {
   document.getElementById('modal-close-title').textContent = T('close.title')
   document.getElementById('modal-close-msg').textContent = T('close.msgWithCount', { count })
 })
-

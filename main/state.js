@@ -8,8 +8,12 @@ const activeServers = {}
 // servers.js y restart.js) reaccionen a cambios del mapa de servidores.
 const serverMapEvents = new EventEmitter()
 
-function getMainWindow() { return mainWindow }
-function setMainWindow(win) { mainWindow = win }
+function getMainWindow() {
+  return mainWindow
+}
+function setMainWindow(win) {
+  mainWindow = win
+}
 
 // Envío seguro al renderer: la ventana puede estar destruida (o su webContents)
 // entre que se dispara un evento y llega aquí. Sin estas guardas, Electron lanza

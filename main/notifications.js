@@ -49,10 +49,12 @@ const TEXTS = {
 }
 
 function interpolate(text, data) {
-  return String(text).replace(/\{\{(\w+)\}\}/g, (_, key) => {
-    const v = data && data[key]
-    return v === undefined || v === null || v === '' ? '' : String(v)
-  }).trim()
+  return String(text)
+    .replace(/\{\{(\w+)\}\}/g, (_, key) => {
+      const v = data && data[key]
+      return v === undefined || v === null || v === '' ? '' : String(v)
+    })
+    .trim()
 }
 
 // Devuelve { title, body } o null si el tipo es desconocido.
@@ -108,14 +110,18 @@ function notify(type, data = {}) {
         const native = new electron.Notification({ title: payload.title, body: payload.body })
         native.show()
       }
-    } catch (_) { /* sin soporte nativo: el toast del renderer es suficiente */ }
+    } catch (_) {
+      /* sin soporte nativo: el toast del renderer es suficiente */
+    }
   }
 
   if (byEmail) {
     try {
       const { sendNotificationEmail } = require('./email')
       Promise.resolve(sendNotificationEmail(payload, data)).catch(() => {})
-    } catch (_) { /* email no disponible: no romper notificación */ }
+    } catch (_) {
+      /* email no disponible: no romper notificación */
+    }
   }
 
   return true

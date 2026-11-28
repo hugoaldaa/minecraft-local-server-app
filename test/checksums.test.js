@@ -34,9 +34,11 @@ test('generateChecksums calcula el hash real y filtra por plataforma', async () 
     assert.equal(fs.readFileSync(win.out, 'utf8'), `${hashOf('instalador')}  ${exe}\n`)
 
     const all = await generateChecksums({ dir })
-    assert.deepEqual(all.entries.map(e => e.file), [appimage, exe])
-    assert.equal(fs.readFileSync(all.out, 'utf8'),
-      `${hashOf('appimage')}  ${appimage}\n${hashOf('instalador')}  ${exe}\n`)
+    assert.deepEqual(
+      all.entries.map(e => e.file),
+      [appimage, exe]
+    )
+    assert.equal(fs.readFileSync(all.out, 'utf8'), `${hashOf('appimage')}  ${appimage}\n${hashOf('instalador')}  ${exe}\n`)
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }
@@ -51,9 +53,11 @@ test('combineChecksums une los parciales sin duplicados y ordenado', async () =>
   fs.writeFileSync(path.join(dir, 'SHA256SUMS-linux.txt'), `${hashOf('deb')}  ${deb}\n`)
   try {
     const { entries } = combineChecksums(dir)
-    assert.deepEqual(entries.map(e => e.file), [deb, exe])
-    assert.equal(fs.readFileSync(path.join(dir, 'SHA256SUMS'), 'utf8'),
-      `${hashOf('deb')}  ${deb}\n${hashOf('exe')}  ${exe}\n`)
+    assert.deepEqual(
+      entries.map(e => e.file),
+      [deb, exe]
+    )
+    assert.equal(fs.readFileSync(path.join(dir, 'SHA256SUMS'), 'utf8'), `${hashOf('deb')}  ${deb}\n${hashOf('exe')}  ${exe}\n`)
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }

@@ -31,11 +31,14 @@ function setServerSource(source) {
 }
 
 function renderVersionOptions(sel, versions) {
-  fill(sel, ...versions.map(v => {
-    const id = typeof v === 'string' ? v : v.id
-    const suffix = v && v.forge ? ` (Forge ${v.forge})` : (v && v.release === false ? ' (pre)' : '')
-    return h('option', { value: id }, `${id}${suffix}`)
-  }))
+  fill(
+    sel,
+    ...versions.map(v => {
+      const id = typeof v === 'string' ? v : v.id
+      const suffix = v && v.forge ? ` (Forge ${v.forge})` : v && v.release === false ? ' (pre)' : ''
+      return h('option', { value: id }, `${id}${suffix}`)
+    })
+  )
   if (versions.length) sel.selectedIndex = 0
 }
 
@@ -54,7 +57,7 @@ async function ensureVersions() {
   sel.disabled = true
   fill(sel, h('option', { value: '' }, T('common.loading')))
   const res = await run(T('run.loadVersions'), () => window.api.listDownloadVersions(state.dl.provider), null)
-  const versions = (res && res.ok && Array.isArray(res.versions)) ? res.versions : []
+  const versions = res && res.ok && Array.isArray(res.versions) ? res.versions : []
   if (res && !res.ok) document.getElementById('ms-error').textContent = res.error || T('servers.createError')
   state.dl.versions[provider] = versions
   state.dl.shownProvider = provider
@@ -66,7 +69,12 @@ async function ensureVersions() {
 
 function folderPreview() {
   const name = document.getElementById('ms-name').value.trim() || 'server'
-  return name.replace(/[<>:"/\\|?*\x00-\x1f]+/g, '_').trim().slice(0, 60) || 'server'
+  return (
+    name
+      .replace(/[<>:"/\\|?*\x00-\x1f]+/g, '_')
+      .trim()
+      .slice(0, 60) || 'server'
+  )
 }
 
 function updateInstallHint() {
@@ -78,9 +86,15 @@ function updateInstallHint() {
 async function updateJavaWarn() {
   const version = document.getElementById('ms-version').value
   const warn = document.getElementById('ms-java-warn')
-  if (!version) { warn.classList.add('hidden'); return }
+  if (!version) {
+    warn.classList.add('hidden')
+    return
+  }
   const need = await run(T('run.checkJava'), () => window.api.minJavaFor(version), { ok: false })
-  if (!need || !need.ok || !need.major) { warn.classList.add('hidden'); return }
+  if (!need || !need.ok || !need.major) {
+    warn.classList.add('hidden')
+    return
+  }
   const javaPath = document.getElementById('ms-java').value.trim() || 'java'
   const check = await run(T('run.checkJava'), () => window.api.javaCheck(javaPath), { ok: false })
   const have = check && check.ok ? check.major : null
@@ -119,9 +133,18 @@ async function saveNewServerDownload() {
   const name = document.getElementById('ms-name').value.trim()
   const root = document.getElementById('ms-install-root').value.trim()
   const version = document.getElementById('ms-version').value
-  if (!name) { err.textContent = T('modal.nameRequired'); return }
-  if (!version) { err.textContent = T('modal.selectVersion'); return }
-  if (!root) { err.textContent = T('modal.selectInstallRoot'); return }
+  if (!name) {
+    err.textContent = T('modal.nameRequired')
+    return
+  }
+  if (!version) {
+    err.textContent = T('modal.selectVersion')
+    return
+  }
+  if (!root) {
+    err.textContent = T('modal.selectInstallRoot')
+    return
+  }
   const selectedColor = document.querySelector('#ms-color-options .color-opt.selected')
   const payload = {
     provider: state.dl.provider,
@@ -158,13 +181,20 @@ async function saveNewServer() {
   const name = document.getElementById('ms-name').value.trim()
   const jarPath = document.getElementById('ms-jar').value.trim()
   const err = document.getElementById('ms-error')
-  if (!name) { err.textContent = T('modal.nameRequired'); return }
-  if (!jarPath) { err.textContent = T('modal.selectJar'); return }
+  if (!name) {
+    err.textContent = T('modal.nameRequired')
+    return
+  }
+  if (!jarPath) {
+    err.textContent = T('modal.selectJar')
+    return
+  }
   const selectedColor = document.querySelector('#ms-color-options .color-opt.selected')
   let res = null
   try {
     res = await window.api.createServer({
-      name, jarPath,
+      name,
+      jarPath,
       javaPath: document.getElementById('ms-java').value.trim() || null,
       minRam: parseInt(document.getElementById('ms-min-ram').value) || 1024,
       maxRam: parseInt(document.getElementById('ms-max-ram').value) || 4096,
@@ -173,9 +203,14 @@ async function saveNewServer() {
   } catch (e) {
     console.error(`[${T('run.createServer')}]`, e)
   }
-  if (!res) { err.textContent = T('servers.createError'); return }
-  if (!res.ok) { err.textContent = res.error; return }
+  if (!res) {
+    err.textContent = T('servers.createError')
+    return
+  }
+  if (!res.ok) {
+    err.textContent = res.error
+    return
+  }
   document.getElementById('modal-server').classList.add('hidden')
   refreshServersGrid()
 }
-

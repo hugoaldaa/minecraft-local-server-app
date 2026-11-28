@@ -10,9 +10,16 @@ const { trackEvent } = require('./analytics')
 const { buildServerRecord, detectJavaVersion } = require('./servers')
 const { isPlainObject, isStr, isValidJavaPath, cleanText, isInsideDir, isIntInRange, splitArgs } = require('./validate')
 const {
-  minJavaFor, slugify,
-  parseVersionManifest, parseVersionJsonServer, parsePaperProjects, parsePaperBuilds, parseFabricGameVersions,
-  parseForgePromotions, forgeArgsRelPath, normalizeVersions
+  minJavaFor,
+  slugify,
+  parseVersionManifest,
+  parseVersionJsonServer,
+  parsePaperProjects,
+  parsePaperBuilds,
+  parseFabricGameVersions,
+  parseForgePromotions,
+  forgeArgsRelPath,
+  normalizeVersions
 } = require('./versions')
 
 const MOJANG_MANIFEST = 'https://launchermeta.mojang.com/mc/game/version_manifest_v2.json'
@@ -42,7 +49,7 @@ async function getVanillaServerUrl(versionId) {
   const url = parseVersionJsonServer(vjson)
   if (!url) throw new Error('El servidor no está disponible para esta versión')
   // Mojang publica el SHA-1 en el JSON de cada versión: lo usamos para verificar.
-  return { url, sha1: (server && isStr(server.sha1) ? server.sha1 : null) }
+  return { url, sha1: server && isStr(server.sha1) ? server.sha1 : null }
 }
 
 async function listPaperVersions() {
@@ -65,17 +72,18 @@ async function listFabricVersions() {
 // El endpoint «server/jar» de Fabric genera al vuelo un lanzador ejecutable
 // (java -jar). Usa el loader y el installer estables más recientes.
 async function getFabricServerUrl(versionId) {
-  const [loaders, installers] = await Promise.all([
-    fetchText(FABRIC_LOADER).then(JSON.parse),
-    fetchText(FABRIC_INSTALLER).then(JSON.parse)
-  ])
+  const [loaders, installers] = await Promise.all([fetchText(FABRIC_LOADER).then(JSON.parse), fetchText(FABRIC_INSTALLER).then(JSON.parse)])
   const loader = (Array.isArray(loaders) ? loaders : []).find(l => l && l.stable) || (Array.isArray(loaders) ? loaders[0] : null)
-  const installer = (Array.isArray(installers) ? installers : []).find(i => i && i.stable) || (Array.isArray(installers) ? installers[0] : null)
+  const installer =
+    (Array.isArray(installers) ? installers : []).find(i => i && i.stable) || (Array.isArray(installers) ? installers[0] : null)
   if (!loader || !installer) throw new Error('No se pudo resolver Fabric')
   // El .jar de servidor de Fabric se genera al vuelo: no hay hash remoto directo
   // para esta URL. Se verifica el instalador de Fabric por separado cuando se
   // disponga de su checksum.
-  return { url: `${FABRIC_GAME.replace('/game', '')}/loader/${encodeURIComponent(versionId)}/${encodeURIComponent(loader.version)}/${encodeURIComponent(installer.version)}/server/jar`, sha1: null }
+  return {
+    url: `${FABRIC_GAME.replace('/game', '')}/loader/${encodeURIComponent(versionId)}/${encodeURIComponent(loader.version)}/${encodeURIComponent(installer.version)}/server/jar`,
+    sha1: null
+  }
 }
 
 async function listForgeVersions() {
@@ -93,19 +101,31 @@ function runProcess(cmd, args, cwd, signal, onLine) {
     } catch (err) {
       return reject(err)
     }
-    const drain = (data) => {
+    const drain = data => {
       if (!onLine) return
-      data.toString().split('\n').forEach(l => { if (l.trim()) onLine(l.trim()) })
+      data
+        .toString()
+        .split('\n')
+        .forEach(l => {
+          if (l.trim()) onLine(l.trim())
+        })
     }
     if (child.stdout) child.stdout.on('data', drain)
     if (child.stderr) child.stderr.on('data', drain)
-    const onAbort = () => { try { child.kill() } catch (_) { } }
+    const onAbort = () => {
+      try {
+        child.kill()
+      } catch (_) {}
+    }
     if (signal) {
-      if (signal.aborted) { onAbort(); return reject(new Error('Descarga cancelada')) }
+      if (signal.aborted) {
+        onAbort()
+        return reject(new Error('Descarga cancelada'))
+      }
       signal.addEventListener('abort', onAbort, { once: true })
     }
     child.on('error', reject)
-    child.on('close', (code) => {
+    child.on('close', code => {
       if (signal) signal.removeEventListener('abort', onAbort)
       if (signal && signal.aborted) return reject(new Error('Descarga cancelada'))
       resolve(code)
@@ -203,7 +223,7 @@ async function installServer(cfg) {
   if (!['vanilla', 'paper', 'fabric', 'forge'].includes(provider)) throw new Error('Proveedor no válido')
   if (!versionId) throw new Error('Selecciona una versión')
 
-  const root = (isStr(cfg.installRoot) && cfg.installRoot.trim() ? path.resolve(cfg.installRoot.trim()) : defaultServersRoot())
+  const root = isStr(cfg.installRoot) && cfg.installRoot.trim() ? path.resolve(cfg.installRoot.trim()) : defaultServersRoot()
   const finalDir = path.join(root, slugify(cfg.folderName || cfg.name))
   if (!isInsideDir(finalDir, root)) throw new Error('Carpeta de destino no válida')
 
@@ -290,13 +310,14 @@ function registerDownloadsIpc() {
   ipcMain.handle('downloads:versions', async (_, provider) => {
     if (!['vanilla', 'paper', 'fabric', 'forge'].includes(provider)) return { ok: false, error: 'Proveedor no válido' }
     try {
-      const result = provider === 'vanilla'
-        ? await listVanillaVersions()
-        : provider === 'fabric'
-          ? await listFabricVersions()
-          : provider === 'forge'
-            ? await listForgeVersions()
-            : await listPaperVersions()
+      const result =
+        provider === 'vanilla'
+          ? await listVanillaVersions()
+          : provider === 'fabric'
+            ? await listFabricVersions()
+            : provider === 'forge'
+              ? await listForgeVersions()
+              : await listPaperVersions()
       return { ok: true, latest: result.latest || null, versions: normalizeVersions(result.versions) }
     } catch (err) {
       return { ok: false, error: err.message }

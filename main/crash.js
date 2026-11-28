@@ -6,10 +6,10 @@ const { sendToRenderer } = require('./state')
 const { sendAnalyticsPayload } = require('./analytics')
 
 function setupCrashReporter() {
-  process.on('uncaughtException', (err) => {
+  process.on('uncaughtException', err => {
     logCrash('uncaughtException', err)
   })
-  process.on('unhandledRejection', (reason) => {
+  process.on('unhandledRejection', reason => {
     logCrash('unhandledRejection', reason)
   })
 }
@@ -31,7 +31,7 @@ function logCrash(type, err) {
     if (crashes.length > 100) crashes.splice(100)
     crashStore.set('crashes', crashes)
     crashStore.set('lastCrash', crash)
-  } catch (_) { }
+  } catch (_) {}
 
   // Notifica al renderer si la ventana existe
   sendToRenderer('crash-logged', crash)
@@ -39,13 +39,18 @@ function logCrash(type, err) {
   // Envía si hay endpoint configurado. Durante el arranque la BD puede no
   // existir todavía (p. ej. si falla la migración): no se debe ocultar el error.
   let endpoint = null
-  try { endpoint = settingsStore.get('crashEndpoint') } catch (_) {}
+  try {
+    endpoint = settingsStore.get('crashEndpoint')
+  } catch (_) {}
   if (endpoint) sendAnalyticsPayload(endpoint, { type: 'crash', ...crash })
 }
 
 function registerCrashIpc() {
   ipcMain.handle('crashes:list', () => crashStore.get('crashes') || [])
-  ipcMain.handle('crashes:clear', () => { crashStore.set('crashes', []); return { ok: true } })
+  ipcMain.handle('crashes:clear', () => {
+    crashStore.set('crashes', [])
+    return { ok: true }
+  })
   ipcMain.handle('crashes:getLast', () => crashStore.get('lastCrash') || null)
 }
 

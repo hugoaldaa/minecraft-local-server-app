@@ -23,17 +23,37 @@ function updateDetailBar(running, starting = false, external = false) {
   const text = document.getElementById('sbar-status-text')
   const start = document.getElementById('detail-btn-start')
   const stop = document.getElementById('detail-btn-stop')
-  if (starting) { dot.className = 'dot starting'; text.textContent = T('status.starting'); start.disabled = true; stop.disabled = true }
-  else if (external) { dot.className = 'dot external'; text.textContent = T('status.external'); start.disabled = true; stop.disabled = true }
-  else if (running) { dot.className = 'dot on'; text.textContent = T('status.online'); start.disabled = true; stop.disabled = false }
-  else { dot.className = 'dot off'; text.textContent = T('status.stopped'); start.disabled = false; stop.disabled = true }
+  if (starting) {
+    dot.className = 'dot starting'
+    text.textContent = T('status.starting')
+    start.disabled = true
+    stop.disabled = true
+  } else if (external) {
+    dot.className = 'dot external'
+    text.textContent = T('status.external')
+    start.disabled = true
+    stop.disabled = true
+  } else if (running) {
+    dot.className = 'dot on'
+    text.textContent = T('status.online')
+    start.disabled = true
+    stop.disabled = false
+  } else {
+    dot.className = 'dot off'
+    text.textContent = T('status.stopped')
+    start.disabled = false
+    stop.disabled = true
+  }
 }
 
 document.getElementById('detail-btn-start').onclick = async () => {
   const id = state.currentServerId
   if (!id) return
   const server = await run(T('run.startServer'), () => window.api.getServer(id))
-  if (!server) { appendLog(T('log.serverNotFound'), 'error'); return }
+  if (!server) {
+    appendLog(T('log.serverNotFound'), 'error')
+    return
+  }
   updateDetailBar(false, true)
   appendLog(T('log.startingServer'), 'info')
   let res = null
@@ -47,15 +67,25 @@ document.getElementById('detail-btn-start').onclick = async () => {
     const ok = confirm(T('log.eulaConfirm'))
     if (ok) {
       appendLog(T('log.acceptingEula'), 'info')
-      try { res = await window.api.startServer(id, true) } catch (e) { console.error(`[${T('run.startServer')}]`, e) }
+      try {
+        res = await window.api.startServer(id, true)
+      } catch (e) {
+        console.error(`[${T('run.startServer')}]`, e)
+      }
     } else {
       appendLog(T('log.eulaCancelled'), 'warn')
       updateDetailBar(false)
       return
     }
   }
-  if (res && res.ok) { state.isRunning = true; updateDetailBar(true); refreshServersGrid() }
-  else { appendLog(T('log.error', { msg: res?.error || T('log.startFailed') }), 'error'); updateDetailBar(false) }
+  if (res && res.ok) {
+    state.isRunning = true
+    updateDetailBar(true)
+    refreshServersGrid()
+  } else {
+    appendLog(T('log.error', { msg: res?.error || T('log.startFailed') }), 'error')
+    updateDetailBar(false)
+  }
 }
 
 document.getElementById('detail-btn-stop').onclick = async () => {
@@ -73,4 +103,3 @@ document.getElementById('detail-btn-stop').onclick = async () => {
     appendLog(T('log.error', { msg: res?.error || T('log.stopFailed') }), 'error')
   }
 }
-

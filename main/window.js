@@ -22,12 +22,7 @@ let forceClosing = false
 // poder leer la ruta del archivo directamente; de fallar, se lee el buffer y
 // se crea la imagen desde él (fs.readFileSync sí resuelve rutas asar).
 function loadAppIcon() {
-  const iconPath = path.join(
-    __dirname,
-    '..',
-    'assets',
-    process.platform === 'win32' ? 'icon.ico' : 'icon.png'
-  )
+  const iconPath = path.join(__dirname, '..', 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png')
   let image = nativeImage.createFromPath(iconPath)
   if (image.isEmpty()) {
     try {
@@ -60,19 +55,23 @@ function quitWhenServersStopped(timeoutMs = 15000) {
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 1280, height: 800, minWidth: 1024, minHeight: 640,
+    width: 1280,
+    height: 800,
+    minWidth: 1024,
+    minHeight: 640,
     title: 'Minecraft Manager',
     icon: loadAppIcon(),
     backgroundColor: currentBackgroundColor(),
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload.js'),
-      contextIsolation: true, nodeIntegration: false
+      contextIsolation: true,
+      nodeIntegration: false
     },
     frame: false
   })
   setMainWindow(mainWindow)
   mainWindow.loadFile(path.join(__dirname, '..', 'src', 'index.html'))
-  mainWindow.on('close', (e) => {
+  mainWindow.on('close', e => {
     if (forceClosing) return
     // «Cerrar en vez de minimizar»: la ✕ oculta la ventana en la bandeja y
     // los servidores siguen corriendo; se sale desde el menú de bandeja.
@@ -88,8 +87,12 @@ function createWindow() {
     }
   })
   mainWindow.on('closed', () => setMainWindow(null))
-  mainWindow.on('maximize', () => { sendToRenderer('window:maximized', true) })
-  mainWindow.on('unmaximize', () => { sendToRenderer('window:maximized', false) })
+  mainWindow.on('maximize', () => {
+    sendToRenderer('window:maximized', true)
+  })
+  mainWindow.on('unmaximize', () => {
+    sendToRenderer('window:maximized', false)
+  })
   mainWindow.webContents.on('did-finish-load', () => {
     sendToRenderer('window:maximized', mainWindow.isMaximized())
     // Tamaño de la interfaz guardado en Ajustes → Apariencia
@@ -98,7 +101,7 @@ function createWindow() {
   })
   // Guardas de navegación: nada fuera del bundle de la app
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
-  mainWindow.webContents.on('will-navigate', (e) => e.preventDefault())
+  mainWindow.webContents.on('will-navigate', e => e.preventDefault())
   return mainWindow
 }
 
@@ -107,7 +110,8 @@ function registerWindowIpc() {
   ipcMain.handle('window:maximize', () => {
     const win = getMainWindow()
     if (!win) return
-    if (win.isMaximized()) win.unmaximize(); else win.maximize()
+    if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
   })
   // La ✕ de la titlebar: con «Cerrar en vez de minimizar» la ventana se
   // oculta en la bandeja (los servidores siguen corriendo); si no, se sale.
@@ -139,10 +143,13 @@ function registerWindowIpc() {
   })
   ipcMain.handle('shell:openPath', (_, p) => {
     if (!canOpenPath(p)) return { ok: false, error: 'Ruta no permitida' }
-    return new Promise((resolve) => {
-      shell.openPath(p).then((errMsg) => {
-        resolve(errMsg ? { ok: false, error: errMsg } : { ok: true })
-      }).catch((err) => resolve({ ok: false, error: err.message }))
+    return new Promise(resolve => {
+      shell
+        .openPath(p)
+        .then(errMsg => {
+          resolve(errMsg ? { ok: false, error: errMsg } : { ok: true })
+        })
+        .catch(err => resolve({ ok: false, error: err.message }))
     })
   })
 }

@@ -6,12 +6,16 @@ const path = require('path')
 const { diagnoseText, recentCrashReport } = require('../main/diagnose')
 
 test('diagnoseText detecta Java incompatible', () => {
-  const r = diagnoseText('Exception in thread "main" java.lang.UnsupportedClassVersionError: net/minecraft/server/Main has been compiled by a more recent version')
+  const r = diagnoseText(
+    'Exception in thread "main" java.lang.UnsupportedClassVersionError: net/minecraft/server/Main has been compiled by a more recent version'
+  )
   assert.equal(r && r.id, 'java_version')
 })
 
 test('diagnoseText detecta puerto ocupado', () => {
-  const r = diagnoseText('[23:00:00] [Server thread/ERROR]: ****************************************\njava.net.BindException: Address already in use')
+  const r = diagnoseText(
+    '[23:00:00] [Server thread/ERROR]: ****************************************\njava.net.BindException: Address already in use'
+  )
   assert.equal(r && r.id, 'port_in_use')
 })
 

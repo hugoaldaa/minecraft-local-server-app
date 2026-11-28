@@ -61,7 +61,10 @@ export async function generateChecksums({ dir = DIST_DIR, platform = null } = {}
 
 // Une los ficheros parciales subidos por cada job de la matriz en uno solo.
 export function combineChecksums(dir = DIST_DIR) {
-  const parts = fs.readdirSync(dir).filter(f => /^SHA256SUMS-(win|linux)\.txt$/.test(f)).sort()
+  const parts = fs
+    .readdirSync(dir)
+    .filter(f => /^SHA256SUMS-(win|linux)\.txt$/.test(f))
+    .sort()
   if (!parts.length) throw new Error(`No hay ficheros SHA256SUMS parciales en ${dir}`)
   const byFile = new Map()
   for (const part of parts) {

@@ -70,7 +70,7 @@
   font-family: var(--pixel);
   font-size: 10px;
   color: var(--text2);
-  }
+}
 
 .tstat span:last-child {
   font-family: var(--mono);
@@ -113,7 +113,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
   font-size: 14px;
 }
 
@@ -138,4 +140,3 @@
 .screen.active {
   display: flex;
 }
-

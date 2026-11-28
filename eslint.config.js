@@ -10,19 +10,22 @@ function sharedRendererGlobals() {
   const files = ['src/renderer.js', 'src/i18n.js']
   const dir = 'src/renderer'
   if (fs.existsSync(dir)) {
-    fs.readdirSync(dir).filter(f => f.endsWith('.js')).forEach(f => files.push(path.join(dir, f)))
+    fs.readdirSync(dir)
+      .filter(f => f.endsWith('.js'))
+      .forEach(f => files.push(path.join(dir, f)))
   }
   const names = new Set()
   for (const file of files) {
     const content = fs.readFileSync(file, 'utf8')
     for (const line of content.split(/\r?\n/)) {
-      const m = line.match(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/) ||
-        line.match(/^(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)/)
+      const m = line.match(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/) || line.match(/^(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)/)
       if (m) names.add(m[1])
     }
   }
   const globals = {}
-  names.forEach(n => { globals[n] = 'readonly' })
+  names.forEach(n => {
+    globals[n] = 'readonly'
+  })
   return globals
 }
 

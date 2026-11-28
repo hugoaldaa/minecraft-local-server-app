@@ -18,16 +18,31 @@ function fakeNode() {
   return new Proxy(target, {
     get(t, prop) {
       if (prop === 'dataset' || prop === 'style') return {}
-      if (prop === 'classList') return { add() {}, remove() {}, toggle() {}, contains() { return false } }
+      if (prop === 'classList')
+        return {
+          add() {},
+          remove() {},
+          toggle() {},
+          contains() {
+            return false
+          }
+        }
       if (prop === 'textContent' || prop === 'value' || prop === 'checked') return t[prop] ?? ''
       if (prop === 'length') return 0
       if (prop === 'then' || typeof prop === 'symbol') return undefined
       if (prop in t) return t[prop]
       return fakeNode()
     },
-    set(t, prop, value) { t[prop] = value; return true },
-    apply() { return fakeNode() },
-    construct() { return fakeNode() }
+    set(t, prop, value) {
+      t[prop] = value
+      return true
+    },
+    apply() {
+      return fakeNode()
+    },
+    construct() {
+      return fakeNode()
+    }
   })
 }
 
@@ -51,12 +66,18 @@ test('los scripts del renderer se cargan en orden y comparten el ámbito global'
     window: { api, addEventListener() {} },
     document: new Proxy(fakeNode(), {
       get(t, prop) {
-        if (prop === 'addEventListener') return (type, cb) => { if (type === 'DOMContentLoaded') onReady = cb }
+        if (prop === 'addEventListener')
+          return (type, cb) => {
+            if (type === 'DOMContentLoaded') onReady = cb
+          }
         if (prop === 'documentElement') return fakeNode()
         const node = fakeNode()
         return Reflect.get(node, prop, node)
       },
-      set(t, prop, value) { t[prop] = value; return true }
+      set(t, prop, value) {
+        t[prop] = value
+        return true
+      }
     }),
     I18N: { t: k => k, onLangChange() {}, setLang() {}, getLang: () => 'es', locale: () => 'es' }
   }

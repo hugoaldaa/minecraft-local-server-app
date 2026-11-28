@@ -14,12 +14,40 @@ const state = {
   update: { status: 'idle', hasUpdate: false, version: null, notes: null, percent: 0, lastChecked: null },
   detailBar: [false, false],
   maximized: false,
-  dl: { source: 'manual', provider: 'paper', version: '', versions: {}, shownProvider: null, installRoot: '', token: null, installing: false, cancelRequested: false }
+  dl: {
+    source: 'manual',
+    provider: 'paper',
+    version: '',
+    versions: {},
+    shownProvider: null,
+    installRoot: '',
+    token: null,
+    installing: false,
+    cancelRequested: false
+  }
 }
 
 const MAX_LINES = 2000
 const SERVER_COLORS = ['#6cb43f', '#8fd14f', '#e5c454', '#e2685c', '#8fd1ff', '#3f7d24', '#cfc6a8', '#97a48f']
-const IMPORTANT_PROPS = ['server-port', 'max-players', 'level-name', 'gamemode', 'difficulty', 'pvp', 'online-mode', 'white-list', 'motd', 'view-distance', 'simulation-distance', 'allow-flight', 'enable-command-block', 'level-seed', 'spawn-protection', 'level-type', 'op-permission-level']
+const IMPORTANT_PROPS = [
+  'server-port',
+  'max-players',
+  'level-name',
+  'gamemode',
+  'difficulty',
+  'pvp',
+  'online-mode',
+  'white-list',
+  'motd',
+  'view-distance',
+  'simulation-distance',
+  'allow-flight',
+  'enable-command-block',
+  'level-seed',
+  'spawn-protection',
+  'level-type',
+  'op-permission-level'
+]
 
 function safeColor(c) {
   return typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c) ? c : SERVER_COLORS[0]
@@ -43,7 +71,9 @@ function h(tag, attrs = {}, ...children) {
 
 function fill(container, ...children) {
   container.textContent = ''
-  children.flat().forEach(c => { if (c) container.appendChild(c) })
+  children.flat().forEach(c => {
+    if (c) container.appendChild(c)
+  })
   return container
 }
 
@@ -67,14 +97,16 @@ async function run(label, fn, fallback = null) {
   }
 }
 
-window.addEventListener('unhandledrejection', (e) => {
+window.addEventListener('unhandledrejection', e => {
   console.error(T('log.unhandledRejection'), e.reason)
 })
 
 // ─── Tema (claro/oscuro): se lee de la BD; el valor antiguo de localStorage se
 // migra una sola vez y se elimina. Ningún ajuste se guarda en localStorage.
 let activeTheme = 'dark'
-function currentTheme() { return activeTheme }
+function currentTheme() {
+  return activeTheme
+}
 function applyTheme(theme) {
   activeTheme = theme === 'light' ? 'light' : 'dark'
   document.documentElement.dataset.theme = activeTheme
@@ -82,15 +114,18 @@ function applyTheme(theme) {
 ;(async () => {
   let saved = null
   let old = null
-  try { saved = await window.api.getPref('theme') } catch (_) {}
+  try {
+    saved = await window.api.getPref('theme')
+  } catch (_) {}
   try {
     old = localStorage.getItem('app-theme')
     localStorage.removeItem('app-theme')
   } catch (_) {}
   if (saved !== 'light' && saved !== 'dark' && (old === 'light' || old === 'dark')) {
     saved = old
-    try { await window.api.setPref('theme', old) } catch (_) {}
+    try {
+      await window.api.setPref('theme', old)
+    } catch (_) {}
   }
   applyTheme(saved)
 })()
-

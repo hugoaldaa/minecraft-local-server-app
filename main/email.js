@@ -4,9 +4,17 @@ const nodemailer = require('nodemailer')
 const { settingsStore } = require('./stores')
 
 const EMAIL_PREF_KEYS = [
-  'emailEnabled', 'emailHost', 'emailPort', 'emailSecure',
-  'emailUser', 'emailPass', 'emailFrom', 'emailTo',
-  'emailNotifyServer', 'emailNotifyBackups', 'emailNotifyPlayers'
+  'emailEnabled',
+  'emailHost',
+  'emailPort',
+  'emailSecure',
+  'emailUser',
+  'emailPass',
+  'emailFrom',
+  'emailTo',
+  'emailNotifyServer',
+  'emailNotifyBackups',
+  'emailNotifyPlayers'
 ]
 
 function asText(value) {
@@ -74,12 +82,7 @@ function row(label, value) {
 }
 
 function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
 async function sendNotificationEmail(payload, data = {}) {

@@ -93,12 +93,12 @@ function initModal() {
   document.getElementById('btn-consent-privacy').onclick = openPrivacyModal
   document.getElementById('btn-privacy-policy').onclick = openPrivacyModal
   document.getElementById('privacy-close').onclick = closePrivacyModal
-  document.getElementById('modal-privacy').addEventListener('click', (e) => {
+  document.getElementById('modal-privacy').addEventListener('click', e => {
     if (e.target.id === 'modal-privacy') closePrivacyModal()
   })
 
   // Accesibilidad: Escape cierra el modal abierto (salvo si está instalando)
-  document.addEventListener('keydown', (e) => {
+  document.addEventListener('keydown', e => {
     if (e.key !== 'Escape' || e.defaultPrevented) return
     const privacy = document.getElementById('modal-privacy')
     if (privacy && !privacy.classList.contains('hidden')) {
@@ -116,7 +116,8 @@ function closePrivacyModal() {
 
 function openPrivacyModal() {
   const content = document.getElementById('privacy-content')
-  fill(content,
+  fill(
+    content,
     h('p', { text: T('privacy.intro') }),
     h('h4', { text: T('privacy.storedTitle') }),
     h('p', { text: T('privacy.storedServers') }),
@@ -138,11 +139,14 @@ function openPrivacyModal() {
 function renderColorOptions(containerId, selectedColor) {
   const container = document.getElementById(containerId)
   const selected = selectedColor || SERVER_COLORS[0]
-  fill(container, ...SERVER_COLORS.map(c => {
-    const el = h('div', { class: `color-opt ${c === selected ? 'selected' : ''}`, 'data-color': c })
-    el.style.background = c
-    return el
-  }))
+  fill(
+    container,
+    ...SERVER_COLORS.map(c => {
+      const el = h('div', { class: `color-opt ${c === selected ? 'selected' : ''}`, 'data-color': c })
+      el.style.background = c
+      return el
+    })
+  )
 }
 
 function selectColor(el, containerId) {
@@ -168,11 +172,11 @@ async function openServerModal() {
   const nameInput = document.getElementById('ms-name')
   if (nameInput && typeof nameInput.focus === 'function') nameInput.focus()
   // Valores por defecto de Ajustes → Servidores
-  const pref = await run(T('run.settings'), () => Promise.all([
-    window.api.getPref('defaultRam'),
-    window.api.getPref('defaultJava'),
-    window.api.getPref('defaultServerDir')
-  ]), [null, null, null])
+  const pref = await run(
+    T('run.settings'),
+    () => Promise.all([window.api.getPref('defaultRam'), window.api.getPref('defaultJava'), window.api.getPref('defaultServerDir')]),
+    [null, null, null]
+  )
   const [ram, java, serverDir] = Array.isArray(pref) ? pref : [null, null, null]
   if (Number.isInteger(ram) && ram >= 512 && ram <= 65536) document.getElementById('ms-max-ram').value = ram
   document.getElementById('ms-java').value = java || ''
@@ -184,4 +188,3 @@ async function openServerModal() {
     rootInput.value = serverDir
   }
 }
-

@@ -11,7 +11,11 @@ function initEvents() {
 
   window.api.onServerStopped(({ serverId, code, error }) => {
     const msg = error ? T('log.serverStoppedError', { error }) : T('log.serverStopped', { code: code ?? 0 })
-    if (state.currentServerId === serverId) { appendLog(msg, 'warn'); updateDetailBar(false); state.isRunning = false }
+    if (state.currentServerId === serverId) {
+      appendLog(msg, 'warn')
+      updateDetailBar(false)
+      state.isRunning = false
+    }
     // Solo se limpian los jugadores del servidor que se detuvo
     delete state.playersByServer[serverId]
     if (state.currentServerId === serverId) renderPlayers()
@@ -35,7 +39,7 @@ function initEvents() {
     document.getElementById('modal-close').classList.remove('hidden')
   })
 
-  window.api.onCrashLogged((crash) => {
+  window.api.onCrashLogged(crash => {
     console.error('Crash logged:', crash)
   })
 
@@ -46,11 +50,12 @@ function initEvents() {
 function showToast(title, body, type = 'info') {
   const container = document.getElementById('toast-container')
   if (!container || !title) return
-  const toast = h('div', { class: 'toast', 'data-type': type },
+  const toast = h(
+    'div',
+    { class: 'toast', 'data-type': type },
     h('div', { class: 'toast-title', text: title }),
     body ? h('div', { class: 'toast-body', text: body }) : null
   )
   container.appendChild(toast)
   setTimeout(() => toast.remove(), 5000)
 }
-

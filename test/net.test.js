@@ -21,9 +21,9 @@ test('parseServerPort respeta puertos válidos', () => {
 
 test('isPortInUse detecta un puerto ocupado y libre', async () => {
   const listener = net.createServer()
-  await new Promise((resolve) => listener.listen(0, '0.0.0.0', resolve))
+  await new Promise(resolve => listener.listen(0, '0.0.0.0', resolve))
   const port = listener.address().port
   assert.equal(await isPortInUse(port), true)
-  await new Promise((resolve) => listener.close(resolve))
+  await new Promise(resolve => listener.close(resolve))
   assert.equal(await isPortInUse(port), false)
 })

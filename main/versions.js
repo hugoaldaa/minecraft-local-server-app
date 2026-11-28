@@ -5,7 +5,9 @@
 // Java mínimo recomendado por versión de Minecraft:
 //  ≤1.16.5 → 8 · 1.17–1.20.4 → 17 · ≥1.20.5 → 21
 function minJavaFor(mcVersion) {
-  const p = String(mcVersion || '').split('.').map(Number)
+  const p = String(mcVersion || '')
+    .split('.')
+    .map(Number)
   const major = p[0]
   const minor = p[1] || 0
   const patch = p[2] || 0
@@ -22,30 +24,36 @@ function isPreRelease(version) {
 }
 
 function compareVersions(a, b) {
-  const pa = String(a).split('.').map(x => parseInt(x, 10) || 0)
-  const pb = String(b).split('.').map(x => parseInt(x, 10) || 0)
+  const pa = String(a)
+    .split('.')
+    .map(x => parseInt(x, 10) || 0)
+  const pb = String(b)
+    .split('.')
+    .map(x => parseInt(x, 10) || 0)
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
     const x = pa[i] || 0
     const y = pb[i] || 0
     if (x !== y) return x - y
   }
-  return isPreRelease(a) === isPreRelease(b) ? 0 : (isPreRelease(a) ? -1 : 1)
+  return isPreRelease(a) === isPreRelease(b) ? 0 : isPreRelease(a) ? -1 : 1
 }
 
 // Nombre de carpeta seguro: sin caracteres inválidos ni rutas relativas.
 function slugify(name) {
-  const s = String(name || '').trim().replace(/[<>:"/\\|?*\x00-\x1f]+/g, '_').replace(/\s+/g, ' ').slice(0, 60)
+  const s = String(name || '')
+    .trim()
+    .replace(/[<>:"/\\|?*\x00-\x1f]+/g, '_')
+    .replace(/\s+/g, ' ')
+    .slice(0, 60)
   return s || 'server'
 }
 
 function parseVersionManifest(json) {
   const list = (json && Array.isArray(json.versions) ? json.versions : [])
     .filter(v => v && v.type === 'release' && /^\d+\.\d+(\.\d+)?$/.test(String(v.id)))
-    .map(v => ({ id: v.id, time: (v.releaseTime || v.time || '') || null }))
+    .map(v => ({ id: v.id, time: v.releaseTime || v.time || '' || null }))
   list.sort((a, b) => compareVersions(b.id, a.id))
-  const latest = json && json.latest && typeof json.latest.release === 'string'
-    ? json.latest.release
-    : (list[0] && list[0].id) || null
+  const latest = json && json.latest && typeof json.latest.release === 'string' ? json.latest.release : (list[0] && list[0].id) || null
   return { latest, releases: list }
 }
 
@@ -65,7 +73,7 @@ function parsePaperProjects(json) {
 }
 
 function parsePaperBuilds(json) {
-  const list = Array.isArray(json) ? json : (json && Array.isArray(json.builds) ? json.builds : [])
+  const list = Array.isArray(json) ? json : json && Array.isArray(json.builds) ? json.builds : []
   for (const b of list) {
     if (!b || b.channel !== 'STABLE') continue
     const d = b.downloads && b.downloads['server:default']

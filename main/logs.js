@@ -5,9 +5,7 @@
 // del juego; eso es más fiable que la salida por stdout, que no tiene timestamps.
 const fs = require('fs')
 const path = require('path')
-const {
-  getAllServersMap, getPlayerEvents, insertPlayerEvents, prunePlayerEvents, settingsStore
-} = require('./stores')
+const { getAllServersMap, getPlayerEvents, insertPlayerEvents, prunePlayerEvents, settingsStore } = require('./stores')
 
 // Log de actividad actual del servidor (ruta relativa a la carpeta del .jar).
 function getLogPath(server) {

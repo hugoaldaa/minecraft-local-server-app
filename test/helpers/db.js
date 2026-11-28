@@ -17,7 +17,9 @@ function setupTestDb(label) {
 function teardownTestDb() {
   closeDb()
   if (dir) {
-    try { fs.rmSync(dir, { recursive: true, force: true }) } catch (_) {}
+    try {
+      fs.rmSync(dir, { recursive: true, force: true })
+    } catch (_) {}
     dir = null
   }
 }

@@ -7,4 +7,3 @@ document.getElementById('btn-consent-no').onclick = async () => {
   await run(T('run.consent'), () => window.api.setAnalyticsConsent(false))
   showScreen('servers')
 }
-

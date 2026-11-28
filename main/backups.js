@@ -24,16 +24,26 @@ function pruneOldBackups(outDir) {
   const keep = Number(settingsStore.get('backupKeep'))
   if (!Number.isFinite(keep) || keep <= 0) return
   try {
-    const files = fs.readdirSync(outDir)
+    const files = fs
+      .readdirSync(outDir)
       .filter(f => /^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.zip$/.test(f))
-      .sort().reverse() // el nombre lleva la fecha: orden lexicográfico = cronológico
+      .sort()
+      .reverse() // el nombre lleva la fecha: orden lexicográfico = cronológico
     files.slice(keep).forEach(f => {
-      try { fs.unlinkSync(path.join(outDir, f)) } catch (_) { /* sin permisos: se queda */ }
+      try {
+        fs.unlinkSync(path.join(outDir, f))
+      } catch (_) {
+        /* sin permisos: se queda */
+      }
     })
-  } catch (_) { /* si falla el listado, no se borra nada */ }
+  } catch (_) {
+    /* si falla el listado, no se borra nada */
+  }
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms))
+}
 
 // Con el servidor en marcha, el mundo puede cambiar mientras se comprime el
 // zip. Se desactiva la escritura a disco (save-off), se fuerza el volcado
@@ -70,10 +80,13 @@ async function createBackup(serverDir, backupDir, serverId) {
     quiesce(serverId)
     await sleep(2000) // margen para que el mundo se vuelque a disco
   }
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const output = fs.createWriteStream(outFile)
     const archive = archiver('zip', { zlib: { level: compressionLevel() } })
-    const finish = (result) => { if (live) resume(serverId); resolve(result) }
+    const finish = result => {
+      if (live) resume(serverId)
+      resolve(result)
+    }
     output.on('close', () => {
       pruneOldBackups(outDir)
       trackEvent('backup_created', { sizeMb: Math.round(archive.pointer() / 1024 / 1024) })
@@ -84,8 +97,14 @@ async function createBackup(serverDir, backupDir, serverId) {
       }
       finish({ ok: true, file: outFile, size: archive.pointer() })
     })
-    output.on('error', (err) => { logCrash('backup_write_error', err); finish({ ok: false, error: err.message }) })
-    archive.on('error', (err) => { logCrash('backup_error', err); finish({ ok: false, error: err.message }) })
+    output.on('error', err => {
+      logCrash('backup_write_error', err)
+      finish({ ok: false, error: err.message })
+    })
+    archive.on('error', err => {
+      logCrash('backup_error', err)
+      finish({ ok: false, error: err.message })
+    })
     archive.pipe(output)
     ;['world', 'world_nether', 'world_the_end'].forEach(dir => {
       const full = path.join(srcDir, dir)
@@ -100,11 +119,15 @@ function listBackups(backupDir) {
   try {
     const dir = path.resolve(backupDir)
     if (!fs.existsSync(dir)) return { ok: true, backups: [] }
-    const backups = fs.readdirSync(dir).filter(f => f.endsWith('.zip')).map(f => {
-      const full = path.join(dir, f)
-      const stats = fs.statSync(full)
-      return { name: f, path: full, size: stats.size, date: stats.mtime }
-    }).sort((a, b) => new Date(b.date) - new Date(a.date))
+    const backups = fs
+      .readdirSync(dir)
+      .filter(f => f.endsWith('.zip'))
+      .map(f => {
+        const full = path.join(dir, f)
+        const stats = fs.statSync(full)
+        return { name: f, path: full, size: stats.size, date: stats.mtime }
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
     return { ok: true, backups }
   } catch (err) {
     logCrash('backup_list_error', err)
@@ -170,8 +193,12 @@ async function restoreBackup(backupFile, serverDir, serverId) {
     try {
       fs.rmSync(destDir, { recursive: true, force: true })
       fs.cpSync(safetyDir, destDir, { recursive: true })
-    } catch (_) { /* mejor esfuerzo */ }
-    try { fs.rmSync(safetyDir, { recursive: true, force: true }) } catch (_) { }
+    } catch (_) {
+      /* mejor esfuerzo */
+    }
+    try {
+      fs.rmSync(safetyDir, { recursive: true, force: true })
+    } catch (_) {}
     logCrash('backup_restore_error', err)
     return { ok: false, error: err.message || 'No se pudo restaurar el backup' }
   }

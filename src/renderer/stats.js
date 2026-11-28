@@ -62,7 +62,7 @@ function renderBarChart(container, points) {
   const minBarWidth = 45
   const height = 160
   const width = Math.max(600, points.length * minBarWidth)
-  const max = Math.max(...points.map((p) => p.value), 1)
+  const max = Math.max(...points.map(p => p.value), 1)
   const barWidth = width / points.length
   const svg = svgEl('svg', {
     viewBox: `0 0 ${width} ${height}`,
@@ -148,10 +148,12 @@ function renderStatsSummary(data, dailyActivity) {
   // La gráfica y su listado de conexiones diarias usan el período del gráfico;
   // las tarjetas y los momentos concurrentes se muestran sin filtrar.
   const daily = dailyActivity || data.dailyPlayerActivity
-  const points = Object.keys(daily).sort().map((day) => {
-    const entry = daily[day]
-    return { label: day.slice(5), value: Object.keys(entry.players).length }
-  })
+  const points = Object.keys(daily)
+    .sort()
+    .map(day => {
+      const entry = daily[day]
+      return { label: day.slice(5), value: Object.keys(entry.players).length }
+    })
   renderBarChart(document.getElementById('stats-chart-players-day'), points)
 
   renderDaysConnections(daily)
@@ -199,7 +201,7 @@ function renderStatsMoments(moments) {
     fill(list, h('div', { class: 'empty-state', text: T('stats.noData') }))
     return
   }
-  moments.slice(0, 10).forEach((m) => {
+  moments.slice(0, 10).forEach(m => {
     const li = document.createElement('li')
     li.className = 'stats-moment'
     const line = document.createElement('div')
@@ -261,7 +263,7 @@ function renderStatsPlayers(players) {
     body.appendChild(tr)
     return
   }
-  players.forEach((p) => {
+  players.forEach(p => {
     const tr = document.createElement('tr')
     const player = document.createElement('td')
     player.textContent = p.player
@@ -294,4 +296,3 @@ async function playerAction(action) {
   }
   if (res) appendLog(`> ${action} ${target}`, 'info')
 }
-

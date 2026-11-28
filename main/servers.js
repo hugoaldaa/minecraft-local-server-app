@@ -11,9 +11,7 @@ const { getRunTime } = require('./stores')
 const { logCrash } = require('./crash')
 const { insertNotificacion } = require('./db')
 const { clearNotificaciones } = require('./notificaciones')
-const {
-  isStr, isIntInRange, isValidColor, cleanText, isValidJavaPath, isPlainObject, splitArgs
-} = require('./validate')
+const { isStr, isIntInRange, isValidColor, cleanText, isValidJavaPath, isPlainObject, splitArgs } = require('./validate')
 const { minJavaFor } = require('./versions')
 const { readProperties } = require('./properties')
 const { parseServerPort, isPortInUse } = require('./net')
@@ -34,7 +32,7 @@ const restartTimers = {}
 // Detecta si un proceso Java está ejecutando un JAR específico (puede haber sido
 // iniciado fuera de la app o antes de reiniciarla)
 function isJarRunning(jarPath) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (!fs.existsSync(jarPath)) return resolve(false)
     const absPath = path.resolve(jarPath)
     const isWindows = process.platform === 'win32'
@@ -42,14 +40,23 @@ function isJarRunning(jarPath) {
     // Linux/macOS: pgrep busca el jar en la linea de comandos.
     const cmd = isWindows ? 'powershell.exe' : 'pgrep'
     const args = isWindows
-      ? ['-NoProfile', '-NonInteractive', '-Command',
-        `(Get-CimInstance Win32_Process -Filter "Name='java.exe'") | Where-Object { $_.CommandLine -and $_.CommandLine.Contains('${absPath.replace(/'/g, "''")}') } | Select-Object -First 1 -ExpandProperty ProcessId`]
+      ? [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          `(Get-CimInstance Win32_Process -Filter "Name='java.exe'") | Where-Object { $_.CommandLine -and $_.CommandLine.Contains('${absPath.replace(/'/g, "''")}') } | Select-Object -First 1 -ExpandProperty ProcessId`
+        ]
       : ['-f', absPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')]
     const child = spawn(cmd, args, { shell: false })
     let output = ''
-    child.stdout.on('data', (d) => { output += d })
+    child.stdout.on('data', d => {
+      output += d
+    })
     child.on('close', () => {
-      const pid = output.split('\n').map(l => l.trim()).find(l => /^\d+$/.test(l))
+      const pid = output
+        .split('\n')
+        .map(l => l.trim())
+        .find(l => /^\d+$/.test(l))
       resolve(pid || false)
     })
     child.on('error', () => resolve(false))
@@ -62,7 +69,7 @@ function isJarRunning(jarPath) {
 const javaVersionCache = new Map()
 
 function detectJavaVersion(javaPath) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (javaVersionCache.has(javaPath)) return resolve(javaVersionCache.get(javaPath))
     let out = ''
     let child
@@ -71,8 +78,12 @@ function detectJavaVersion(javaPath) {
     } catch (_) {
       return resolve(null)
     }
-    child.stdout.on('data', (d) => { out += d })
-    child.stderr.on('data', (d) => { out += d })
+    child.stdout.on('data', d => {
+      out += d
+    })
+    child.stderr.on('data', d => {
+      out += d
+    })
     child.on('error', () => resolve(null))
     child.on('close', () => {
       let major = null
@@ -96,7 +107,10 @@ function detectJavaVersion(javaPath) {
 async function startServer(serverId, acceptEula = false, isRestart = false) {
   if (activeServers[serverId]) return { ok: false, error: 'Ya está en ejecución' }
   // Cancela un reinicio pendiente; un arranque manual reinicia el contador.
-  if (restartTimers[serverId]) { clearTimeout(restartTimers[serverId]); delete restartTimers[serverId] }
+  if (restartTimers[serverId]) {
+    clearTimeout(restartTimers[serverId])
+    delete restartTimers[serverId]
+  }
   if (!isRestart) delete restartAttempts[serverId]
   // La configuración SIEMPRE sale del almacenamiento propio: el renderer no
   // puede inyectar javaPath/extraArgs arbitrarios.
@@ -117,7 +131,10 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
   const ver = await detectJavaVersion(java)
   if (!ver) return { ok: false, error: `No se pudo ejecutar "${java} -version". Instala Java ${requiredJava}+ o corrige la ruta de Java.` }
   if (ver.major < requiredJava) {
-    return { ok: false, error: `Minecraft ${mcVersion || 'desconocida'} requiere Java ${requiredJava}+ (detectado Java ${ver.major}). Cambia la ruta de Java en la configuración del servidor.` }
+    return {
+      ok: false,
+      error: `Minecraft ${mcVersion || 'desconocida'} requiere Java ${requiredJava}+ (detectado Java ${ver.major}). Cambia la ruta de Java en la configuración del servidor.`
+    }
   }
 
   // Comprobar el puerto antes de arrancar: el 25565 ocupado es el fallo más
@@ -126,9 +143,14 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
     const propsRes = readProperties(serverDir)
     const port = parseServerPort(propsRes.ok ? propsRes.props : null)
     if (await isPortInUse(port)) {
-      return { ok: false, error: `El puerto ${port} ya está en uso. Cierra el programa que lo ocupa o cambia «server-port» en server.properties.` }
+      return {
+        ok: false,
+        error: `El puerto ${port} ya está en uso. Cierra el programa que lo ocupa o cambia «server-port» en server.properties.`
+      }
     }
-  } catch (_) { /* si la comprobación falla, se deja arrancar */ }
+  } catch (_) {
+    /* si la comprobación falla, se deja arrancar */
+  }
 
   // eula.txt: el primer arranque necesita aceptación explícita del usuario,
   // salvo que «Aceptar la EULA automáticamente» esté activo en Ajustes.
@@ -137,7 +159,11 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
     const autoEula = settingsStore.get('autoEula') === true
     if (!acceptEula && !autoEula) return { ok: false, code: 'eula', error: 'Falta aceptar la EULA de Minecraft (eula.txt)' }
     try {
-      fs.writeFileSync(eulaFile, '# Aceptación de la EULA de Minecraft (https://aka.ms/MinecraftEULA)\n# Generado por Minecraft Local Server Manager\neula=true\n', 'utf8')
+      fs.writeFileSync(
+        eulaFile,
+        '# Aceptación de la EULA de Minecraft (https://aka.ms/MinecraftEULA)\n# Generado por Minecraft Local Server Manager\neula=true\n',
+        'utf8'
+      )
     } catch (err) {
       logCrash('eula_write_error', err)
       return { ok: false, error: 'No se pudo crear eula.txt: ' + err.message }
@@ -168,47 +194,61 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
     const startTime = Date.now()
     // Últimas líneas de salida para diagnosticar un crash (2.4) sin guardar logs completos.
     const recentLines = []
-    const pushLine = (line) => { recentLines.push(line); if (recentLines.length > 40) recentLines.shift() }
+    const pushLine = line => {
+      recentLines.push(line)
+      if (recentLines.length > 40) recentLines.shift()
+    }
     let notifiedReady = false // una sola notificación de arranque por sesión
 
     // El stdin puede cerrarse (proceso muerto) y su 'error' es asíncrono:
     // sin este handler sería un uncaughtException.
-    if (proc.stdin) proc.stdin.on('error', (err) => logCrash('server_stdin_error', err))
+    if (proc.stdin) proc.stdin.on('error', err => logCrash('server_stdin_error', err))
 
-    proc.stdout.on('data', (data) => {
-      data.toString().split('\n').filter(l => l.trim()).forEach(line => {
-        pushLine(line)
-        sendToRenderer('console-line', { serverId, text: line, type: classifyLine(line) })
-        if (/Done \([\d.]+s\)!/i.test(line)) {
-          trackEvent('server_started', { startupMs: Date.now() - startTime })
-          if (!notifiedReady) {
-            notifiedReady = true
-            notify('server_started', { name: config.name })
-            insertNotificacion(serverId, 'start', 'Servidor encendido')
+    proc.stdout.on('data', data => {
+      data
+        .toString()
+        .split('\n')
+        .filter(l => l.trim())
+        .forEach(line => {
+          pushLine(line)
+          sendToRenderer('console-line', { serverId, text: line, type: classifyLine(line) })
+          if (/Done \([\d.]+s\)!/i.test(line)) {
+            trackEvent('server_started', { startupMs: Date.now() - startTime })
+            if (!notifiedReady) {
+              notifiedReady = true
+              notify('server_started', { name: config.name })
+              insertNotificacion(serverId, 'start', 'Servidor encendido')
+            }
           }
-        }
-        const join = JOIN_RE.exec(line)
-        if (join) notify('player_join', { name: join[1] })
-        const leave = LEAVE_RE.exec(line)
-        if (leave) notify('player_leave', { name: leave[1] })
-      })
+          const join = JOIN_RE.exec(line)
+          if (join) notify('player_join', { name: join[1] })
+          const leave = LEAVE_RE.exec(line)
+          if (leave) notify('player_leave', { name: leave[1] })
+        })
     })
-    proc.stderr.on('data', (data) => {
-      data.toString().split('\n').filter(l => l.trim()).forEach(line => {
-        pushLine(line)
-        sendToRenderer('console-line', { serverId, text: line, type: 'error' })
-      })
+    proc.stderr.on('data', data => {
+      data
+        .toString()
+        .split('\n')
+        .filter(l => l.trim())
+        .forEach(line => {
+          pushLine(line)
+          sendToRenderer('console-line', { serverId, text: line, type: 'error' })
+        })
     })
     const closeRun = (stopTime, code, error) => {
       const running = activeServers[serverId]
-      if (running && running.stopTimer) { clearTimeout(running.stopTimer); running.stopTimer = null }
+      if (running && running.stopTimer) {
+        clearTimeout(running.stopTimer)
+        running.stopTimer = null
+      }
       if (running) running.stopTime = stopTime
       // Acumula el tiempo de esta sesión y guarda la parada (Fase 2).
       const run = getRunTime(serverId)
       const sessionStart = run && run.currentSessionStart ? run.currentSessionStart : stopTime
       const sessionMs = Math.max(0, stopTime - sessionStart)
       saveRunTime(serverId, {
-        startedAt: run && run.startedAt ? run.startedAt : (running ? running.startTime : null),
+        startedAt: run && run.startedAt ? run.startedAt : running ? running.startTime : null,
         stoppedAt: stopTime,
         totalMs: Math.max(0, (run && run.totalMs ? run.totalMs : 0) + sessionMs),
         currentSessionStart: null
@@ -218,7 +258,7 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
       trackEvent('server_stopped', { code, uptimeMs: sessionMs })
       closeServerSessions(serverId, stopTime)
     }
-    proc.on('exit', (code) => {
+    proc.on('exit', code => {
       const running = activeServers[serverId]
       const voluntary = !!(running && running.stopping)
       closeRun(Date.now(), code, null)
@@ -242,7 +282,11 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
       // Estos fallos no se arreglan solos: reintentar solo generaría ruido.
       const FATAL_DIAGNOSES = ['java_version', 'eula', 'port_in_use']
       if (diag && FATAL_DIAGNOSES.includes(diag.id)) {
-        sendToRenderer('console-line', { serverId, text: 'No se reintentará automáticamente: corrige el problema indicado y arranca el servidor de nuevo.', type: 'error' })
+        sendToRenderer('console-line', {
+          serverId,
+          text: 'No se reintentará automáticamente: corrige el problema indicado y arranca el servidor de nuevo.',
+          type: 'error'
+        })
         delete restartAttempts[serverId]
         return
       }
@@ -250,7 +294,11 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
       // Auto-reinicio (2.1) con límite de reintentos consecutivos.
       const attempts = (restartAttempts[serverId] || 0) + 1
       if (attempts > RESTART_LIMIT) {
-        sendToRenderer('console-line', { serverId, text: `El servidor se ha caído ${RESTART_LIMIT} veces seguidas. No se reiniciará más automáticamente.`, type: 'error' })
+        sendToRenderer('console-line', {
+          serverId,
+          text: `El servidor se ha caído ${RESTART_LIMIT} veces seguidas. No se reiniciará más automáticamente.`,
+          type: 'error'
+        })
         delete restartAttempts[serverId]
         return
       }
@@ -265,7 +313,7 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
         startServer(serverId, false, true).catch(err => logCrash('server_restart_error', err))
       }, RESTART_DELAY_MS)
     })
-    proc.on('error', (err) => {
+    proc.on('error', err => {
       closeRun(Date.now(), null, err.message)
       delete restartAttempts[serverId]
       logCrash('server_process_error', err)
@@ -287,7 +335,10 @@ async function startServer(serverId, acceptEula = false, isRestart = false) {
 
 async function stopServer(serverId) {
   // Una parada manual cancela cualquier reinicio pendiente y resetea reintentos.
-  if (restartTimers[serverId]) { clearTimeout(restartTimers[serverId]); delete restartTimers[serverId] }
+  if (restartTimers[serverId]) {
+    clearTimeout(restartTimers[serverId])
+    delete restartTimers[serverId]
+  }
   delete restartAttempts[serverId]
   const s = activeServers[serverId]
   if (!s) {
@@ -308,7 +359,9 @@ async function stopServer(serverId) {
   }
   s.stopTimer = setTimeout(() => {
     if (activeServers[serverId]) {
-      try { activeServers[serverId].process.kill() } catch (_) { }
+      try {
+        activeServers[serverId].process.kill()
+      } catch (_) {}
       delete activeServers[serverId]
     }
   }, 10000)
@@ -324,7 +377,9 @@ function cancelAllRestarts() {
 
 function stopAllServers() {
   cancelAllRestarts()
-  Object.keys(activeServers).forEach(id => { stopServer(id) })
+  Object.keys(activeServers).forEach(id => {
+    stopServer(id)
+  })
 }
 
 async function sendCommand(serverId, cmd) {
@@ -439,7 +494,10 @@ function registerServersIpc() {
     if (!isStr(serverId)) return { ok: false, error: 'Datos inválidos' }
     const map = getAllServersMap()
     if (activeServers[serverId]) return { ok: false, error: 'Detén el servidor antes de eliminarlo' }
-    if (restartTimers[serverId]) { clearTimeout(restartTimers[serverId]); delete restartTimers[serverId] }
+    if (restartTimers[serverId]) {
+      clearTimeout(restartTimers[serverId])
+      delete restartTimers[serverId]
+    }
     delete restartAttempts[serverId]
     delete map[serverId]
     saveServerMap(map)
@@ -452,9 +510,9 @@ function registerServersIpc() {
 
   ipcMain.handle('servers:get', (_, serverId) => (isStr(serverId) ? getAllServersMap()[serverId] || null : null))
 
-  ipcMain.handle('server:start', (_, { serverId, acceptEula } = {}) => (
+  ipcMain.handle('server:start', (_, { serverId, acceptEula } = {}) =>
     isStr(serverId) ? startServer(serverId, acceptEula === true) : { ok: false, error: 'Datos inválidos' }
-  ))
+  )
   ipcMain.handle('server:stop', (_, serverId) => (isStr(serverId) ? stopServer(serverId) : { ok: false, error: 'Datos inválidos' }))
   ipcMain.handle('server:command', (_, { serverId, cmd } = {}) => {
     if (!isStr(serverId) || typeof cmd !== 'string' || !cmd.trim()) return { ok: false, error: 'Comando inválido' }
@@ -486,17 +544,31 @@ function registerServersIpc() {
   ipcMain.handle('server:statusAll', async () => {
     if (statusAllCache.value && Date.now() - statusAllCache.at < 3000) return statusAllCache.value
     const r = {}
-    Object.keys(activeServers).forEach(id => { r[id] = true })
+    Object.keys(activeServers).forEach(id => {
+      r[id] = true
+    })
     try {
       const map = getAllServersMap()
       const ids = Object.keys(map).filter(id => !r[id] && isStr(launchFingerprint(map[id])))
       const results = await Promise.all(ids.map(id => isJarRunning(launchFingerprint(map[id]))))
-      ids.forEach((id, i) => { if (results[i]) r[id] = { external: true, pid: results[i] } })
-    } catch (_) { }
+      ids.forEach((id, i) => {
+        if (results[i]) r[id] = { external: true, pid: results[i] }
+      })
+    } catch (_) {}
     statusAllCache = { at: Date.now(), value: r }
     return r
   })
 }
 
 // Nota: la validación de rutas compartida vive en validate.js (isServerDir…)
-module.exports = { registerServersIpc, stopAllServers, cancelAllRestarts, stopServer, startServer, isJarRunning, classifyLine, buildServerRecord, detectJavaVersion }
+module.exports = {
+  registerServersIpc,
+  stopAllServers,
+  cancelAllRestarts,
+  stopServer,
+  startServer,
+  isJarRunning,
+  classifyLine,
+  buildServerRecord,
+  detectJavaVersion
+}

@@ -79,11 +79,37 @@ ipcMain.handle('data:importFile', async () => {
 })
 
 // ─── Preferencias globales (Ajustes) ────────────────────────────────────────
-const PREF_KEYS = ['backupDir', 'backupKeep', 'backupLevel', 'theme', 'lang', 'defaultServerDir', 'closeToTray', 'startOnBoot', 'uiScale',
-  'defaultRam', 'defaultJava', 'defaultJvmArgs', 'autoEula', 'retentionSamples', 'retentionEvents',
-  'notifyServer', 'notifyPlayers', 'notifyBackups',
-  'emailEnabled', 'emailHost', 'emailPort', 'emailSecure', 'emailUser', 'emailPass', 'emailFrom', 'emailTo',
-  'emailNotifyServer', 'emailNotifyBackups', 'emailNotifyPlayers']
+const PREF_KEYS = [
+  'backupDir',
+  'backupKeep',
+  'backupLevel',
+  'theme',
+  'lang',
+  'defaultServerDir',
+  'closeToTray',
+  'startOnBoot',
+  'uiScale',
+  'defaultRam',
+  'defaultJava',
+  'defaultJvmArgs',
+  'autoEula',
+  'retentionSamples',
+  'retentionEvents',
+  'notifyServer',
+  'notifyPlayers',
+  'notifyBackups',
+  'emailEnabled',
+  'emailHost',
+  'emailPort',
+  'emailSecure',
+  'emailUser',
+  'emailPass',
+  'emailFrom',
+  'emailTo',
+  'emailNotifyServer',
+  'emailNotifyBackups',
+  'emailNotifyPlayers'
+]
 
 ipcMain.handle('prefs:get', (_, key) => (PREF_KEYS.includes(key) ? settingsStore.get(key, null) : null))
 ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
@@ -100,11 +126,22 @@ ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
     updateTrayLang() // el menú de bandeja se traduce con el idioma guardado
     return { ok: true }
   }
-  if (key === 'closeToTray' || key === 'startOnBoot' || key === 'notifyServer' || key === 'notifyPlayers' || key === 'notifyBackups'
-    || key === 'emailEnabled' || key === 'emailSecure' || key === 'emailNotifyServer' || key === 'emailNotifyBackups' || key === 'emailNotifyPlayers') {
+  if (
+    key === 'closeToTray' ||
+    key === 'startOnBoot' ||
+    key === 'notifyServer' ||
+    key === 'notifyPlayers' ||
+    key === 'notifyBackups' ||
+    key === 'emailEnabled' ||
+    key === 'emailSecure' ||
+    key === 'emailNotifyServer' ||
+    key === 'emailNotifyBackups' ||
+    key === 'emailNotifyPlayers'
+  ) {
     if (typeof value !== 'boolean') return { ok: false, error: 'Valor no válido' }
     settingsStore.set(key, value)
-    if (key === 'closeToTray') syncTray() // crea o elimina el icono de bandeja
+    if (key === 'closeToTray')
+      syncTray() // crea o elimina el icono de bandeja
     else if (key === 'startOnBoot' && app.isPackaged) app.setLoginItemSettings({ openAtLogin: value, path: process.execPath })
     // En desarrollo el ejecutable es electron.exe: no se registra nada
     return { ok: true, ...(key === 'startOnBoot' ? { applied: app.isPackaged } : {}) }
@@ -177,7 +214,7 @@ ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
   if (value !== null && !isStr(value)) return { ok: false, error: 'Ruta no válida' }
   settingsStore.set('backupDir', value || '')
   // La carpeta cambia para todos: se reprograman todos los mantenimientos
-  Object.keys(getAllServersMap()).forEach((id) => scheduleServerMaintenance(id))
+  Object.keys(getAllServersMap()).forEach(id => scheduleServerMaintenance(id))
   return { ok: true }
 })
 
@@ -255,7 +292,9 @@ if (!gotTheLock) {
   })
 }
 
-app.on('window-all-closed', () => { app.quit() })
+app.on('window-all-closed', () => {
+  app.quit()
+})
 
 app.on('will-quit', () => {
   closeDb()

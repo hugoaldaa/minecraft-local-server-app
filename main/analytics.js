@@ -45,7 +45,9 @@ function sendAnalyticsPayload(endpoint, payload) {
   try {
     url = new URL(endpoint)
     if (url.protocol !== 'https:') return
-  } catch (_) { return }
+  } catch (_) {
+    return
+  }
   try {
     const body = JSON.stringify(payload)
     const options = {
@@ -58,10 +60,10 @@ function sendAnalyticsPayload(endpoint, payload) {
     }
     const req = https.request(options)
     req.on('timeout', () => req.destroy())
-    req.on('error', () => { }) // silencioso
+    req.on('error', () => {}) // silencioso
     req.write(body)
     req.end()
-  } catch (_) { }
+  } catch (_) {}
 }
 
 function registerAnalyticsIpc() {

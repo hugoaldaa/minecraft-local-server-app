@@ -25,7 +25,13 @@ test('los enlaces de descarga usan el artifactName configurado', () => {
 
 test('la web ofrece SHA256SUMS y refleja las funciones recientes', () => {
   assert.ok(html.includes('data-f="SHA256SUMS"'), 'debe enlazar el fichero de checksums')
-  for (const text of ['Reinicios programados', 'Diagnóstico de errores', 'Notificaciones', 'Instalador integrado', 'Verifica tu descarga:']) {
+  for (const text of [
+    'Reinicios programados',
+    'Diagnóstico de errores',
+    'Notificaciones',
+    'Instalador integrado',
+    'Verifica tu descarga:'
+  ]) {
     assert.ok(html.includes(text), `falta la sección "${text}"`)
   }
   for (const translation of ['Scheduled restarts', 'Error diagnosis', 'Notifications', 'Built-in installer', 'Verify your download:']) {

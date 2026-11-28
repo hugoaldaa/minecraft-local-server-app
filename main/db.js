@@ -125,12 +125,18 @@ function createSchema(database) {
 function metaGet(key) {
   const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key)
   if (!row) return undefined
-  try { return JSON.parse(row.value) } catch (_) { return row.value }
+  try {
+    return JSON.parse(row.value)
+  } catch (_) {
+    return row.value
+  }
 }
 
 function metaSet(key, value) {
-  db.prepare('INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
-    .run(key, JSON.stringify(value))
+  db.prepare('INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(
+    key,
+    JSON.stringify(value)
+  )
 }
 
 function countAll() {
@@ -155,12 +161,13 @@ function countLegacy() {
   const stats = jsonOrNull('serverStats')
   const analytics = jsonOrNull('analytics')
   const crashes = jsonOrNull('crashes')
-  const sum = prefix => Object.entries(stats || {}).reduce((n, [key, value]) => {
-    if (!key.startsWith(prefix)) return n
-    if (Array.isArray(value)) return n + value.length
-    if (value && typeof value === 'object') return n + Object.keys(value).length
-    return n
-  }, 0)
+  const sum = prefix =>
+    Object.entries(stats || {}).reduce((n, [key, value]) => {
+      if (!key.startsWith(prefix)) return n
+      if (Array.isArray(value)) return n + value.length
+      if (value && typeof value === 'object') return n + Object.keys(value).length
+      return n
+    }, 0)
   const runs = Object.keys(stats || {}).filter(key => key.startsWith('run_')).length
   return {
     servers: Object.keys((servers && servers.servers) || {}).length,
@@ -187,10 +194,16 @@ function importLegacy() {
   const insertSetting = db.prepare('INSERT OR REPLACE INTO settings(key, value) VALUES (?, ?)')
   const insertSample = db.prepare('INSERT INTO samples(server_id, ts, cpu, ram_used_mb) VALUES (?, ?, ?, ?)')
   const insertEvent = db.prepare('INSERT INTO player_events(server_id, ts, type, player) VALUES (?, ?, ?, ?)')
-  const insertTotal = db.prepare('INSERT OR REPLACE INTO player_totals(server_id, player, total_ms, last_seen, days_json) VALUES (?, ?, ?, ?, ?)')
-  const insertRun = db.prepare('INSERT OR REPLACE INTO server_runs(server_id, started_at, stopped_at, total_ms, current_session_start) VALUES (?, ?, ?, ?, ?)')
+  const insertTotal = db.prepare(
+    'INSERT OR REPLACE INTO player_totals(server_id, player, total_ms, last_seen, days_json) VALUES (?, ?, ?, ?, ?)'
+  )
+  const insertRun = db.prepare(
+    'INSERT OR REPLACE INTO server_runs(server_id, started_at, stopped_at, total_ms, current_session_start) VALUES (?, ?, ?, ?, ?)'
+  )
   const insertAnalytics = db.prepare('INSERT INTO analytics_events(payload, ts) VALUES (?, ?)')
-  const insertCrash = db.prepare('INSERT OR REPLACE INTO crashes(id, type, message, stack, app_version, platform, os_version, ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+  const insertCrash = db.prepare(
+    'INSERT OR REPLACE INTO crashes(id, type, message, stack, app_version, platform, os_version, ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  )
 
   const migrate = db.transaction(() => {
     for (const [id, server] of Object.entries(servers && servers.servers ? servers.servers : {})) {
@@ -223,8 +236,16 @@ function importLegacy() {
       if (['installId', 'firstSeen', 'analyticsEnabled'].includes(key)) metaSet(key, value)
     }
     for (const crash of (crashes && crashes.crashes) || []) {
-      insertCrash.run(crash.id || crypto.randomUUID(), crash.type || '', crash.message || '', crash.stack || '',
-        crash.appVersion || '', crash.platform || '', crash.osVersion || '', crash.timestamp || Date.now())
+      insertCrash.run(
+        crash.id || crypto.randomUUID(),
+        crash.type || '',
+        crash.message || '',
+        crash.stack || '',
+        crash.appVersion || '',
+        crash.platform || '',
+        crash.osVersion || '',
+        crash.timestamp || Date.now()
+      )
     }
     if (crashes && crashes.lastCrash) metaSet('lastCrash', crashes.lastCrash)
     metaSet('schemaVersion', SCHEMA_VERSION)
@@ -245,13 +266,17 @@ function verifyMigration(before) {
 function removeLegacyFiles() {
   for (const name of LEGACY_FILES) {
     const file = legacyPath(name)
-    try { if (fs.existsSync(file)) fs.unlinkSync(file) } catch (_) {}
+    try {
+      if (fs.existsSync(file)) fs.unlinkSync(file)
+    } catch (_) {}
   }
 }
 
 function removeDbFiles() {
   for (const suffix of ['', '-wal', '-shm']) {
-    try { if (fs.existsSync(dbPath() + suffix)) fs.unlinkSync(dbPath() + suffix) } catch (_) {}
+    try {
+      if (fs.existsSync(dbPath() + suffix)) fs.unlinkSync(dbPath() + suffix)
+    } catch (_) {}
   }
 }
 
@@ -286,7 +311,12 @@ function initDb() {
         db.pragma('synchronous = NORMAL')
         removeLegacyFiles()
       } catch (err) {
-        if (db) { try { db.close() } catch (_) {}; db = null }
+        if (db) {
+          try {
+            db.close()
+          } catch (_) {}
+          db = null
+        }
         removeDbFiles()
         throw new Error(`No se pudo migrar la persistencia a SQLite: ${err.message}`)
       }
@@ -303,7 +333,9 @@ function getDb() {
 
 function closeDb() {
   if (!db) return
-  try { db.pragma('wal_checkpoint(TRUNCATE)') } catch (_) {}
+  try {
+    db.pragma('wal_checkpoint(TRUNCATE)')
+  } catch (_) {}
   db.close()
   db = null
 }
@@ -317,8 +349,18 @@ function resetDbForTests() {
 // para persistir; es solo un archivo que el usuario descarga o importa.
 function exportAll() {
   const database = getDb()
-  const tables = ['meta', 'servers', 'settings', 'samples', 'player_events', 'player_totals',
-    'server_runs', 'analytics_events', 'crashes', 'notificaciones']
+  const tables = [
+    'meta',
+    'servers',
+    'settings',
+    'samples',
+    'player_events',
+    'player_totals',
+    'server_runs',
+    'analytics_events',
+    'crashes',
+    'notificaciones'
+  ]
   const result = { format: 'minecraft-local-server-app', schemaVersion: SCHEMA_VERSION, exportedAt: Date.now() }
   for (const table of tables) result[table] = database.prepare(`SELECT * FROM ${table}`).all()
   return result
@@ -331,8 +373,18 @@ function importAll(payload) {
     throw new Error('Archivo de backup no compatible')
   }
   const database = getDb()
-  const tables = ['meta', 'servers', 'settings', 'samples', 'player_events', 'player_totals',
-    'server_runs', 'analytics_events', 'crashes', 'notificaciones']
+  const tables = [
+    'meta',
+    'servers',
+    'settings',
+    'samples',
+    'player_events',
+    'player_totals',
+    'server_runs',
+    'analytics_events',
+    'crashes',
+    'notificaciones'
+  ]
   // Solo columnas conocidas: el payload viene de un archivo y no debe poder
   // construir SQL arbitrario a partir de sus claves.
   const columnsByTable = {
@@ -365,7 +417,7 @@ function importAll(payload) {
         if (columns.length === 0) continue
         const sql = `INSERT INTO ${table}(${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
         const insert = db.prepare(sql)
-        for (const row of rows) insert.run(...columns.map(c => row[c] === undefined ? null : row[c]))
+        for (const row of rows) insert.run(...columns.map(c => (row[c] === undefined ? null : row[c])))
       }
     })()
     fs.unlinkSync(backupFile)
@@ -388,12 +440,20 @@ function insertNotificacion(serverId, tipo, mensaje = '') {
 
 function listNotificaciones(serverId, limit = 100) {
   const database = getDb()
-  return database.prepare(
-    'SELECT * FROM notificaciones WHERE server_id = ? ORDER BY ts DESC LIMIT ?'
-  ).all(serverId, limit)
+  return database.prepare('SELECT * FROM notificaciones WHERE server_id = ? ORDER BY ts DESC LIMIT ?').all(serverId, limit)
 }
 
 module.exports = {
-  initDb, getDb, closeDb, metaGet, metaSet, dbPath, exportAll, importAll, resetDbForTests, SCHEMA_VERSION,
-  insertNotificacion, listNotificaciones
+  initDb,
+  getDb,
+  closeDb,
+  metaGet,
+  metaSet,
+  dbPath,
+  exportAll,
+  importAll,
+  resetDbForTests,
+  SCHEMA_VERSION,
+  insertNotificacion,
+  listNotificaciones
 }

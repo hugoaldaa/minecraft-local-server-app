@@ -28,11 +28,13 @@ function showWindow() {
 function setContextMenu() {
   if (!tray) return
   const t = TRAY_TEXT[trayLang()]
-  tray.setContextMenu(Menu.buildFromTemplate([
-    { label: t.open, click: showWindow },
-    { type: 'separator' },
-    { label: t.quit, click: () => quitWhenServersStopped() }
-  ]))
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: t.open, click: showWindow },
+      { type: 'separator' },
+      { label: t.quit, click: () => quitWhenServersStopped() }
+    ])
+  )
 }
 
 function createTray() {

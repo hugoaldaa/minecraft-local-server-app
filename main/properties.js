@@ -14,11 +14,13 @@ function readProperties(serverDir) {
   try {
     if (!fs.existsSync(file)) return { ok: false, error: 'No se encontró server.properties' }
     const props = {}
-    fs.readFileSync(file, 'utf8').split('\n').forEach(line => {
-      if (line.startsWith('#') || !line.includes('=')) return
-      const [key, ...rest] = line.split('=')
-      props[key.trim()] = rest.join('=').trim()
-    })
+    fs.readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach(line => {
+        if (line.startsWith('#') || !line.includes('=')) return
+        const [key, ...rest] = line.split('=')
+        props[key.trim()] = rest.join('=').trim()
+      })
     return { ok: true, props }
   } catch (err) {
     logCrash('props_read_error', err)
@@ -27,7 +29,9 @@ function readProperties(serverDir) {
 }
 
 function propValue(v) {
-  return String(v).replace(/[\r\n]/g, '').slice(0, MAX_PROP_VALUE)
+  return String(v)
+    .replace(/[\r\n]/g, '')
+    .slice(0, MAX_PROP_VALUE)
 }
 
 // Conserva comentarios, líneas en blanco, orden y claves no editadas del archivo
@@ -86,28 +90,34 @@ function readJsonList(serverDir, filename) {
 
 // UUID offline de Minecraft (mismo algoritmo que NameUUIDFromBytes("OfflinePlayer:"+name))
 function offlineUuid(name) {
-  const h = crypto.createHash('md5').update('OfflinePlayer:' + name, 'utf8').digest('hex')
+  const h = crypto
+    .createHash('md5')
+    .update('OfflinePlayer:' + name, 'utf8')
+    .digest('hex')
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`
 }
 
 function sanitizeList(list) {
   if (!Array.isArray(list)) return null
   if (list.length > MAX_LIST_ENTRIES) return null
-  return list.slice(0, MAX_LIST_ENTRIES).map(entry => {
-    if (typeof entry === 'string') return entry.slice(0, 64)
-    if (!isPlainObject(entry)) return null
-    const out = {}
-    for (const [k, v] of Object.entries(entry)) {
-      if (typeof v === 'string') out[k] = v.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 256)
-      else if (typeof v === 'number' || typeof v === 'boolean') out[k] = v
-    }
-    // Las entradas de whitelist/banlist con uuid vacío no son válidas para
-    // vanilla: se completa con el UUID offline del nombre.
-    if (typeof out.name === 'string' && out.name && (!isStr(out.uuid) || out.uuid === '')) {
-      out.uuid = offlineUuid(out.name)
-    }
-    return out
-  }).filter(Boolean)
+  return list
+    .slice(0, MAX_LIST_ENTRIES)
+    .map(entry => {
+      if (typeof entry === 'string') return entry.slice(0, 64)
+      if (!isPlainObject(entry)) return null
+      const out = {}
+      for (const [k, v] of Object.entries(entry)) {
+        if (typeof v === 'string') out[k] = v.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 256)
+        else if (typeof v === 'number' || typeof v === 'boolean') out[k] = v
+      }
+      // Las entradas de whitelist/banlist con uuid vacío no son válidas para
+      // vanilla: se completa con el UUID offline del nombre.
+      if (typeof out.name === 'string' && out.name && (!isStr(out.uuid) || out.uuid === '')) {
+        out.uuid = offlineUuid(out.name)
+      }
+      return out
+    })
+    .filter(Boolean)
 }
 
 function writeJsonList(serverDir, filename, list) {

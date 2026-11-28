@@ -19,19 +19,29 @@ test('migra los 5 JSON legacy a SQLite y los elimina tras verificar', () => {
     const server = { id: 'srv-1', name: 'Mundo', jarPath: 'D:\\mc\\server.jar', createdAt: 1234 }
     fs.writeFileSync(path.join(dir, 'servers.json'), JSON.stringify({ servers: { 'srv-1': server } }))
     fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify({ theme: 'light', server_srv1: { autoBackup: true } }))
-    fs.writeFileSync(path.join(dir, 'serverStats.json'), JSON.stringify({
-      samples_srv1: [{ ts: 1000, cpu: 10, ramUsed: 512 }],
-      playerEvents_srv1: [{ ts: 1000, type: 'join', player: 'Steve' }],
-      playerTotals_srv1: { Steve: { totalMs: 60000, days: { '2026-01-01': 60000 } } },
-      run_srv1: { startedAt: 1000, totalMs: 60000 }
-    }))
-    fs.writeFileSync(path.join(dir, 'analytics.json'), JSON.stringify({
-      installId: 'abc', events: [{ event: 'app_launch', timestamp: 1000 }]
-    }))
-    fs.writeFileSync(path.join(dir, 'crashes.json'), JSON.stringify({
-      crashes: [{ id: 'c1', type: 'test', message: 'boom', timestamp: 1000 }],
-      lastCrash: { id: 'c1', message: 'boom' }
-    }))
+    fs.writeFileSync(
+      path.join(dir, 'serverStats.json'),
+      JSON.stringify({
+        samples_srv1: [{ ts: 1000, cpu: 10, ramUsed: 512 }],
+        playerEvents_srv1: [{ ts: 1000, type: 'join', player: 'Steve' }],
+        playerTotals_srv1: { Steve: { totalMs: 60000, days: { '2026-01-01': 60000 } } },
+        run_srv1: { startedAt: 1000, totalMs: 60000 }
+      })
+    )
+    fs.writeFileSync(
+      path.join(dir, 'analytics.json'),
+      JSON.stringify({
+        installId: 'abc',
+        events: [{ event: 'app_launch', timestamp: 1000 }]
+      })
+    )
+    fs.writeFileSync(
+      path.join(dir, 'crashes.json'),
+      JSON.stringify({
+        crashes: [{ id: 'c1', type: 'test', message: 'boom', timestamp: 1000 }],
+        lastCrash: { id: 'c1', message: 'boom' }
+      })
+    )
 
     const db = dbModule.initDb()
     assert.equal(db.prepare('SELECT COUNT(*) AS n FROM servers').get().n, 1)

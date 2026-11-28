@@ -33,12 +33,21 @@ async function loadNotificacionesTab() {
     return
   }
 
-  fill(list, ...items.map(n => h('div', { class: `notificacion-item notificacion-${n.tipo}` },
-    h('span', { class: 'notificacion-icon', text: NOTIFICACION_ICONS[n.tipo] || '🔔' }),
-    h('div', { class: 'notificacion-info' },
-      h('div', { class: 'notificacion-title', text: T(`notificaciones.type.${n.tipo}`) }),
-      h('div', { class: 'notificacion-msg', text: n.mensaje || '' })
-    ),
-    h('time', { class: 'notificacion-time', text: new Date(n.ts).toLocaleString(I18N.locale()) })
-  )))
+  fill(
+    list,
+    ...items.map(n =>
+      h(
+        'div',
+        { class: `notificacion-item notificacion-${n.tipo}` },
+        h('span', { class: 'notificacion-icon', text: NOTIFICACION_ICONS[n.tipo] || '🔔' }),
+        h(
+          'div',
+          { class: 'notificacion-info' },
+          h('div', { class: 'notificacion-title', text: T(`notificaciones.type.${n.tipo}`) }),
+          h('div', { class: 'notificacion-msg', text: n.mensaje || '' })
+        ),
+        h('time', { class: 'notificacion-time', text: new Date(n.ts).toLocaleString(I18N.locale()) })
+      )
+    )
+  )
 }

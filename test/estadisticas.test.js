@@ -193,12 +193,18 @@ test('buildServerJson aplica filtros distintos a la gráfica y a los jugadores',
     playersFilters: { desde: reciente - 1000 }
   })
   assert.deepEqual(Object.keys(json.jugadoresPorDia), ['2026-01-10'])
-  assert.deepEqual(json.jugadores.map(p => p.jugador), ['Recent'])
+  assert.deepEqual(
+    json.jugadores.map(p => p.jugador),
+    ['Recent']
+  )
 
   // El filtro único de versiones anteriores sigue aplicándose a ambas partes.
   const legacy = estadisticas.buildServerJson(serverId, { desde: new Date(2026, 0, 5).getTime() })
   assert.deepEqual(Object.keys(legacy.jugadoresPorDia), ['2026-01-10'])
-  assert.deepEqual(legacy.jugadores.map(p => p.jugador), ['Recent'])
+  assert.deepEqual(
+    legacy.jugadores.map(p => p.jugador),
+    ['Recent']
+  )
 })
 
 test('pruneEvents respeta los días de retención configurados', () => {
@@ -287,9 +293,7 @@ test('getPlayerList lastSeen de sesión abierta al parar usa el cierre del servi
   const ahora = Date.now()
   const hace = minutos => ahora - minutos * 60000
   const serverId = `srv-open-${ahora}`
-  savePlayerEvents(serverId, [
-    { ts: hace(60), type: 'join', player: 'OpenPlayer' }
-  ])
+  savePlayerEvents(serverId, [{ ts: hace(60), type: 'join', player: 'OpenPlayer' }])
   saveRunTime(serverId, { startedAt: hace(200), stoppedAt: hace(10) })
 
   const list = estadisticas.getPlayerList(serverId, null)

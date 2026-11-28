@@ -18,7 +18,7 @@ const PROGRESS_STEP = 262144
 function getWithRedirects(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     const mod = url.startsWith('https:') ? https : http
-    const req = mod.get(url, { headers: { 'User-Agent': USER_AGENT, 'Accept-Encoding': 'gzip, deflate' } }, (res) => {
+    const req = mod.get(url, { headers: { 'User-Agent': USER_AGENT, 'Accept-Encoding': 'gzip, deflate' } }, res => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume()
         if (redirects >= MAX_REDIRECTS) return reject(new Error('Demasiadas redirecciones'))
@@ -85,10 +85,14 @@ function downloadToFile(url, destPath, { signal, onProgress } = {}) {
     let lastReport = 0
     let settled = false
 
-    const fail = (err) => {
+    const fail = err => {
       if (settled) return
       settled = true
-      if (ws) { try { ws.destroy() } catch (_) { } }
+      if (ws) {
+        try {
+          ws.destroy()
+        } catch (_) {}
+      }
       fs.rm(tmpPath, { force: true }, () => {})
       reject(err)
     }
@@ -116,11 +120,14 @@ function downloadToFile(url, destPath, { signal, onProgress } = {}) {
           ws.on('finish', () => {
             if (settled) return
             settled = true
-            fs.rename(tmpPath, destPath, (err) => (err ? fail(err) : resolve({ received, total })))
+            fs.rename(tmpPath, destPath, err => (err ? fail(err) : resolve({ received, total })))
           })
           // Asegura que los bytes recibidos se escriban realmente en disco:
           // antes solo se contaban y el fichero quedaba vacío.
-          stream.on('data', d => { received += d.length; report() })
+          stream.on('data', d => {
+            received += d.length
+            report()
+          })
           stream.pipe(ws)
           stream.on('error', fail)
           if (signal) signal.addEventListener('abort', cancel, { once: true })

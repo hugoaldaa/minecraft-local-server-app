@@ -19,9 +19,15 @@ const { settingsStore } = require('../main/stores')
 
 const electronMock = {
   app: { getVersion: () => '1.9.7-test', isPackaged: false, setLoginItemSettings: () => {} },
-  ipcMain: { handle: (channel, fn) => { handlers[channel] = fn } },
+  ipcMain: {
+    handle: (channel, fn) => {
+      handlers[channel] = fn
+    }
+  },
   Notification: class {
-    static isSupported() { return false }
+    static isSupported() {
+      return false
+    }
     show() {}
   }
 }
@@ -44,7 +50,10 @@ function fakeSpawn(command, args) {
   proc.stdin = new EventEmitter()
   proc.stdin.writable = true
   proc.stdin.writes = []
-  proc.stdin.write = (data) => { proc.stdin.writes.push(String(data)); return true }
+  proc.stdin.write = data => {
+    proc.stdin.writes.push(String(data))
+    return true
+  }
   proc.stdout = new EventEmitter()
   proc.stderr = new EventEmitter()
   proc.kill = () => {}
@@ -55,7 +64,10 @@ function fakeSpawn(command, args) {
       proc.emit('close', 0)
     })
   } else if (String(command).includes('powershell') || String(command) === 'pgrep') {
-    setImmediate(() => { proc.stdout.emit('data', ''); proc.emit('close', 0) })
+    setImmediate(() => {
+      proc.stdout.emit('data', '')
+      proc.emit('close', 0)
+    })
   } else {
     spawnedProcesses.push(proc)
     setImmediate(() => proc.stdout.emit('data', 'Starting minecraft server version 1.21.1\nDone (0.123s)! For help, type "help"\n'))
@@ -167,7 +179,10 @@ test('smoke: el historial guarda encendido y apagado por servidor', async () => 
 
   const listed = await handlers['notificaciones:list'](null, { serverId: id })
   assert.equal(listed.ok, true)
-  assert.deepEqual(listed.notificaciones.map(n => n.tipo), ['stop', 'start'])
+  assert.deepEqual(
+    listed.notificaciones.map(n => n.tipo),
+    ['stop', 'start']
+  )
 
   assert.equal((await handlers['notificaciones:clear'](null, id)).ok, true)
   assert.equal((await handlers['notificaciones:list'](null, { serverId: id })).notificaciones.length, 0)

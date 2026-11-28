@@ -15,7 +15,10 @@ const plain = value => JSON.parse(JSON.stringify(value))
 
 test('tokenizeInline separa enlaces, código, negritas y texto', () => {
   const tokens = plain(context.tokenizeInline('Ver **SHA256SUMS** en `latest.yml`: [ayuda](https://example.com/guia)'))
-  assert.deepEqual(tokens.map(t => t.type), ['text', 'strong', 'text', 'code', 'text', 'link'])
+  assert.deepEqual(
+    tokens.map(t => t.type),
+    ['text', 'strong', 'text', 'code', 'text', 'link']
+  )
   assert.equal(tokens[1].text, 'SHA256SUMS')
   assert.equal(tokens[3].text, 'latest.yml')
   assert.deepEqual(tokens[5], { type: 'link', text: 'ayuda', href: 'https://example.com/guia' })

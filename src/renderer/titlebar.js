@@ -9,7 +9,7 @@ function initTitlebar() {
     setSettingsSection('general')
   }
   document.getElementById('btn-back-servers').onclick = () => showScreen('servers')
-  window.api.onMaximized((isMaximized) => {
+  window.api.onMaximized(isMaximized => {
     state.maximized = isMaximized
     document.getElementById('btn-max').textContent = isMaximized ? '🗗' : '☐'
     updateMaxTitle()
@@ -20,4 +20,3 @@ function initTitlebar() {
 function updateMaxTitle() {
   document.getElementById('btn-max').title = state.maximized ? T('win.restore') : T('win.maximize')
 }
-

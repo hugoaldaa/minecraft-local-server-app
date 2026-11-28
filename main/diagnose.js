@@ -10,7 +10,8 @@ const DIAGNOSIS_PATTERNS = [
   {
     id: 'java_version',
     re: /UnsupportedClassVersionError|class file version .{0,40}(?:not supported|unsupported)|Unsupported major\.minor version/i,
-    message: 'Java incompatible: el servidor necesita una versión de Java distinta (revisa la versión de Minecraft y la ruta de Java en la configuración).'
+    message:
+      'Java incompatible: el servidor necesita una versión de Java distinta (revisa la versión de Minecraft y la ruta de Java en la configuración).'
   },
   {
     id: 'port_in_use',
@@ -47,7 +48,9 @@ function recentCrashReport(serverDir, afterTs) {
   const dir = path.join(path.resolve(serverDir), 'crash-reports')
   let files
   try {
-    files = fs.readdirSync(dir).filter(f => f.endsWith('.txt'))
+    files = fs
+      .readdirSync(dir)
+      .filter(f => f.endsWith('.txt'))
       .map(f => ({ name: f, full: path.join(dir, f), mtime: fs.statSync(path.join(dir, f)).mtimeMs }))
       .filter(f => f.mtime >= (afterTs || 0))
       .sort((a, b) => b.mtime - a.mtime)
@@ -55,7 +58,11 @@ function recentCrashReport(serverDir, afterTs) {
     return null
   }
   for (const f of files) {
-    try { return fs.readFileSync(f.full, 'utf8') } catch (_) { /* sigue con el siguiente */ }
+    try {
+      return fs.readFileSync(f.full, 'utf8')
+    } catch (_) {
+      /* sigue con el siguiente */
+    }
   }
   return null
 }

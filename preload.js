@@ -3,43 +3,43 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('api', {
   // Servers CRUD
   listServers: () => ipcRenderer.invoke('servers:list'),
-  createServer: (d) => ipcRenderer.invoke('servers:create', d),
-  updateServer: (d) => ipcRenderer.invoke('servers:update', d),
-  deleteServer: (id) => ipcRenderer.invoke('servers:delete', id),
-  getServer: (id) => ipcRenderer.invoke('servers:get', id),
+  createServer: d => ipcRenderer.invoke('servers:create', d),
+  updateServer: d => ipcRenderer.invoke('servers:update', d),
+  deleteServer: id => ipcRenderer.invoke('servers:delete', id),
+  getServer: id => ipcRenderer.invoke('servers:get', id),
 
   // Server process
   startServer: (serverId, acceptEula) => ipcRenderer.invoke('server:start', { serverId, acceptEula }),
-  stopServer: (serverId) => ipcRenderer.invoke('server:stop', serverId),
+  stopServer: serverId => ipcRenderer.invoke('server:stop', serverId),
   sendCommand: (serverId, cmd) => ipcRenderer.invoke('server:command', { serverId, cmd }),
-  getStatus: (serverId) => ipcRenderer.invoke('server:status', serverId),
+  getStatus: serverId => ipcRenderer.invoke('server:status', serverId),
   getStatusAll: () => ipcRenderer.invoke('server:statusAll'),
-  javaCheck: (p) => ipcRenderer.invoke('java:check', p),
+  javaCheck: p => ipcRenderer.invoke('java:check', p),
 
   // Properties / Lists / Backups
-  readProperties: (dir) => ipcRenderer.invoke('props:read', dir),
+  readProperties: dir => ipcRenderer.invoke('props:read', dir),
   writeProperties: (dir, props) => ipcRenderer.invoke('props:write', { serverDir: dir, props }),
-  readWhitelist: (dir) => ipcRenderer.invoke('whitelist:read', dir),
+  readWhitelist: dir => ipcRenderer.invoke('whitelist:read', dir),
   writeWhitelist: (dir, list) => ipcRenderer.invoke('whitelist:write', { serverDir: dir, list }),
-  readBanlist: (dir) => ipcRenderer.invoke('banlist:read', dir),
+  readBanlist: dir => ipcRenderer.invoke('banlist:read', dir),
   writeBanlist: (dir, list) => ipcRenderer.invoke('banlist:write', { serverDir: dir, list }),
   createBackup: (sd, bd, sid) => ipcRenderer.invoke('backup:create', { serverDir: sd, backupDir: bd, serverId: sid }),
-  listBackups: (bd) => ipcRenderer.invoke('backup:list', bd),
-  deleteBackup: (p) => ipcRenderer.invoke('backup:delete', p),
+  listBackups: bd => ipcRenderer.invoke('backup:list', bd),
+  deleteBackup: p => ipcRenderer.invoke('backup:delete', p),
   restoreBackup: (bf, sd, sid) => ipcRenderer.invoke('backup:restore', { backupFile: bf, serverDir: sd, serverId: sid }),
-  getBackupDir: (serverId) => ipcRenderer.invoke('backup:dir', serverId),
-  getRestartStatus: (serverId) => ipcRenderer.invoke('restart:status', serverId),
+  getBackupDir: serverId => ipcRenderer.invoke('backup:dir', serverId),
+  getRestartStatus: serverId => ipcRenderer.invoke('restart:status', serverId),
 
   // Notificaciones guardadas por servidor (encendido, apagado, reinicio, backup)
   listNotificaciones: (serverId, limit) => ipcRenderer.invoke('notificaciones:list', { serverId, limit }),
-  clearNotificaciones: (serverId) => ipcRenderer.invoke('notificaciones:clear', serverId),
+  clearNotificaciones: serverId => ipcRenderer.invoke('notificaciones:clear', serverId),
 
   // Settings
-  getSettings: (serverId) => ipcRenderer.invoke('settings:get', serverId),
+  getSettings: serverId => ipcRenderer.invoke('settings:get', serverId),
   saveSettings: (serverId, data) => ipcRenderer.invoke('settings:set', { serverId, data }),
 
   // Preferencias globales (Ajustes)
-  getPref: (key) => ipcRenderer.invoke('prefs:get', key),
+  getPref: key => ipcRenderer.invoke('prefs:get', key),
   setPref: (key, value) => ipcRenderer.invoke('prefs:set', { key, value }),
   testEmail: () => ipcRenderer.invoke('email:test'),
 
@@ -48,17 +48,23 @@ contextBridge.exposeInMainWorld('api', {
   downloadUpdate: () => ipcRenderer.invoke('update:download'),
   installUpdate: () => ipcRenderer.invoke('update:install'),
   getVersion: () => ipcRenderer.invoke('app:version'),
-  onUpdateStatus: (cb) => ipcRenderer.on('update-status', (_, d) => cb(d)),
-  onUpdateAvailable: (cb) => ipcRenderer.on('update-status', (_, d) => { if (d.status === 'available') cb(d) }),
-  onUpdateDownloaded: (cb) => ipcRenderer.on('update-status', (_, d) => { if (d.status === 'ready') cb(d) }),
+  onUpdateStatus: cb => ipcRenderer.on('update-status', (_, d) => cb(d)),
+  onUpdateAvailable: cb =>
+    ipcRenderer.on('update-status', (_, d) => {
+      if (d.status === 'available') cb(d)
+    }),
+  onUpdateDownloaded: cb =>
+    ipcRenderer.on('update-status', (_, d) => {
+      if (d.status === 'ready') cb(d)
+    }),
 
   // Descarga/instalación de servidores
-  listDownloadVersions: (provider) => ipcRenderer.invoke('downloads:versions', provider),
-  minJavaFor: (versionId) => ipcRenderer.invoke('downloads:java', versionId),
+  listDownloadVersions: provider => ipcRenderer.invoke('downloads:versions', provider),
+  minJavaFor: versionId => ipcRenderer.invoke('downloads:java', versionId),
   getDefaultServerDir: () => ipcRenderer.invoke('downloads:defaultDir'),
-  installServer: (d) => ipcRenderer.invoke('downloads:install', d),
-  cancelDownload: (token) => ipcRenderer.invoke('downloads:cancel', token),
-  onDownloadProgress: (cb) => {
+  installServer: d => ipcRenderer.invoke('downloads:install', d),
+  cancelDownload: token => ipcRenderer.invoke('downloads:cancel', token),
+  onDownloadProgress: cb => {
     const l = (_e, p) => cb(p)
     ipcRenderer.on('downloads:progress', l)
     return () => ipcRenderer.removeListener('downloads:progress', l)
@@ -66,7 +72,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // Analytics
   getAnalyticsConsent: () => ipcRenderer.invoke('analytics:getConsent'),
-  setAnalyticsConsent: (enabled) => ipcRenderer.invoke('analytics:setConsent', enabled),
+  setAnalyticsConsent: enabled => ipcRenderer.invoke('analytics:setConsent', enabled),
   clearAnalyticsEvents: () => ipcRenderer.invoke('analytics:clearEvents'),
 
   // Crash reports
@@ -85,27 +91,27 @@ contextBridge.exposeInMainWorld('api', {
 
   // Backup global (SQLite). Solo se usa cuando el usuario lo pide.
   exportAllData: () => ipcRenderer.invoke('data:export'),
-  importAllData: (payload) => ipcRenderer.invoke('data:import', payload),
+  importAllData: payload => ipcRenderer.invoke('data:import', payload),
   exportAllDataToFile: () => ipcRenderer.invoke('data:exportFile'),
   importAllDataFromFile: () => ipcRenderer.invoke('data:importFile'),
 
   // Dialogs
   openJarDialog: () => ipcRenderer.invoke('dialog:openJar'),
   openDirDialog: () => ipcRenderer.invoke('dialog:openDir'),
-  openPath: (p) => ipcRenderer.invoke('shell:openPath', p),
+  openPath: p => ipcRenderer.invoke('shell:openPath', p),
 
   // Window
   minimize: () => ipcRenderer.invoke('window:minimize'),
   maximize: () => ipcRenderer.invoke('window:maximize'),
   close: () => ipcRenderer.invoke('window:close'),
-  onMaximized: (cb) => ipcRenderer.on('window:maximized', (_, isMaximized) => cb(isMaximized)),
+  onMaximized: cb => ipcRenderer.on('window:maximized', (_, isMaximized) => cb(isMaximized)),
 
   // Events
-  onConsoleLine: (cb) => ipcRenderer.on('console-line', (_, d) => cb(d)),
-  onServerStopped: (cb) => ipcRenderer.on('server-stopped', (_, d) => cb(d)),
-  onStatsUpdate: (cb) => ipcRenderer.on('stats-update', (_, d) => cb(d)),
-  onConfirmClose: (cb) => ipcRenderer.on('confirm-close', (_, d) => cb(d)),
-  onCrashLogged: (cb) => ipcRenderer.on('crash-logged', (_, d) => cb(d)),
-  onAppNotification: (cb) => ipcRenderer.on('app-notification', (_, d) => cb(d)),
-  removeAllListeners: (ch) => ipcRenderer.removeAllListeners(ch)
+  onConsoleLine: cb => ipcRenderer.on('console-line', (_, d) => cb(d)),
+  onServerStopped: cb => ipcRenderer.on('server-stopped', (_, d) => cb(d)),
+  onStatsUpdate: cb => ipcRenderer.on('stats-update', (_, d) => cb(d)),
+  onConfirmClose: cb => ipcRenderer.on('confirm-close', (_, d) => cb(d)),
+  onCrashLogged: cb => ipcRenderer.on('crash-logged', (_, d) => cb(d)),
+  onAppNotification: cb => ipcRenderer.on('app-notification', (_, d) => cb(d)),
+  removeAllListeners: ch => ipcRenderer.removeAllListeners(ch)
 })

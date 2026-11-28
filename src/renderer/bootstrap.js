@@ -23,8 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       setSettingsSection('updates')
     }
 
-    window.api.onUpdateStatus((info) => applyUpdateStatus(info))
+    window.api.onUpdateStatus(info => applyUpdateStatus(info))
   }
-
 })
-

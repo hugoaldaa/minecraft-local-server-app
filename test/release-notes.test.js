@@ -78,10 +78,7 @@ test('translationRequest y parseTranslation conservan el orden de las viñetas',
   assert.equal(JSON.parse(request.user).items.length, 3)
   assert.match(request.system, /SQLite/)
   assert.throws(() => parseTranslation('{"items":["One","Two"]}', request.items), /conserva el número/)
-  assert.deepEqual(
-    parseTranslation('{"items":["One","Two","Three"]}', request.items),
-    ['One', 'Two', 'Three']
-  )
+  assert.deepEqual(parseTranslation('{"items":["One","Two","Three"]}', request.items), ['One', 'Two', 'Three'])
 })
 
 test('translateSections traduce las viñetas con Gemini y reconstruye las secciones', async () => {
@@ -94,9 +91,11 @@ test('translateSections traduce las viñetas con Gemini y reconstruye las seccio
     return {
       ok: true,
       json: async () => ({
-        candidates: [{
-          content: { parts: [{ text: JSON.stringify({ items: ['Added one', 'Fixed one'] }) }] }
-        }]
+        candidates: [
+          {
+            content: { parts: [{ text: JSON.stringify({ items: ['Added one', 'Fixed one'] }) }] }
+          }
+        ]
       })
     }
   }
@@ -150,21 +149,25 @@ test('cleanChangelog normaliza cabeceras y viñetas sin perder contenido', async
   const { cleanChangelog } = await releasePromise
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mc-changelog-'))
   const file = path.join(dir, 'CHANGELOG.md')
-  fs.writeFileSync(file, [
-    '# Changelog',
-    '',
-    'Historial del proyecto.',
-    '',
-    '## v1.9.7 - Statistics patch v3 (2026-11-10)',
-    '',
-    '- Statistics patch v3',
-    '',
-    '## 1.9.6 - Fix cosa (2026-11-09)',
-    '',
-    '- - arreglo uno',
-    '- arreglo uno',
-    '- otra cosa'
-  ].join('\n'), 'utf8')
+  fs.writeFileSync(
+    file,
+    [
+      '# Changelog',
+      '',
+      'Historial del proyecto.',
+      '',
+      '## v1.9.7 - Statistics patch v3 (2026-11-10)',
+      '',
+      '- Statistics patch v3',
+      '',
+      '## 1.9.6 - Fix cosa (2026-11-09)',
+      '',
+      '- - arreglo uno',
+      '- arreglo uno',
+      '- otra cosa'
+    ].join('\n'),
+    'utf8'
+  )
 
   try {
     const count = cleanChangelog(file)

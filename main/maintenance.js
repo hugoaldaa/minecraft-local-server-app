@@ -51,20 +51,32 @@ function minuteWord(n) {
 function cancelWarnings(serverId) {
   const list = warnJobs[serverId]
   if (!Array.isArray(list)) return
-  list.forEach(job => { try { job.cancel() } catch (_) {} })
+  list.forEach(job => {
+    try {
+      job.cancel()
+    } catch (_) {}
+  })
   delete warnJobs[serverId]
 }
 
 function cancelServerMaintenance(serverId) {
   const job = jobs[serverId]
-  if (job) { job.cancel(); delete jobs[serverId] }
+  if (job) {
+    job.cancel()
+    delete jobs[serverId]
+  }
   cancelWarnings(serverId)
 }
 
 function cancelAllServerMaintenance() {
-  Object.keys(jobs).forEach(id => { jobs[id].cancel(); delete jobs[id] })
+  Object.keys(jobs).forEach(id => {
+    jobs[id].cancel()
+    delete jobs[id]
+  })
   Object.keys(warnJobs).forEach(id => cancelWarnings(id))
-  Object.keys(pending).forEach(id => { delete pending[id] })
+  Object.keys(pending).forEach(id => {
+    delete pending[id]
+  })
 }
 
 function nextDailyAt(hhmm) {
@@ -112,7 +124,7 @@ function line(serverId, text, type) {
 
 function waitUntilStopped(serverId) {
   const deadline = Date.now() + STOP_DEADLINE_MS
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const check = () => {
       if (!activeServers[serverId]) return resolve()
       if (Date.now() >= deadline) return resolve()
@@ -135,7 +147,9 @@ function scheduleWarnings(serverId, dueAt, { stop, backup, restart }, minutes) {
   cancelWarnings(serverId)
 
   const phrase = stop
-    ? (backup && restart ? 'El servidor se apagará para backup y reinicio' : 'El servidor se apagará para el reinicio programado')
+    ? backup && restart
+      ? 'El servidor se apagará para backup y reinicio'
+      : 'El servidor se apagará para el reinicio programado'
     : 'Se creará una copia de seguridad del mundo (el servidor seguirá en línea)'
   const short = stop ? 'apagado' : 'backup'
   const list = []
@@ -148,10 +162,11 @@ function scheduleWarnings(serverId, dueAt, { stop, backup, restart }, minutes) {
     const job = schedule.scheduleJob(new Date(at), () => {
       const reminder = min === last ? ' ¡Guardad vuestro progreso!' : ''
       const sent = chatSay(serverId, `§e[Mantenimiento] ${phrase} en ${min} ${word}.${reminder}`)
-      line(serverId, sent
-        ? `Aviso enviado al chat: ${short} en ${min} ${word}`
-        : `No se pudo enviar el aviso de ${min} ${word} (servidor apagado)`,
-        sent ? 'info' : 'warn')
+      line(
+        serverId,
+        sent ? `Aviso enviado al chat: ${short} en ${min} ${word}` : `No se pudo enviar el aviso de ${min} ${word} (servidor apagado)`,
+        sent ? 'info' : 'warn'
+      )
     })
     if (job) list.push(job)
   }
@@ -195,10 +210,11 @@ function scheduleServerMaintenance(serverId) {
           await waitUntilStopped(serverId)
         }
         const res = await createBackup(serverDir, backupDir, serverId)
-        line(serverId, res.ok
-          ? `Backup automático creado: ${path.basename(res.file)}`
-          : `Error en el backup automático: ${res.error}`,
-          res.ok ? 'success' : 'error')
+        line(
+          serverId,
+          res.ok ? `Backup automático creado: ${path.basename(res.file)}` : `Error en el backup automático: ${res.error}`,
+          res.ok ? 'success' : 'error'
+        )
         line(serverId, 'Mantenimiento programado: arrancando de nuevo...', 'info')
         const startRes = await startServer(serverId)
         if (startRes && startRes.ok === false) {
@@ -211,10 +227,11 @@ function scheduleServerMaintenance(serverId) {
         }
       } else if (dueB) {
         const res = await createBackup(serverDir, backupDir, serverId)
-        line(serverId, res.ok
-          ? `Backup automático creado: ${path.basename(res.file)}`
-          : `Error en backup automático: ${res.error}`,
-          res.ok ? 'success' : 'error')
+        line(
+          serverId,
+          res.ok ? `Backup automático creado: ${path.basename(res.file)}` : `Error en backup automático: ${res.error}`,
+          res.ok ? 'success' : 'error'
+        )
       } else if (dueR) {
         line(serverId, 'Reinicio programado: deteniendo el servidor...', 'warn')
         if (activeServers[serverId]) {
@@ -250,7 +267,7 @@ function initMaintenance() {
     if (action === 'delete') cancelServerMaintenance(serverId)
     else scheduleServerMaintenance(serverId)
   })
-  Object.keys(getAllServersMap()).forEach((id) => scheduleServerMaintenance(id))
+  Object.keys(getAllServersMap()).forEach(id => scheduleServerMaintenance(id))
 }
 
 // Estado del reinicio programado (usado por la pestaña Backups).

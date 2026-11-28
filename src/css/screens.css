@@ -13,7 +13,9 @@
   color: var(--text);
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color 0.12s, color 0.12s;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
 }
 
 .btn-secondary:hover,
@@ -93,7 +95,9 @@
   overflow: hidden;
   pointer-events: auto;
   box-shadow: var(--shadow);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .server-card::before {
@@ -249,14 +253,13 @@
 }
 
 @keyframes pulse {
-
   0%,
   100% {
-    opacity: 1
+    opacity: 1;
   }
 
   50% {
-    opacity: 0.45
+    opacity: 0.45;
   }
 }
 
@@ -315,7 +318,9 @@
   cursor: pointer;
   font-family: var(--pixel);
   font-size: 11px;
-  transition: color 0.12s, background 0.12s;
+  transition:
+    color 0.12s,
+    background 0.12s;
   position: relative;
 }
 
@@ -570,7 +575,9 @@
   border-radius: var(--radius);
   color: var(--text);
   cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
 }
 
 .btn-action:hover {
@@ -626,7 +633,7 @@
   color: var(--text2);
 }
 
-.toggle-wrap input[type=checkbox] {
+.toggle-wrap input[type='checkbox'] {
   accent-color: var(--accent);
   width: 15px;
   height: 15px;
@@ -640,7 +647,7 @@
   cursor: pointer;
 }
 
-.switch input[type=checkbox] {
+.switch input[type='checkbox'] {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -656,7 +663,9 @@
   background: var(--bg3);
   border: 2px solid var(--line2);
   border-radius: 999px;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .switch-track::before {
@@ -672,16 +681,16 @@
   transition: transform 0.2s ease;
 }
 
-.switch input[type=checkbox]:checked + .switch-track {
+.switch input[type='checkbox']:checked + .switch-track {
   background: var(--accent);
   border-color: var(--accent3);
 }
 
-.switch input[type=checkbox]:checked + .switch-track::before {
+.switch input[type='checkbox']:checked + .switch-track::before {
   transform: translateX(20px);
 }
 
-.switch input[type=checkbox]:focus-visible + .switch-track {
+.switch input[type='checkbox']:focus-visible + .switch-track {
   outline: 2px solid var(--accent2);
   outline-offset: 2px;
 }
@@ -759,7 +768,7 @@
   font-family: var(--font);
   font-size: 14px;
   padding: 0 4px;
-  }
+}
 
 .btn-remove:hover {
   color: var(--danger);
@@ -917,10 +926,18 @@
   padding: 14px 16px;
 }
 
-.notificacion-start { border-left-color: var(--accent); }
-.notificacion-stop { border-left-color: var(--danger, #e2685c); }
-.notificacion-restart { border-left-color: #e5c454; }
-.notificacion-backup { border-left-color: #8fd1ff; }
+.notificacion-start {
+  border-left-color: var(--accent);
+}
+.notificacion-stop {
+  border-left-color: var(--danger, #e2685c);
+}
+.notificacion-restart {
+  border-left-color: #e5c454;
+}
+.notificacion-backup {
+  border-left-color: #8fd1ff;
+}
 
 .notificacion-icon {
   font-size: 20px;
@@ -964,7 +981,9 @@
   border: 2px solid var(--line);
   border-radius: var(--radius);
   padding: 14px 16px;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .backup-item:hover {
@@ -1132,7 +1151,9 @@
   border-radius: var(--radius);
   color: var(--danger-text);
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 
 .btn-danger:hover {
@@ -1248,7 +1269,9 @@
   background: transparent;
   color: var(--text2);
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 
 .segmented button:hover {
@@ -1304,7 +1327,9 @@
   cursor: pointer;
   background: var(--bg3);
   color: var(--text);
-  transition: border-color 0.12s, color 0.12s;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
 }
 
 .modal-actions button:hover:not(:disabled) {
@@ -1445,7 +1470,6 @@ code {
 }
 
 @keyframes update-pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -1824,7 +1848,9 @@ code {
   padding: 10px 14px;
   border-radius: var(--radius);
   border: 1px solid transparent;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .consent-item:hover {
@@ -1921,7 +1947,10 @@ code {
   border-radius: var(--radius);
   color: var(--text2);
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
 }
 
 .set-nav-item:hover {

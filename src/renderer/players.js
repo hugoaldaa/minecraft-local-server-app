@@ -22,7 +22,11 @@ function parsePlayersFromLog(serverId, line) {
   if (leave) players.delete(leave[1])
   if (list) {
     players.clear()
-    list[1].split(',').map(n => n.trim()).filter(Boolean).forEach(n => players.add(n))
+    list[1]
+      .split(',')
+      .map(n => n.trim())
+      .filter(Boolean)
+      .forEach(n => players.add(n))
   }
   if (state.currentServerId === serverId) renderPlayers()
 }
@@ -35,12 +39,15 @@ function renderPlayers() {
     fill(grid, h('div', { class: 'empty-state', text: T('players.none') }))
     return
   }
-  fill(grid, ...[...players].map(name => h('div', { class: 'player-card' },
-    h('div', { class: 'player-avatar', text: '🧑' }),
-    h('div', {},
-      h('div', { class: 'player-name', text: name }),
-      h('div', { class: 'player-status', text: T('status.online') })
+  fill(
+    grid,
+    ...[...players].map(name =>
+      h(
+        'div',
+        { class: 'player-card' },
+        h('div', { class: 'player-avatar', text: '🧑' }),
+        h('div', {}, h('div', { class: 'player-name', text: name }), h('div', { class: 'player-status', text: T('status.online') }))
+      )
     )
-  )))
+  )
 }
-

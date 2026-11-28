@@ -1,246 +1,806 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Minecraft Local Server Manager</title>
-<meta name="description" content="Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Fabric y Forge.">
-<link rel="icon" href="./favicon.ico" sizes="16x16 24x24 32x32 48x48 64x64 128x128 256x256">
-<link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<meta name="theme-color" content="#efe8d2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#141815" media="(prefers-color-scheme: dark)">
-<meta name="apple-mobile-web-app-title" content="Minecraft Manager">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Minecraft Local Server Manager">
-<meta property="og:description" content="Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Fabric y Forge.">
-<meta property="og:image" content="./icon-512.png">
-<meta property="og:image:alt" content="Icono de Minecraft Local Server Manager">
-<meta property="og:image:width" content="512">
-<meta property="og:image:height" content="512">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="./icon-512.png">
-<style>
-/* Tipografías locales (assets/fonts), sin CDN: mismas familias, pesos y estilos
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Minecraft Local Server Manager</title>
+    <meta
+      name="description"
+      content="Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Fabric y Forge."
+    />
+    <link rel="icon" href="./favicon.ico" sizes="16x16 24x24 32x32 48x48 64x64 128x128 256x256" />
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="theme-color" content="#efe8d2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141815" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-title" content="Minecraft Manager" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Minecraft Local Server Manager" />
+    <meta
+      property="og:description"
+      content="Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Fabric y Forge."
+    />
+    <meta property="og:image" content="./icon-512.png" />
+    <meta property="og:image:alt" content="Icono de Minecraft Local Server Manager" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image" content="./icon-512.png" />
+    <style>
+      /* Tipografías locales (assets/fonts), sin CDN: mismas familias, pesos y estilos
    que servía Google Fonts, para que la tipografía no cambie. */
-@font-face{font-family:'Silkscreen';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/Silkscreen-Regular.woff2') format('woff2')}
-@font-face{font-family:'Silkscreen';font-style:normal;font-weight:700;font-display:swap;src:url('../assets/fonts/Silkscreen-Bold.woff2') format('woff2')}
-@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/IBMPlexSans-Regular.woff2') format('woff2')}
-@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:500;font-display:swap;src:url('../assets/fonts/IBMPlexSans-Medium.woff2') format('woff2')}
-@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:600;font-display:swap;src:url('../assets/fonts/IBMPlexSans-SemiBold.woff2') format('woff2')}
-@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/IBMPlexMono-Regular.woff2') format('woff2')}
-/* Tokens de color de la app (src/css/tokens.css): mismos nombres y valores.
+      @font-face {
+        font-family: 'Silkscreen';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('../assets/fonts/Silkscreen-Regular.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Silkscreen';
+        font-style: normal;
+        font-weight: 700;
+        font-display: swap;
+        src: url('../assets/fonts/Silkscreen-Bold.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'IBM Plex Sans';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('../assets/fonts/IBMPlexSans-Regular.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'IBM Plex Sans';
+        font-style: normal;
+        font-weight: 500;
+        font-display: swap;
+        src: url('../assets/fonts/IBMPlexSans-Medium.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'IBM Plex Sans';
+        font-style: normal;
+        font-weight: 600;
+        font-display: swap;
+        src: url('../assets/fonts/IBMPlexSans-SemiBold.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'IBM Plex Mono';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('../assets/fonts/IBMPlexMono-Regular.woff2') format('woff2');
+      }
+      /* Tokens de color de la app (src/css/tokens.css): mismos nombres y valores.
    No se replican --bg/--ink/--mute/--line/--grass/--red/--win: la landing ya
    define esos nombres con su propia paleta themable (claro/oscuro). */
-:root{--bg0:#0c0f0d;--bg1:#141815;--bg2:#1c211c;--bg3:#26302a;--accent:#6cb43f;--accent2:#8fd14f;--accent3:#4e8f2c;--accent-ink:#10200a;--danger:#c2362b;--danger-deep:#8f231b;--danger-text:#e2685c;--warn:#e5c454;--info:#8fd1ff;--text:#e6eadb;--text2:#97a48f;--text3:#6b7767;--text-inverse:#fff;--line2:#3a463b}
-/* --line de la app (#2c352d, fijo) dentro de la vista previa de la consola,
+      :root {
+        --bg0: #0c0f0d;
+        --bg1: #141815;
+        --bg2: #1c211c;
+        --bg3: #26302a;
+        --accent: #6cb43f;
+        --accent2: #8fd14f;
+        --accent3: #4e8f2c;
+        --accent-ink: #10200a;
+        --danger: #c2362b;
+        --danger-deep: #8f231b;
+        --danger-text: #e2685c;
+        --warn: #e5c454;
+        --info: #8fd1ff;
+        --text: #e6eadb;
+        --text2: #97a48f;
+        --text3: #6b7767;
+        --text-inverse: #fff;
+        --line2: #3a463b;
+      }
+      /* --line de la app (#2c352d, fijo) dentro de la vista previa de la consola,
    que siempre es oscura: el --line de la landing cambia con el tema. */
-.bar,.meters,.cmd{--line:#2c352d}
-:root{--bg:#efe8d2;--ink:#232a22;--mute:#5d6655;--line:#cfc6a8;--grass:#3f7d24;--grass-ink:#fff;--win:#1c211d;--win-ink:#cfe3c4;--red:#c2362b;--dirt:#7a4e30;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141815;--ink:#e6eadb;--mute:#97a48f;--line:#2c352d;--grass:#6cb43f;--grass-ink:#10200a;--win:#0c0f0d}}
-:root[data-theme="dark"]{--bg:#141815;--ink:#e6eadb;--mute:#97a48f;--line:#2c352d;--grass:#6cb43f;--grass-ink:#10200a;--win:#0c0f0d}
-html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 72px)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 "IBM Plex Sans",system-ui,sans-serif}
-a{color:inherit}
-.lang{font:700 13px "Silkscreen",monospace;background:none;color:var(--ink);border:2px solid var(--line);padding:6px 10px;cursor:pointer;border-radius:2px}
-:focus-visible{outline:3px solid var(--grass);outline-offset:3px}
-.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
-.top{position:fixed;top:0;left:0;right:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px);transition:transform .25s ease}
-.top.hide{transform:translateY(-100%)}
-.top .wrap{display:flex;justify-content:space-between;align-items:center;padding-top:14px;padding-bottom:14px}
-body{padding-top:68px}
-@media (prefers-reduced-motion:reduce){.top{transition:none}}
-.logo{font:700 18px "Silkscreen",monospace;text-decoration:none;display:flex;gap:10px;align-items:center}
-.logo i{width:18px;height:18px;background:var(--grass);border-bottom:6px solid var(--dirt);display:block}
-nav a{margin-left:20px;font-size:15px;color:var(--mute);text-decoration:none}
-nav a:hover{color:var(--ink)}
-.hero{display:grid;grid-template-columns:1fr 1.15fr;gap:48px;align-items:center;padding:56px 0 88px}
-h1{font:700 clamp(34px,5.4vw,58px)/1.05 "Silkscreen",monospace;margin:0 0 22px;letter-spacing:-.01em}
-.lead{font-size:19px;color:var(--mute);max-width:46ch;margin:0 0 30px}
-.btn{display:inline-block;background:var(--grass);color:var(--grass-ink);font:700 15px "Silkscreen",monospace;padding:14px 22px;text-decoration:none;border-bottom:5px solid rgba(0,0,0,.28);border-radius:2px}
-.btn:hover{filter:brightness(1.08)}
-.btn.alt{background:transparent;color:var(--ink);border:2px solid var(--line);padding:12px 20px}
-.actions{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch}
-.actions .btn{display:flex;align-items:center}
-.cta .actions{justify-content:center}
-.win{background:var(--win);border-radius:6px;border:1px solid var(--line);box-shadow:8px 8px 0 var(--dirt);overflow:hidden;color:var(--win-ink)}
-.bar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font:13px "IBM Plex Sans",sans-serif}
-.status{display:flex;align-items:center;gap:8px}
-.dot{width:10px;height:10px;background:var(--accent);display:inline-block}
-.btn-stop{background:var(--red);color:var(--text-inverse);font:700 12px "Silkscreen",monospace;padding:5px 10px;border-radius:2px}
-.meters{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:14px;border-bottom:1px solid var(--line);font-size:12px}
-.meter div{height:8px;background:var(--bg3);margin-top:6px}
-.meter b{display:block;height:100%;background:var(--accent);width:30%;transition:width .8s}
-.log{padding:14px;font:13px/1.65 "IBM Plex Mono",monospace;min-height:218px;margin:0;white-space:pre-wrap;word-break:break-word}
-.log .w{color:var(--warn)}.log .p{color:var(--info)}
-.cmd{display:flex;border-top:1px solid var(--line);padding:10px 14px;font:13px "IBM Plex Mono",monospace;color:#7d8b76}
-.linux{margin:20px 0 0;font-size:15px;color:var(--mute)}
-.linux a{font-weight:600;margin-left:14px;text-underline-offset:4px}
-.cta .linux{margin:22px auto 0;max-width:none}
-section{padding:72px 0;border-top:2px solid var(--line)}
-h2{font:700 clamp(24px,3.4vw,34px)/1.15 "Silkscreen",monospace;margin:0 0 36px;max-width:22ch}
-.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:24px;padding:22px 0;border-top:1px solid var(--line)}
-.row:last-child{border-bottom:1px solid var(--line)}
-.row h3{margin:0;font:700 16px "Silkscreen",monospace}
-.row p{margin:0;color:var(--mute)}
-.loaders{display:flex;flex-wrap:wrap;gap:12px;padding:0;margin:0 0 20px;list-style:none}
-.loaders li{font:700 15px "Silkscreen",monospace;padding:10px 16px;border:2px solid var(--ink);border-bottom-width:6px}
-.cta{text-align:center}
-.cta h2{margin:0 auto 20px}
-.cta p{color:var(--mute);margin:0 auto 28px;max-width:44ch}
-footer{padding:32px 0 40px;border-top:2px solid var(--line);color:var(--mute);font-size:14px}
-footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
-@media (max-width:820px){.hero{grid-template-columns:1fr;padding-top:24px}.row{grid-template-columns:1fr;gap:6px}nav a:not(:last-child){display:none}}
-</style>
-</head>
-<body>
-<header class="top"><div class="wrap">
-  <a class="logo" href="#"><i></i>Server Manager</a>
-  <nav><button id="lang" type="button" class="lang" aria-label="Change language"></button><a href="#funciones">Funciones</a><a href="#compatibilidad">Compatibilidad</a><a href="https://github.com/hugoaldaHD/minecraft-local-server-app">GitHub</a></nav>
-</div></header>
-<div class="wrap">
-
-<div class="hero">
-  <div>
-    <h1>Tu servidor de Minecraft, bajo control.</h1>
-    <p class="lead">Una aplicación de escritorio para crear, arrancar y administrar servidores locales de Minecraft sin pelearte con la línea de comandos.</p>
-    <div class="actions"><a class="btn dl" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">Descargar para Windows</a><a class="btn alt" href="#funciones">Ver funciones</a></div>
-    <p class="linux">También para Linux:<a class="dl-l" data-f="Minecraft-Local-Server-Manager.AppImage" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">AppImage</a><a class="dl-l" data-f="Minecraft-Local-Server-Manager.deb" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">.deb</a></p>
-    <p class="linux">Verifica tu descarga:<a class="dl-l" data-f="SHA256SUMS" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">SHA256SUMS</a></p>
-  </div>
-  <div class="win" aria-label="Vista previa de la consola del servidor">
-    <div class="bar"><span class="status"><span class="dot"></span>Servidor en marcha</span><span class="btn-stop">Detener</span></div>
-    <div class="meters">
-      <div class="meter">CPU <span id="cpuv">18%</span><div><b id="cpu"></b></div></div>
-      <div class="meter">RAM <span id="ramv">2.1 GB</span><div><b id="ram"></b></div></div>
+      .bar,
+      .meters,
+      .cmd {
+        --line: #2c352d;
+      }
+      :root {
+        --bg: #efe8d2;
+        --ink: #232a22;
+        --mute: #5d6655;
+        --line: #cfc6a8;
+        --grass: #3f7d24;
+        --grass-ink: #fff;
+        --win: #1c211d;
+        --win-ink: #cfe3c4;
+        --red: #c2362b;
+        --dirt: #7a4e30;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --bg: #141815;
+          --ink: #e6eadb;
+          --mute: #97a48f;
+          --line: #2c352d;
+          --grass: #6cb43f;
+          --grass-ink: #10200a;
+          --win: #0c0f0d;
+        }
+      }
+      :root[data-theme='dark'] {
+        --bg: #141815;
+        --ink: #e6eadb;
+        --mute: #97a48f;
+        --line: #2c352d;
+        --grass: #6cb43f;
+        --grass-ink: #10200a;
+        --win: #0c0f0d;
+      }
+      html {
+        scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          400 17px/1.6 'IBM Plex Sans',
+          system-ui,
+          sans-serif;
+      }
+      a {
+        color: inherit;
+      }
+      .lang {
+        font:
+          700 13px 'Silkscreen',
+          monospace;
+        background: none;
+        color: var(--ink);
+        border: 2px solid var(--line);
+        padding: 6px 10px;
+        cursor: pointer;
+        border-radius: 2px;
+      }
+      :focus-visible {
+        outline: 3px solid var(--grass);
+        outline-offset: 3px;
+      }
+      .wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+      .top {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+        padding-top: env(safe-area-inset-top, 0px);
+        transition: transform 0.25s ease;
+      }
+      .top.hide {
+        transform: translateY(-100%);
+      }
+      .top .wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 14px;
+        padding-bottom: 14px;
+      }
+      body {
+        padding-top: 68px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .top {
+          transition: none;
+        }
+      }
+      .logo {
+        font:
+          700 18px 'Silkscreen',
+          monospace;
+        text-decoration: none;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .logo i {
+        width: 18px;
+        height: 18px;
+        background: var(--grass);
+        border-bottom: 6px solid var(--dirt);
+        display: block;
+      }
+      nav a {
+        margin-left: 20px;
+        font-size: 15px;
+        color: var(--mute);
+        text-decoration: none;
+      }
+      nav a:hover {
+        color: var(--ink);
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: 1fr 1.15fr;
+        gap: 48px;
+        align-items: center;
+        padding: 56px 0 88px;
+      }
+      h1 {
+        font:
+          700 clamp(34px, 5.4vw, 58px)/1.05 'Silkscreen',
+          monospace;
+        margin: 0 0 22px;
+        letter-spacing: -0.01em;
+      }
+      .lead {
+        font-size: 19px;
+        color: var(--mute);
+        max-width: 46ch;
+        margin: 0 0 30px;
+      }
+      .btn {
+        display: inline-block;
+        background: var(--grass);
+        color: var(--grass-ink);
+        font:
+          700 15px 'Silkscreen',
+          monospace;
+        padding: 14px 22px;
+        text-decoration: none;
+        border-bottom: 5px solid rgba(0, 0, 0, 0.28);
+        border-radius: 2px;
+      }
+      .btn:hover {
+        filter: brightness(1.08);
+      }
+      .btn.alt {
+        background: transparent;
+        color: var(--ink);
+        border: 2px solid var(--line);
+        padding: 12px 20px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: stretch;
+      }
+      .actions .btn {
+        display: flex;
+        align-items: center;
+      }
+      .cta .actions {
+        justify-content: center;
+      }
+      .win {
+        background: var(--win);
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        box-shadow: 8px 8px 0 var(--dirt);
+        overflow: hidden;
+        color: var(--win-ink);
+      }
+      .bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+        font:
+          13px 'IBM Plex Sans',
+          sans-serif;
+      }
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        background: var(--accent);
+        display: inline-block;
+      }
+      .btn-stop {
+        background: var(--red);
+        color: var(--text-inverse);
+        font:
+          700 12px 'Silkscreen',
+          monospace;
+        padding: 5px 10px;
+        border-radius: 2px;
+      }
+      .meters {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        padding: 14px;
+        border-bottom: 1px solid var(--line);
+        font-size: 12px;
+      }
+      .meter div {
+        height: 8px;
+        background: var(--bg3);
+        margin-top: 6px;
+      }
+      .meter b {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        width: 30%;
+        transition: width 0.8s;
+      }
+      .log {
+        padding: 14px;
+        font:
+          13px/1.65 'IBM Plex Mono',
+          monospace;
+        min-height: 218px;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .log .w {
+        color: var(--warn);
+      }
+      .log .p {
+        color: var(--info);
+      }
+      .cmd {
+        display: flex;
+        border-top: 1px solid var(--line);
+        padding: 10px 14px;
+        font:
+          13px 'IBM Plex Mono',
+          monospace;
+        color: #7d8b76;
+      }
+      .linux {
+        margin: 20px 0 0;
+        font-size: 15px;
+        color: var(--mute);
+      }
+      .linux a {
+        font-weight: 600;
+        margin-left: 14px;
+        text-underline-offset: 4px;
+      }
+      .cta .linux {
+        margin: 22px auto 0;
+        max-width: none;
+      }
+      section {
+        padding: 72px 0;
+        border-top: 2px solid var(--line);
+      }
+      h2 {
+        font:
+          700 clamp(24px, 3.4vw, 34px)/1.15 'Silkscreen',
+          monospace;
+        margin: 0 0 36px;
+        max-width: 22ch;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+        gap: 24px;
+        padding: 22px 0;
+        border-top: 1px solid var(--line);
+      }
+      .row:last-child {
+        border-bottom: 1px solid var(--line);
+      }
+      .row h3 {
+        margin: 0;
+        font:
+          700 16px 'Silkscreen',
+          monospace;
+      }
+      .row p {
+        margin: 0;
+        color: var(--mute);
+      }
+      .loaders {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 0;
+        margin: 0 0 20px;
+        list-style: none;
+      }
+      .loaders li {
+        font:
+          700 15px 'Silkscreen',
+          monospace;
+        padding: 10px 16px;
+        border: 2px solid var(--ink);
+        border-bottom-width: 6px;
+      }
+      .cta {
+        text-align: center;
+      }
+      .cta h2 {
+        margin: 0 auto 20px;
+      }
+      .cta p {
+        color: var(--mute);
+        margin: 0 auto 28px;
+        max-width: 44ch;
+      }
+      footer {
+        padding: 32px 0 40px;
+        border-top: 2px solid var(--line);
+        color: var(--mute);
+        font-size: 14px;
+      }
+      footer .wrap {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      @media (max-width: 820px) {
+        .hero {
+          grid-template-columns: 1fr;
+          padding-top: 24px;
+        }
+        .row {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+        nav a:not(:last-child) {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="logo" href="#"><i></i>Server Manager</a>
+        <nav>
+          <button id="lang" type="button" class="lang" aria-label="Change language"></button><a href="#funciones">Funciones</a
+          ><a href="#compatibilidad">Compatibilidad</a><a href="https://github.com/hugoaldaHD/minecraft-local-server-app">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <div class="hero">
+        <div>
+          <h1>Tu servidor de Minecraft, bajo control.</h1>
+          <p class="lead">
+            Una aplicación de escritorio para crear, arrancar y administrar servidores locales de Minecraft sin pelearte con la línea de
+            comandos.
+          </p>
+          <div class="actions">
+            <a class="btn dl" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">Descargar para Windows</a
+            ><a class="btn alt" href="#funciones">Ver funciones</a>
+          </div>
+          <p class="linux">
+            También para Linux:<a
+              class="dl-l"
+              data-f="Minecraft-Local-Server-Manager.AppImage"
+              href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest"
+              >AppImage</a
+            ><a
+              class="dl-l"
+              data-f="Minecraft-Local-Server-Manager.deb"
+              href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest"
+              >.deb</a
+            >
+          </p>
+          <p class="linux">
+            Verifica tu descarga:<a
+              class="dl-l"
+              data-f="SHA256SUMS"
+              href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest"
+              >SHA256SUMS</a
+            >
+          </p>
+        </div>
+        <div class="win" aria-label="Vista previa de la consola del servidor">
+          <div class="bar">
+            <span class="status"><span class="dot"></span>Servidor en marcha</span><span class="btn-stop">Detener</span>
+          </div>
+          <div class="meters">
+            <div class="meter">
+              CPU <span id="cpuv">18%</span>
+              <div><b id="cpu"></b></div>
+            </div>
+            <div class="meter">
+              RAM <span id="ramv">2.1 GB</span>
+              <div><b id="ram"></b></div>
+            </div>
+          </div>
+          <pre class="log" id="log" aria-live="off"></pre>
+          <div class="cmd">&gt; op Steve</div>
+        </div>
+      </div>
     </div>
-    <pre class="log" id="log" aria-live="off"></pre>
-    <div class="cmd">&gt; op Steve</div>
-  </div>
-</div>
-</div>
 
-<section id="funciones"><div class="wrap">
-  <h2>Todo lo que necesitas para tu servidor</h2>
-  <div>
-    <div class="row"><h3>Arranca y detén</h3><p>Inicia o apaga el servidor con un clic desde la misma ventana.</p></div>
-    <div class="row"><h3>CPU y RAM en vivo</h3><p>Consulta en tiempo real cuántos recursos consume tu servidor.</p></div>
-    <div class="row"><h3>Consola en tiempo real</h3><p>Lee el registro mientras ocurre y lanza comandos con historial para repetirlos al instante.</p></div>
-    <div class="row"><h3>Gestión de jugadores</h3><p>Expulsa, banea, da permisos de operador o cambia el modo de juego de cada jugador.</p></div>
-    <div class="row"><h3>Whitelist y banlist</h3><p>Edita las listas desde un editor visual, sin tocar archivos JSON.</p></div>
-    <div class="row"><h3>Editor de server.properties</h3><p>Ajusta la configuración del servidor desde la propia aplicación.</p></div>
-    <div class="row"><h3>Copias de seguridad</h3><p>Guarda tus mundos manualmente o de forma automática y restaura cualquier copia con un clic.</p></div>
-    <div class="row"><h3>Reinicios programados</h3><p>Reinicia cada servidor cada 6, 12 o 24 horas y recupéralo automáticamente tras una caída.</p></div>
-    <div class="row"><h3>Diagnóstico de errores</h3><p>Detecta problemas de Java, puerto ocupado, memoria o EULA y te explica cómo solucionarlos.</p></div>
-    <div class="row"><h3>Notificaciones</h3><p>Recibe avisos cuando un servidor arranca, se cae, entra un jugador o termina una copia.</p></div>
-    <div class="row"><h3>Instalador integrado</h3><p>Descarga y configura Vanilla, Paper, Fabric o Forge desde la propia aplicación, verificando la integridad de la descarga.</p></div>
-  </div>
-</div></section>
+    <section id="funciones">
+      <div class="wrap">
+        <h2>Todo lo que necesitas para tu servidor</h2>
+        <div>
+          <div class="row">
+            <h3>Arranca y detén</h3>
+            <p>Inicia o apaga el servidor con un clic desde la misma ventana.</p>
+          </div>
+          <div class="row">
+            <h3>CPU y RAM en vivo</h3>
+            <p>Consulta en tiempo real cuántos recursos consume tu servidor.</p>
+          </div>
+          <div class="row">
+            <h3>Consola en tiempo real</h3>
+            <p>Lee el registro mientras ocurre y lanza comandos con historial para repetirlos al instante.</p>
+          </div>
+          <div class="row">
+            <h3>Gestión de jugadores</h3>
+            <p>Expulsa, banea, da permisos de operador o cambia el modo de juego de cada jugador.</p>
+          </div>
+          <div class="row">
+            <h3>Whitelist y banlist</h3>
+            <p>Edita las listas desde un editor visual, sin tocar archivos JSON.</p>
+          </div>
+          <div class="row">
+            <h3>Editor de server.properties</h3>
+            <p>Ajusta la configuración del servidor desde la propia aplicación.</p>
+          </div>
+          <div class="row">
+            <h3>Copias de seguridad</h3>
+            <p>Guarda tus mundos manualmente o de forma automática y restaura cualquier copia con un clic.</p>
+          </div>
+          <div class="row">
+            <h3>Reinicios programados</h3>
+            <p>Reinicia cada servidor cada 6, 12 o 24 horas y recupéralo automáticamente tras una caída.</p>
+          </div>
+          <div class="row">
+            <h3>Diagnóstico de errores</h3>
+            <p>Detecta problemas de Java, puerto ocupado, memoria o EULA y te explica cómo solucionarlos.</p>
+          </div>
+          <div class="row">
+            <h3>Notificaciones</h3>
+            <p>Recibe avisos cuando un servidor arranca, se cae, entra un jugador o termina una copia.</p>
+          </div>
+          <div class="row">
+            <h3>Instalador integrado</h3>
+            <p>Descarga y configura Vanilla, Paper, Fabric o Forge desde la propia aplicación, verificando la integridad de la descarga.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-<section id="compatibilidad"><div class="wrap">
-  <h2>Funciona con tu tipo de servidor</h2>
-  <ul class="loaders"><li>Vanilla</li><li>Paper</li><li>Fabric</li><li>Forge</li></ul>
-  <p class="lead">Del servidor oficial a los más populares con plugins y mods.</p>
-</div></section>
+    <section id="compatibilidad">
+      <div class="wrap">
+        <h2>Funciona con tu tipo de servidor</h2>
+        <ul class="loaders">
+          <li>Vanilla</li>
+          <li>Paper</li>
+          <li>Fabric</li>
+          <li>Forge</li>
+        </ul>
+        <p class="lead">Del servidor oficial a los más populares con plugins y mods.</p>
+      </div>
+    </section>
 
-<section class="cta"><div class="wrap">
-  <h2>Empieza a gestionar tu servidor</h2>
-  <p>Consigue la última versión y consulta el código en GitHub.</p>
-  <div class="actions"><a class="btn dl" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">Descargar para Windows</a><a class="btn alt" href="https://github.com/hugoaldaHD/minecraft-local-server-app">Ver el código</a></div>
-  <p class="linux">También para Linux:<a class="dl-l" data-f="Minecraft-Local-Server-Manager.AppImage" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">AppImage</a><a class="dl-l" data-f="Minecraft-Local-Server-Manager.deb" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">.deb</a></p>
-  <p class="linux">Verifica tu descarga:<a class="dl-l" data-f="SHA256SUMS" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">SHA256SUMS</a></p>
-</div></section>
+    <section class="cta">
+      <div class="wrap">
+        <h2>Empieza a gestionar tu servidor</h2>
+        <p>Consigue la última versión y consulta el código en GitHub.</p>
+        <div class="actions">
+          <a class="btn dl" href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest">Descargar para Windows</a
+          ><a class="btn alt" href="https://github.com/hugoaldaHD/minecraft-local-server-app">Ver el código</a>
+        </div>
+        <p class="linux">
+          También para Linux:<a
+            class="dl-l"
+            data-f="Minecraft-Local-Server-Manager.AppImage"
+            href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest"
+            >AppImage</a
+          ><a
+            class="dl-l"
+            data-f="Minecraft-Local-Server-Manager.deb"
+            href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest"
+            >.deb</a
+          >
+        </p>
+        <p class="linux">
+          Verifica tu descarga:<a
+            class="dl-l"
+            data-f="SHA256SUMS"
+            href="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest"
+            >SHA256SUMS</a
+          >
+        </p>
+      </div>
+    </section>
 
-<footer><div class="wrap"><span>Minecraft Local Server Manager · por hugoaldaHD</span><span>Proyecto independiente, no afiliado a Mojang ni a Microsoft.</span></div></footer>
+    <footer>
+      <div class="wrap">
+        <span>Minecraft Local Server Manager · por hugoaldaHD</span
+        ><span>Proyecto independiente, no afiliado a Mojang ni a Microsoft.</span>
+      </div>
+    </footer>
 
-<script>
-(function(){
-  var lines=[
-    ['','[12:04:01] [Server thread/INFO]: Starting minecraft server'],
-    ['','[12:04:04] [Server thread/INFO]: Preparing spawn area: 100%'],
-    ['','[12:04:05] [Server thread/INFO]: Done (4.2s)! For help, type "help"'],
-    ['p','[12:06:12] [Server thread/INFO]: Steve joined the game'],
-    ['w','[12:06:40] [Server thread/WARN]: Can\'t keep up! Running 2100ms behind'],
-    ['','[12:07:03] [Server thread/INFO]: Made Steve a server operator'],
-    ['','[12:10:00] [Backup/INFO]: World backup saved']
-  ];
-  var log=document.getElementById('log'),i=0;
-  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function add(){var l=lines[i++];var s=document.createElement('span');if(l[0])s.className=l[0];s.textContent=l[1]+'\n';log.appendChild(s)}
-  function stats(){
-    var c=Math.round(12+Math.random()*30),r=(2+Math.random()*.6).toFixed(1);
-    cpu.style.width=c+'%';cpuv.textContent=c+'%';ram.style.width=(r/6*100)+'%';ramv.textContent=r+' GB';
-  }
-  stats();
-  if(reduce){while(i<lines.length)add();return}
-  var t=setInterval(function(){if(i<lines.length)add();else clearInterval(t)},900);
-  setInterval(stats,2200);
-})();
-</script>
-<script>
-(function(){
-var T={
-"Funciones":"Features","Compatibilidad":"Compatibility",
-"Tu servidor de Minecraft, bajo control.":"Your Minecraft server, under control.",
-"Una aplicación de escritorio para crear, arrancar y administrar servidores locales de Minecraft sin pelearte con la línea de comandos.":"A desktop app to start and manage local Minecraft servers without wrestling with the command line.",
-"Descargar para Windows":"Download for Windows","Ver funciones":"See features","Ver el código":"View the code","También para Linux:":"Also for Linux:","Verifica tu descarga:":"Verify your download:",
-"Servidor en marcha":"Server running","Detener":"Stop",
-"Todo lo que necesitas para tu servidor":"Everything you need to run your server",
-"Arranca y detén":"Start and stop","Inicia o apaga el servidor con un clic desde la misma ventana.":"Start or shut down the server with one click from the same window.",
-"CPU y RAM en vivo":"Live CPU and RAM","Consulta en tiempo real cuántos recursos consume tu servidor.":"See in real time how many resources your server uses.",
-"Consola en tiempo real":"Real-time console","Lee el registro mientras ocurre y lanza comandos con historial para repetirlos al instante.":"Read the log as it happens and run commands, with history to repeat them instantly.",
-"Gestión de jugadores":"Player management","Expulsa, banea, da permisos de operador o cambia el modo de juego de cada jugador.":"Kick, ban, give operator rights or change each player's game mode.",
-"Whitelist y banlist":"Whitelist and banlist","Edita las listas desde un editor visual, sin tocar archivos JSON.":"Edit the lists in a visual editor, without touching JSON files.",
-"Editor de server.properties":"server.properties editor","Ajusta la configuración del servidor desde la propia aplicación.":"Adjust the server settings from inside the app.",
-"Copias de seguridad":"Backups","Guarda tus mundos manualmente o de forma automática y restaura cualquier copia con un clic.":"Save your worlds manually or automatically and restore any backup with one click.",
-"Reinicios programados":"Scheduled restarts","Reinicia cada servidor cada 6, 12 o 24 horas y recupéralo automáticamente tras una caída.":"Restart each server every 6, 12 or 24 hours and recover it automatically after a crash.",
-"Diagnóstico de errores":"Error diagnosis","Detecta problemas de Java, puerto ocupado, memoria o EULA y te explica cómo solucionarlos.":"Detects Java, port, memory or EULA problems and explains how to fix them.",
-"Notificaciones":"Notifications","Recibe avisos cuando un servidor arranca, se cae, entra un jugador o termina una copia.":"Get alerts when a server starts, crashes, a player joins or a backup finishes.",
-"Instalador integrado":"Built-in installer","Descarga y configura Vanilla, Paper, Fabric o Forge desde la propia aplicación, verificando la integridad de la descarga.":"Download and set up Vanilla, Paper, Fabric or Forge from inside the app, with download integrity verification.",
-"Funciona con tu tipo de servidor":"Works with your type of server",
-"Del servidor oficial a los más populares con plugins y mods.":"From the official server to the most popular ones with plugins and mods.",
-"Empieza a gestionar tu servidor":"Start managing your server",
-"Consigue la última versión y consulta el código en GitHub.":"Get the latest version and browse the code on GitHub.",
-"Minecraft Local Server Manager · por hugoaldaHD":"Minecraft Local Server Manager · by hugoaldaHD",
-"Proyecto independiente, no afiliado a Mojang ni a Microsoft.":"Independent project, not affiliated with Mojang or Microsoft."};
-var DESC={es:"Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Fabric y Forge.",en:"Desktop app to manage local Minecraft servers. Compatible with Vanilla, Paper, Fabric and Forge."};
-var ARIA={es:"Vista previa de la consola del servidor",en:"Server console preview"};
-/* Si defines aquí el nombre exacto del .exe de la release (p. ej. "MiApp-Setup.exe"),
+    <script>
+      ;(function () {
+        var lines = [
+          ['', '[12:04:01] [Server thread/INFO]: Starting minecraft server'],
+          ['', '[12:04:04] [Server thread/INFO]: Preparing spawn area: 100%'],
+          ['', '[12:04:05] [Server thread/INFO]: Done (4.2s)! For help, type "help"'],
+          ['p', '[12:06:12] [Server thread/INFO]: Steve joined the game'],
+          ['w', "[12:06:40] [Server thread/WARN]: Can't keep up! Running 2100ms behind"],
+          ['', '[12:07:03] [Server thread/INFO]: Made Steve a server operator'],
+          ['', '[12:10:00] [Backup/INFO]: World backup saved']
+        ]
+        var log = document.getElementById('log'),
+          i = 0
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        function add() {
+          var l = lines[i++]
+          var s = document.createElement('span')
+          if (l[0]) s.className = l[0]
+          s.textContent = l[1] + '\n'
+          log.appendChild(s)
+        }
+        function stats() {
+          var c = Math.round(12 + Math.random() * 30),
+            r = (2 + Math.random() * 0.6).toFixed(1)
+          cpu.style.width = c + '%'
+          cpuv.textContent = c + '%'
+          ram.style.width = (r / 6) * 100 + '%'
+          ramv.textContent = r + ' GB'
+        }
+        stats()
+        if (reduce) {
+          while (i < lines.length) add()
+          return
+        }
+        var t = setInterval(function () {
+          if (i < lines.length) add()
+          else clearInterval(t)
+        }, 900)
+        setInterval(stats, 2200)
+      })()
+    </script>
+    <script>
+      ;(function () {
+        var T = {
+          Funciones: 'Features',
+          Compatibilidad: 'Compatibility',
+          'Tu servidor de Minecraft, bajo control.': 'Your Minecraft server, under control.',
+          'Una aplicación de escritorio para crear, arrancar y administrar servidores locales de Minecraft sin pelearte con la línea de comandos.':
+            'A desktop app to start and manage local Minecraft servers without wrestling with the command line.',
+          'Descargar para Windows': 'Download for Windows',
+          'Ver funciones': 'See features',
+          'Ver el código': 'View the code',
+          'También para Linux:': 'Also for Linux:',
+          'Verifica tu descarga:': 'Verify your download:',
+          'Servidor en marcha': 'Server running',
+          Detener: 'Stop',
+          'Todo lo que necesitas para tu servidor': 'Everything you need to run your server',
+          'Arranca y detén': 'Start and stop',
+          'Inicia o apaga el servidor con un clic desde la misma ventana.':
+            'Start or shut down the server with one click from the same window.',
+          'CPU y RAM en vivo': 'Live CPU and RAM',
+          'Consulta en tiempo real cuántos recursos consume tu servidor.': 'See in real time how many resources your server uses.',
+          'Consola en tiempo real': 'Real-time console',
+          'Lee el registro mientras ocurre y lanza comandos con historial para repetirlos al instante.':
+            'Read the log as it happens and run commands, with history to repeat them instantly.',
+          'Gestión de jugadores': 'Player management',
+          'Expulsa, banea, da permisos de operador o cambia el modo de juego de cada jugador.':
+            "Kick, ban, give operator rights or change each player's game mode.",
+          'Whitelist y banlist': 'Whitelist and banlist',
+          'Edita las listas desde un editor visual, sin tocar archivos JSON.':
+            'Edit the lists in a visual editor, without touching JSON files.',
+          'Editor de server.properties': 'server.properties editor',
+          'Ajusta la configuración del servidor desde la propia aplicación.': 'Adjust the server settings from inside the app.',
+          'Copias de seguridad': 'Backups',
+          'Guarda tus mundos manualmente o de forma automática y restaura cualquier copia con un clic.':
+            'Save your worlds manually or automatically and restore any backup with one click.',
+          'Reinicios programados': 'Scheduled restarts',
+          'Reinicia cada servidor cada 6, 12 o 24 horas y recupéralo automáticamente tras una caída.':
+            'Restart each server every 6, 12 or 24 hours and recover it automatically after a crash.',
+          'Diagnóstico de errores': 'Error diagnosis',
+          'Detecta problemas de Java, puerto ocupado, memoria o EULA y te explica cómo solucionarlos.':
+            'Detects Java, port, memory or EULA problems and explains how to fix them.',
+          Notificaciones: 'Notifications',
+          'Recibe avisos cuando un servidor arranca, se cae, entra un jugador o termina una copia.':
+            'Get alerts when a server starts, crashes, a player joins or a backup finishes.',
+          'Instalador integrado': 'Built-in installer',
+          'Descarga y configura Vanilla, Paper, Fabric o Forge desde la propia aplicación, verificando la integridad de la descarga.':
+            'Download and set up Vanilla, Paper, Fabric or Forge from inside the app, with download integrity verification.',
+          'Funciona con tu tipo de servidor': 'Works with your type of server',
+          'Del servidor oficial a los más populares con plugins y mods.':
+            'From the official server to the most popular ones with plugins and mods.',
+          'Empieza a gestionar tu servidor': 'Start managing your server',
+          'Consigue la última versión y consulta el código en GitHub.': 'Get the latest version and browse the code on GitHub.',
+          'Minecraft Local Server Manager · por hugoaldaHD': 'Minecraft Local Server Manager · by hugoaldaHD',
+          'Proyecto independiente, no afiliado a Mojang ni a Microsoft.': 'Independent project, not affiliated with Mojang or Microsoft.'
+        }
+        var DESC = {
+          es: 'Aplicación de escritorio para gestionar servidores locales de Minecraft. Compatible con Vanilla, Paper, Fabric y Forge.',
+          en: 'Desktop app to manage local Minecraft servers. Compatible with Vanilla, Paper, Fabric and Forge.'
+        }
+        var ARIA = { es: 'Vista previa de la consola del servidor', en: 'Server console preview' }
+        /* Si defines aquí el nombre exacto del .exe de la release (p. ej. "MiApp-Setup.exe"),
    el botón descargará directamente la última versión. Vacío = abre la última release. */
-var EXE="Minecraft-Local-Server-Manager.exe";
-var base="https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest";
-document.querySelectorAll("a.dl-l").forEach(function(a){a.href=base+"/download/"+a.dataset.f});
-if(EXE){document.querySelectorAll("a.dl").forEach(function(a){a.href=base+"/download/"+encodeURIComponent(EXE)})}
-var items=[],w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:function(n){
-  if(n.parentNode.closest("script,pre"))return NodeFilter.FILTER_REJECT;
-  return T[n.nodeValue.trim()]?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP}});
-while(w.nextNode())items.push({n:w.currentNode,es:w.currentNode.nodeValue});
-var btn=document.getElementById("lang"),meta=document.querySelector('meta[name="description"]'),win=document.querySelector(".win");
-function set(l){
-  items.forEach(function(i){var k=i.es.trim();i.n.nodeValue=l==="en"?i.es.replace(k,T[k]):i.es});
-  document.documentElement.lang=l;meta.content=DESC[l];win.setAttribute("aria-label",ARIA[l]);
-  btn.textContent=l==="en"?"ES":"EN";btn.setAttribute("aria-label",l==="en"?"Cambiar a español":"Switch to English");
-  try{localStorage.setItem("lang",l)}catch(e){}
-}
-var cur;try{cur=localStorage.getItem("lang")}catch(e){}
-if(!cur)cur=(navigator.language||"es").slice(0,2)==="es"?"es":"en";
-btn.addEventListener("click",function(){cur=cur==="en"?"es":"en";set(cur)});
-set(cur);
-})();
-</script>
-<script>
-(function(){
-var h=document.querySelector(".top"),last=window.scrollY;
-window.addEventListener("scroll",function(){
-  var y=window.scrollY,d=y-last;
-  if(y<10||d<-4)h.classList.remove("hide");
-  else if(d>4&&y>80)h.classList.add("hide");
-  if(Math.abs(d)>4)last=y;
-},{passive:true});
-h.addEventListener("focusin",function(){h.classList.remove("hide")});
-})();
-</script>
-</body>
+        var EXE = 'Minecraft-Local-Server-Manager.exe'
+        var base = 'https://github.com/hugoaldaHD/minecraft-local-server-app/releases/latest'
+        document.querySelectorAll('a.dl-l').forEach(function (a) {
+          a.href = base + '/download/' + a.dataset.f
+        })
+        if (EXE) {
+          document.querySelectorAll('a.dl').forEach(function (a) {
+            a.href = base + '/download/' + encodeURIComponent(EXE)
+          })
+        }
+        var items = [],
+          w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (n) {
+              if (n.parentNode.closest('script,pre')) return NodeFilter.FILTER_REJECT
+              return T[n.nodeValue.trim()] ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+            }
+          })
+        while (w.nextNode()) items.push({ n: w.currentNode, es: w.currentNode.nodeValue })
+        var btn = document.getElementById('lang'),
+          meta = document.querySelector('meta[name="description"]'),
+          win = document.querySelector('.win')
+        function set(l) {
+          items.forEach(function (i) {
+            var k = i.es.trim()
+            i.n.nodeValue = l === 'en' ? i.es.replace(k, T[k]) : i.es
+          })
+          document.documentElement.lang = l
+          meta.content = DESC[l]
+          win.setAttribute('aria-label', ARIA[l])
+          btn.textContent = l === 'en' ? 'ES' : 'EN'
+          btn.setAttribute('aria-label', l === 'en' ? 'Cambiar a español' : 'Switch to English')
+          try {
+            localStorage.setItem('lang', l)
+          } catch (e) {}
+        }
+        var cur
+        try {
+          cur = localStorage.getItem('lang')
+        } catch (e) {}
+        if (!cur) cur = (navigator.language || 'es').slice(0, 2) === 'es' ? 'es' : 'en'
+        btn.addEventListener('click', function () {
+          cur = cur === 'en' ? 'es' : 'en'
+          set(cur)
+        })
+        set(cur)
+      })()
+    </script>
+    <script>
+      ;(function () {
+        var h = document.querySelector('.top'),
+          last = window.scrollY
+        window.addEventListener(
+          'scroll',
+          function () {
+            var y = window.scrollY,
+              d = y - last
+            if (y < 10 || d < -4) h.classList.remove('hide')
+            else if (d > 4 && y > 80) h.classList.add('hide')
+            if (Math.abs(d) > 4) last = y
+          },
+          { passive: true }
+        )
+        h.addEventListener('focusin', function () {
+          h.classList.remove('hide')
+        })
+      })()
+    </script>
+  </body>
 </html>

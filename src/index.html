@@ -1,1046 +1,1114 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self' file: data:; img-src 'self' data:"
+    />
+    <title>Minecraft Local Server Manager</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/screens.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self' file: data:; img-src 'self' data:">
-  <title>Minecraft Local Server Manager</title>
-  <link rel="stylesheet" href="css/tokens.css" />
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/layout.css" />
-  <link rel="stylesheet" href="css/components.css" />
-  <link rel="stylesheet" href="css/screens.css" />
-  <link rel="stylesheet" href="css/responsive.css" />
-</head>
-
-<body>
-
-  <!-- ══ TITLEBAR ══════════════════════════════════════════════════════════ -->
-  <div class="titlebar">
-    <div class="titlebar-left">
-      <span class="app-name">Minecraft Local Server Manager</span>
-    </div>
-    <div class="titlebar-center hidden" id="titlebar-stats">
-      <span class="tstat"><span class="tstat-label">CPU</span><span id="tstat-cpu">0%</span></span>
-      <span class="tstat"><span class="tstat-label">RAM</span><span id="tstat-ram">—</span></span>
-      <span class="tstat active-badge hidden" id="tstat-active">
-        <span class="dot-small on"></span><span id="tstat-count">0</span> <span
-          data-i18n="titlebar.activeCount">activo(s)</span>
-      </span>
-    </div>
-    <div class="titlebar-right">
-      <button class="wbtn update-btn hidden" id="btn-update-notify" aria-label="Actualización disponible">⬇</button>
-      <button class="wbtn" id="btn-settings" title="Ajustes" data-i18n-title="settings.title">⚙</button>
-      <button class="wbtn" id="btn-min">─</button>
-      <button class="wbtn" id="btn-max" title="Maximizar" data-i18n-title="win.maximize">☐</button>
-      <button class="wbtn danger" id="btn-close">✕</button>
-    </div>
-  </div>
-
-  <!-- ══ SCREEN: ANALYTICS CONSENT ════════════════════════════════════════════════ -->
-  <div class="screen" id="screen-consent">
-    <div class="auth-bg">
-      <div class="auth-card consent-card">
-        <div class="auth-logo">📊</div>
-        <h1 class="auth-title" data-i18n="consent.title">Ayúdanos a mejorar</h1>
-        <p class="auth-sub" data-i18n="consent.question">Antes de empezar, ¿aceptas el envío de datos anónimos de uso?</p>
-        <div class="consent-details">
-          <div class="consent-item yes" data-i18n="consent.item1">✅ Versión de la app y SO</div>
-          <div class="consent-item yes" data-i18n="consent.item2">✅ Funciones usadas (sin datos personales)</div>
-          <div class="consent-item yes" data-i18n="consent.item3">✅ Informes de error anónimos</div>
-          <div class="consent-item no" data-i18n="consent.item4">❌ Nunca: nombres, IPs, contraseñas ni datos del servidor</div>
-          <div class="consent-item no" data-i18n="consent.item5">❌ Nunca: se vende ni comparte con terceros</div>
-        </div>
-        <p class="consent-note" data-i18n="consent.note">Puedes cambiar esto en cualquier momento desde
-          Diagnóstico</p>
-        <button type="button" class="privacy-link" id="btn-consent-privacy"
-          data-i18n="privacy.viewPolicy">Ver política de privacidad</button>
-        <div class="consent-btns">
-          <button class="btn-consent-no" id="btn-consent-no" data-i18n="consent.no">No, gracias</button>
-          <button class="btn-consent-yes" id="btn-consent-yes" data-i18n="consent.yes">Aceptar y continuar</button>
-        </div>
+  <body>
+    <!-- ══ TITLEBAR ══════════════════════════════════════════════════════════ -->
+    <div class="titlebar">
+      <div class="titlebar-left">
+        <span class="app-name">Minecraft Local Server Manager</span>
       </div>
-    </div>
-  </div>
-
-  <!-- ══ SCREEN: SERVER LIST ══════════════════════════════════════════════════════════ -->
-  <div class="screen" id="screen-servers">
-    <div class="servers-header">
-      <div class="servers-header-title">
-        <h1 class="servers-title" id="servers-title" data-i18n="servers.title">Mis servidores</h1>
-        <p class="servers-sub" id="servers-sub" data-i18n="common.loading">Cargando...</p>
+      <div class="titlebar-center hidden" id="titlebar-stats">
+        <span class="tstat"><span class="tstat-label">CPU</span><span id="tstat-cpu">0%</span></span>
+        <span class="tstat"><span class="tstat-label">RAM</span><span id="tstat-ram">—</span></span>
+        <span class="tstat active-badge hidden" id="tstat-active">
+          <span class="dot-small on"></span><span id="tstat-count">0</span> <span data-i18n="titlebar.activeCount">activo(s)</span>
+        </span>
       </div>
-      <div class="servers-header-right">
-        <button class="btn-new-server" id="btn-new-server" data-i18n="servers.add">Añadir servidor</button>
-      </div>
-    </div>
-    <div class="servers-banner hidden" id="servers-banner" role="alert"></div>
-    <div class="servers-grid" id="servers-grid"></div>
-  </div>
-
-  <!-- ══ SCREEN: SERVER DETAIL ════════════════════════════════════════════════ -->
-  <div class="screen" id="screen-detail">
-    <div class="server-bar" id="server-bar">
-      <button class="btn-back" id="btn-back-servers" data-i18n="nav.servers">Servidores</button>
-      <div class="server-bar-left">
-        <span class="server-name-display" id="sbar-server-name"></span>
-        <div class="status-pill">
-          <span class="dot off" id="sbar-dot-status"></span>
-          <span id="sbar-status-text" data-i18n="status.stopped">Detenido</span>
-        </div>
-      </div>
-      <div class="server-bar-right">
-        <button class="btn-start" id="detail-btn-start" data-i18n="status.startAction">Iniciar</button>
-        <button class="btn-stop" id="detail-btn-stop" data-i18n="status.stopAction" disabled>Detener</button>
-      </div>
-    </div>
-    <nav class="nav" id="detail-nav">
-      <button class="nav-item active" data-tab="console" data-i18n="tab.console">Consola</button>
-      <button class="nav-item" data-tab="players" data-i18n="tab.players">Jugadores</button>
-      <button class="nav-item" data-tab="stats" data-i18n="tab.stats">Estadísticas</button>
-      <button class="nav-item" data-tab="lists" data-i18n="tab.lists">Listas</button>
-      <button class="nav-item" data-tab="notificaciones" data-i18n="tab.notificaciones">Notificaciones</button>
-      <button class="nav-item" data-tab="backups" data-i18n="tab.backups">Backups</button>
-      <button class="nav-item" data-tab="properties" data-i18n="tab.properties">Propiedades</button>
-      <button class="nav-item" data-tab="config" data-i18n="tab.config">Ajustes</button>
-    </nav>
-
-    <div class="tab active" id="tab-console">
-      <div class="console-wrap">
-        <div class="console" id="console"></div>
-      </div>
-      <div class="cmd-bar">
-        <span class="cmd-prefix">›</span>
-        <input type="text" id="cmd-input" placeholder="Escribe un comando de Minecraft..."
-          data-i18n-placeholder="console.placeholder" autocomplete="off" spellcheck="false" />
-        <button id="cmd-send" data-i18n="console.send">Enviar</button>
+      <div class="titlebar-right">
+        <button class="wbtn update-btn hidden" id="btn-update-notify" aria-label="Actualización disponible">⬇</button>
+        <button class="wbtn" id="btn-settings" title="Ajustes" data-i18n-title="settings.title">⚙</button>
+        <button class="wbtn" id="btn-min">─</button>
+        <button class="wbtn" id="btn-max" title="Maximizar" data-i18n-title="win.maximize">☐</button>
+        <button class="wbtn danger" id="btn-close">✕</button>
       </div>
     </div>
 
-    <div class="tab" id="tab-players">
-      <div class="panel-header">
-        <h2 data-i18n="players.connected">Jugadores conectados</h2><button class="btn-secondary" id="btn-refresh-players"
-          data-i18n="common.refresh">Actualizar</button>
-      </div>
-      <div class="players-grid" id="players-grid"></div>
-      <div class="quick-actions">
-        <h3 data-i18n="players.quickActions">Acciones rápidas</h3>
-        <div class="action-row">
-          <input type="text" id="player-target" placeholder="Nombre del jugador" data-i18n-placeholder="common.playerName" />
-          <button class="btn-action" data-action="kick">Kick</button>
-          <button class="btn-action danger" data-action="ban">Ban</button>
-          <button class="btn-action" data-action="op">OP</button>
-          <button class="btn-action" data-action="deop">De-OP</button>
-          <button class="btn-action" data-action="gamemode survival">Survival</button>
-          <button class="btn-action" data-action="gamemode creative">Creative</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Pestaña de estadísticas (Fase 3) -->
-    <div class="tab" id="tab-stats">
-      <div class="panel-header">
-        <h2 data-i18n="stats.title">Estadísticas del servidor</h2>
-        <button class="btn-secondary" id="btn-refresh-stats" data-i18n="common.refresh">Actualizar</button>
-        <label class="stats-filter-label" data-i18n="stats.filterChartPeriod">Período del gráfico</label>
-        <select id="stats-filter-period" class="stats-filter-select" aria-label="Chart period">
-          <option value="7d" data-i18n="stats.filter7d" selected>Últimos 7 días</option>
-          <option value="14d" data-i18n="stats.filter14d">Últimos 14 días</option>
-          <option value="30d" data-i18n="stats.filter30d">Últimos 30 días</option>
-          <option value="90d" data-i18n="stats.filter90d">Últimos 90 días</option>
-          <option value="6m" data-i18n="stats.filter6m">Últimos 6 meses</option>
-          <option value="1y" data-i18n="stats.filter1y">Último año</option>
-          <option value="all" data-i18n="stats.filterAll">Todo</option>
-        </select>
-        <button class="btn-secondary" id="btn-export-stats" data-i18n="common.export">Exportar</button>
-        <select id="stats-export-format" aria-label="Export format">
-          <option value="csv" data-i18n="common.exportCsv">CSV</option>
-          <option value="json" data-i18n="common.exportJson" selected>JSON</option>
-        </select>
-      </div>
-
-      <section class="stats-section">
-        <h3 data-i18n="stats.summary">Resumen</h3>
-        <div class="stats-cards">
-          <div class="stats-card">
-            <span class="stats-label" data-i18n="stats.uptime">Horas encendido</span>
-            <span class="stats-value" id="stats-uptime">—</span>
+    <!-- ══ SCREEN: ANALYTICS CONSENT ════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-consent">
+      <div class="auth-bg">
+        <div class="auth-card consent-card">
+          <div class="auth-logo">📊</div>
+          <h1 class="auth-title" data-i18n="consent.title">Ayúdanos a mejorar</h1>
+          <p class="auth-sub" data-i18n="consent.question">Antes de empezar, ¿aceptas el envío de datos anónimos de uso?</p>
+          <div class="consent-details">
+            <div class="consent-item yes" data-i18n="consent.item1">✅ Versión de la app y SO</div>
+            <div class="consent-item yes" data-i18n="consent.item2">✅ Funciones usadas (sin datos personales)</div>
+            <div class="consent-item yes" data-i18n="consent.item3">✅ Informes de error anónimos</div>
+            <div class="consent-item no" data-i18n="consent.item4">❌ Nunca: nombres, IPs, contraseñas ni datos del servidor</div>
+            <div class="consent-item no" data-i18n="consent.item5">❌ Nunca: se vende ni comparte con terceros</div>
           </div>
-          <div class="stats-card">
-            <span class="stats-label" data-i18n="stats.cpuPeak">Pico de CPU</span>
-            <span class="stats-value" id="stats-cpu-peak">—</span>
-            <span class="stats-sub" id="stats-cpu-peak-at"></span>
-          </div>
-          <div class="stats-card">
-            <span class="stats-label" data-i18n="stats.ramPeak">Pico de RAM</span>
-            <span class="stats-value" id="stats-ram-peak">—</span>
-            <span class="stats-sub" id="stats-ram-peak-at"></span>
-          </div>
-          <div class="stats-card">
-            <span class="stats-label" data-i18n="stats.concurrentPeak">Jugadores concurrentes máximos</span>
-            <span class="stats-value" id="stats-concurrent-peak">—</span>
-            <span class="stats-sub" id="stats-concurrent-peak-at"></span>
+          <p class="consent-note" data-i18n="consent.note">Puedes cambiar esto en cualquier momento desde Diagnóstico</p>
+          <button type="button" class="privacy-link" id="btn-consent-privacy" data-i18n="privacy.viewPolicy">
+            Ver política de privacidad
+          </button>
+          <div class="consent-btns">
+            <button class="btn-consent-no" id="btn-consent-no" data-i18n="consent.no">No, gracias</button>
+            <button class="btn-consent-yes" id="btn-consent-yes" data-i18n="consent.yes">Aceptar y continuar</button>
           </div>
         </div>
-        <div class="stats-chart">
-          <h3 data-i18n="stats.playersPerDay">Jugadores por día</h3>
-          <div class="stats-chart-body" id="stats-chart-players-day"></div>
-          <ul class="stats-days" id="stats-days"></ul>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: SERVER LIST ══════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-servers">
+      <div class="servers-header">
+        <div class="servers-header-title">
+          <h1 class="servers-title" id="servers-title" data-i18n="servers.title">Mis servidores</h1>
+          <p class="servers-sub" id="servers-sub" data-i18n="common.loading">Cargando...</p>
         </div>
-      </section>
+        <div class="servers-header-right">
+          <button class="btn-new-server" id="btn-new-server" data-i18n="servers.add">Añadir servidor</button>
+        </div>
+      </div>
+      <div class="servers-banner hidden" id="servers-banner" role="alert"></div>
+      <div class="servers-grid" id="servers-grid"></div>
+    </div>
 
-      <section class="stats-section">
-        <h3 data-i18n="stats.topMoments">Momentos con más jugadores</h3>
-        <ul class="stats-moments" id="stats-moments"></ul>
-        <p class="stats-empty hidden" id="stats-moments-empty" data-i18n="stats.noData">Sin datos todavía.</p>
-      </section>
+    <!-- ══ SCREEN: SERVER DETAIL ════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-detail">
+      <div class="server-bar" id="server-bar">
+        <button class="btn-back" id="btn-back-servers" data-i18n="nav.servers">Servidores</button>
+        <div class="server-bar-left">
+          <span class="server-name-display" id="sbar-server-name"></span>
+          <div class="status-pill">
+            <span class="dot off" id="sbar-dot-status"></span>
+            <span id="sbar-status-text" data-i18n="status.stopped">Detenido</span>
+          </div>
+        </div>
+        <div class="server-bar-right">
+          <button class="btn-start" id="detail-btn-start" data-i18n="status.startAction">Iniciar</button>
+          <button class="btn-stop" id="detail-btn-stop" data-i18n="status.stopAction" disabled>Detener</button>
+        </div>
+      </div>
+      <nav class="nav" id="detail-nav">
+        <button class="nav-item active" data-tab="console" data-i18n="tab.console">Consola</button>
+        <button class="nav-item" data-tab="players" data-i18n="tab.players">Jugadores</button>
+        <button class="nav-item" data-tab="stats" data-i18n="tab.stats">Estadísticas</button>
+        <button class="nav-item" data-tab="lists" data-i18n="tab.lists">Listas</button>
+        <button class="nav-item" data-tab="notificaciones" data-i18n="tab.notificaciones">Notificaciones</button>
+        <button class="nav-item" data-tab="backups" data-i18n="tab.backups">Backups</button>
+        <button class="nav-item" data-tab="properties" data-i18n="tab.properties">Propiedades</button>
+        <button class="nav-item" data-tab="config" data-i18n="tab.config">Ajustes</button>
+      </nav>
 
-      <section class="stats-section">
-        <div class="stats-players-header">
-          <h3 data-i18n="stats.playersList">Jugadores</h3>
-          <label class="stats-filter-label" data-i18n="stats.filterPlayersPeriod">Período de jugadores</label>
-          <select id="stats-players-filter-period" class="stats-filter-select" aria-label="Players period">
-            <option value="all" data-i18n="stats.filterAll" selected>Todo</option>
-            <option value="7d" data-i18n="stats.filter7d">Últimos 7 días</option>
+      <div class="tab active" id="tab-console">
+        <div class="console-wrap">
+          <div class="console" id="console"></div>
+        </div>
+        <div class="cmd-bar">
+          <span class="cmd-prefix">›</span>
+          <input
+            type="text"
+            id="cmd-input"
+            placeholder="Escribe un comando de Minecraft..."
+            data-i18n-placeholder="console.placeholder"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="cmd-send" data-i18n="console.send">Enviar</button>
+        </div>
+      </div>
+
+      <div class="tab" id="tab-players">
+        <div class="panel-header">
+          <h2 data-i18n="players.connected">Jugadores conectados</h2>
+          <button class="btn-secondary" id="btn-refresh-players" data-i18n="common.refresh">Actualizar</button>
+        </div>
+        <div class="players-grid" id="players-grid"></div>
+        <div class="quick-actions">
+          <h3 data-i18n="players.quickActions">Acciones rápidas</h3>
+          <div class="action-row">
+            <input type="text" id="player-target" placeholder="Nombre del jugador" data-i18n-placeholder="common.playerName" />
+            <button class="btn-action" data-action="kick">Kick</button>
+            <button class="btn-action danger" data-action="ban">Ban</button>
+            <button class="btn-action" data-action="op">OP</button>
+            <button class="btn-action" data-action="deop">De-OP</button>
+            <button class="btn-action" data-action="gamemode survival">Survival</button>
+            <button class="btn-action" data-action="gamemode creative">Creative</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña de estadísticas (Fase 3) -->
+      <div class="tab" id="tab-stats">
+        <div class="panel-header">
+          <h2 data-i18n="stats.title">Estadísticas del servidor</h2>
+          <button class="btn-secondary" id="btn-refresh-stats" data-i18n="common.refresh">Actualizar</button>
+          <label class="stats-filter-label" data-i18n="stats.filterChartPeriod">Período del gráfico</label>
+          <select id="stats-filter-period" class="stats-filter-select" aria-label="Chart period">
+            <option value="7d" data-i18n="stats.filter7d" selected>Últimos 7 días</option>
             <option value="14d" data-i18n="stats.filter14d">Últimos 14 días</option>
             <option value="30d" data-i18n="stats.filter30d">Últimos 30 días</option>
             <option value="90d" data-i18n="stats.filter90d">Últimos 90 días</option>
             <option value="6m" data-i18n="stats.filter6m">Últimos 6 meses</option>
             <option value="1y" data-i18n="stats.filter1y">Último año</option>
+            <option value="all" data-i18n="stats.filterAll">Todo</option>
+          </select>
+          <button class="btn-secondary" id="btn-export-stats" data-i18n="common.export">Exportar</button>
+          <select id="stats-export-format" aria-label="Export format">
+            <option value="csv" data-i18n="common.exportCsv">CSV</option>
+            <option value="json" data-i18n="common.exportJson" selected>JSON</option>
           </select>
         </div>
-        <div class="stats-players">
-          <table class="stats-table" id="stats-players-table">
-            <thead>
-              <tr>
-                <th data-i18n="stats.colPlayer">Jugador</th>
-                <th data-i18n="stats.colPlayed">Tiempo jugado</th>
-                <th data-i18n="stats.colDaysActive">Días activos</th>
-                <th data-i18n="stats.colLastSeen">Última vez visto</th>
-              </tr>
-            </thead>
-            <tbody id="stats-players-body"></tbody>
-          </table>
-          <p class="stats-empty hidden" id="stats-players-empty" data-i18n="stats.noData">Sin datos todavía.</p>
-        </div>
-      </section>
-    </div>
 
-    <div class="tab" id="tab-lists">
-      <div class="lists-container">
-        <div class="list-panel">
-          <div class="list-header">
-            <h2>Whitelist</h2><label class="toggle-wrap"><input type="checkbox"
-                id="whitelist-toggle" /><span data-i18n="lists.active">Activa</span></label>
-          </div>
-          <div class="list-add"><input type="text" id="wl-input" placeholder="Nombre del jugador"
-              data-i18n-placeholder="common.playerName" /><button id="wl-add" data-i18n="common.add">Añadir</button></div>
-          <ul class="player-list" id="whitelist-ul"></ul>
-        </div>
-        <div class="list-panel">
-          <div class="list-header">
-            <h2>Banlist</h2>
-          </div>
-          <div class="list-add">
-            <input type="text" id="bl-input" placeholder="Nombre del jugador" data-i18n-placeholder="common.playerName" />
-            <input type="text" id="bl-reason" placeholder="Motivo (opcional)" data-i18n-placeholder="lists.reasonOptional" />
-            <button id="bl-add" data-i18n="lists.ban">Banear</button>
-          </div>
-          <ul class="player-list" id="banlist-ul"></ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="tab" id="tab-properties">
-      <div class="panel-header">
-        <h2>server.properties</h2><button class="btn-primary" id="btn-save-props" data-i18n="common.save">Guardar</button>
-      </div>
-      <div class="props-grid" id="props-grid">
-        <div class="empty-state" data-i18n="properties.needSave">Guarda la configuración del servidor primero.</div>
-      </div>
-    </div>
-
-    <div class="tab" id="tab-backups">
-      <div class="panel-header">
-        <h2 data-i18n="backups.title">Backups del mundo</h2><button class="btn-primary" id="btn-backup-now"
-          data-i18n="backups.createNow">Crear backup ahora</button>
-      </div>
-      <div class="backup-auto-config">
-        <h3 data-i18n="backups.auto">Backup automático</h3>
-        <p class="field-hint" data-i18n="backups.dirHint">La carpeta de destino se configura en Ajustes.</p>
-        <div class="auto-backup-row">
-          <label class="toggle-wrap"><input type="checkbox" id="auto-backup-enabled" /><span
-              data-i18n="backups.enable">Activar</span></label>
-          <select id="auto-backup-interval">
-            <option value="1h" data-i18n="backups.everyHour">Cada hora</option>
-            <option value="6h" selected data-i18n="backups.every6h">Cada 6 horas</option>
-            <option value="12h" data-i18n="backups.every12h">Cada 12 horas</option>
-            <option value="24h" data-i18n="backups.daily">Una vez al día</option>
-          </select>
-          <span class="time-label" data-i18n="backups.atTime" hidden>A las</span>
-          <input type="time" id="auto-backup-time" class="daily-time" hidden />
-          <button class="btn-primary" id="btn-save-auto" data-i18n="common.save">Guardar</button>
-        </div>
-      </div>
-      <div class="backup-auto-config">
-        <h3 data-i18n="backups.restartTitle">Reinicio programado</h3>
-        <p class="field-hint" data-i18n="backups.restartHint">Detiene y arranca el servidor periódicamente.</p>
-        <div class="auto-backup-row">
-          <label class="toggle-wrap"><input type="checkbox" id="auto-restart-enabled" /><span
-              data-i18n="backups.restartEnable">Reiniciar automáticamente</span></label>
-          <select id="auto-restart-interval">
-            <option value="6h" data-i18n="backups.every6h">Cada 6 horas</option>
-            <option value="12h" data-i18n="backups.every12h">Cada 12 horas</option>
-            <option value="24h" selected data-i18n="backups.daily">Una vez al día</option>
-          </select>
-          <span class="time-label" data-i18n="backups.atTime" hidden>A las</span>
-          <input type="time" id="auto-restart-time" class="daily-time" hidden />
-        </div>
-        <p class="field-hint" id="auto-restart-next" data-i18n="backups.restartNone">Sin reinicio programado</p>
-      </div>
-      <div class="backup-auto-config">
-        <h3 data-i18n="backups.warnTitle">Avisos antes del mantenimiento</h3>
-        <p class="field-hint" data-i18n="backups.warnHint">Minutos antes del backup o reinicio, separados por comas.</p>
-        <div class="auto-backup-row">
-          <label class="time-label" for="maintenance-warn-minutes" data-i18n="backups.warnMinutes">Minutos de aviso</label>
-          <input type="text" id="maintenance-warn-minutes" class="warn-minutes-input" placeholder="5, 1"
-            data-i18n-placeholder="backups.warnPlaceholder" />
-          <button class="btn-primary" id="btn-save-warn" data-i18n="common.save">Guardar</button>
-        </div>
-      </div>
-      <div class="backups-list" id="backups-list"></div>
-    </div>
-
-    <div class="tab" id="tab-notificaciones">
-      <div class="panel-header">
-        <h2 data-i18n="notificaciones.title">Notificaciones del servidor</h2>
-        <div class="backup-actions">
-          <button class="btn-icon" id="btn-notificaciones-refresh" title="Actualizar" data-i18n-title="common.refresh">🔄</button>
-          <button class="btn-primary" id="btn-notificaciones-clear" data-i18n="notificaciones.clear">Limpiar</button>
-        </div>
-      </div>
-      <p class="field-hint" data-i18n="notificaciones.hint">Encendido, apagado, reinicios y backups de este servidor.</p>
-      <div class="notificaciones-list" id="notificaciones-list"></div>
-    </div>
-
-    <div class="tab" id="tab-config">
-      <div class="settings-form">
-        <h2 data-i18n="config.title">Configuración del servidor</h2>
-        <div class="field-group">
-          <label data-i18n="config.nameLabel">Nombre del servidor</label>
-          <div class="name-color-row">
-            <input type="text" id="cfg-name" placeholder="Mi servidor" data-i18n-placeholder="config.namePlaceholder" />
-            <div class="color-options" id="color-options"></div>
-          </div>
-        </div>
-        <div class="field-group">
-          <label data-i18n="config.jarLabel">Archivo JAR</label>
-          <div class="field-row"><input type="text" id="cfg-jar" placeholder="C:\servers\server.jar" readonly /><button
-              id="btn-pick-jar" data-i18n="config.browse">Buscar</button></div>
-          <p class="field-hint" data-i18n="config.jarHint">Compatible con Vanilla, Paper, Spigot, Bukkit, Fabric y Forge</p>
-        </div>
-        <div class="field-group"><label data-i18n="config.javaLabel">Ruta de Java (opcional)</label><input type="text"
-            id="cfg-java" placeholder="java" /></div>
-        <div class="field-row">
-          <div class="field-group flex1"><label data-i18n="config.ramMin">RAM mínima (MB)</label><input type="number"
-              id="cfg-min-ram" value="1024" min="512" step="256" /></div>
-          <div class="field-group flex1"><label data-i18n="config.ramMax">RAM máxima (MB)</label><input type="number"
-              id="cfg-max-ram" value="4096" min="1024" step="256" /></div>
-        </div>
-        <div class="field-group"><label data-i18n="config.jvmArgs">Argumentos JVM adicionales</label><input type="text"
-            id="cfg-extra" placeholder="-XX:+UseG1GC" /></div>
-        <div class="config-actions">
-          <button class="btn-primary" id="btn-save-cfg" data-i18n="config.save">Guardar configuración</button>
-          <button class="btn-danger" id="btn-delete-server" data-i18n="config.delete">Eliminar servidor</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ SCREEN: SETTINGS ══════════════════════════════════════════════════ -->
-  <div class="screen" id="screen-settings">
-    <div class="servers-header">
-      <button class="btn-back" id="btn-settings-back" data-i18n="nav.servers">Servidores</button>
-      <div class="servers-header-title">
-        <h1 class="servers-title" data-i18n="settings.title">Ajustes</h1>
-        <p class="servers-sub" data-i18n="settings.subtitle">Preferencias de la aplicación</p>
-      </div>
-    </div>
-
-    <div class="settings-layout">
-      <!-- ── Raíl de secciones ── -->
-      <nav class="set-nav" id="set-nav">
-        <button class="set-nav-item active" data-set-section="general">⚙ <span
-            data-i18n="settings.general">General</span></button>
-        <button class="set-nav-item" data-set-section="notifications">🔔 <span
-            data-i18n="settings.notifications">Notificaciones</span></button>
-        <button class="set-nav-item" data-set-section="appearance">🎨 <span
-            data-i18n="settings.appearance">Apariencia</span></button>
-        <button class="set-nav-item" data-set-section="backups">💾 <span
-            data-i18n="settings.backups">Copias de seguridad</span></button>
-        <button class="set-nav-item" data-set-section="servers">🖥 <span
-            data-i18n="settings.servers">Servidores</span></button>
-        <button class="set-nav-item" data-set-section="errors">🐞 <span
-            data-i18n="settings.errors">Errores</span></button>
-        <button class="set-nav-item" data-set-section="privacy">🔒 <span
-            data-i18n="settings.privacy">Privacidad y datos</span></button>
-        <button class="set-nav-item" data-set-section="updates">🔄 <span
-            data-i18n="settings.updates">Actualizaciones</span></button>
-        <button class="set-nav-item" data-set-section="about">ℹ <span
-            data-i18n="settings.about">Acerca de</span></button>
-      </nav>
-
-      <!-- ── Paneles ── -->
-      <div class="set-panels">
-
-        <!-- General -->
-        <section class="set-panel active" data-set-panel="general">
-          <h3 data-i18n="settings.general">General</h3>
-          <div class="set-group">
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.language">Idioma</span>
-                <p class="set-row-hint" data-i18n="settings.languageHint">Idioma de los textos de la aplicación.</p>
-              </div>
-              <div class="set-row-control">
-                <div class="seg-options" id="lang-options">
-                  <button class="seg-opt" data-lang-value="es">Español</button>
-                  <button class="seg-opt" data-lang-value="en">English</button>
-                </div>
-              </div>
+        <section class="stats-section">
+          <h3 data-i18n="stats.summary">Resumen</h3>
+          <div class="stats-cards">
+            <div class="stats-card">
+              <span class="stats-label" data-i18n="stats.uptime">Horas encendido</span>
+              <span class="stats-value" id="stats-uptime">—</span>
             </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.defaultServerDir">Carpeta por defecto de
-                  servidores</span>
-                <p class="set-row-hint" data-i18n="settings.defaultServerDirHint">Dónde se crean los mundos de los
-                  servidores nuevos.</p>
-              </div>
-              <div class="set-row-control set-row-dir">
-                <input type="text" id="set-server-dir" readonly placeholder="Carpeta de servidores"
-                  data-i18n-placeholder="settings.serverDirPlaceholder" />
-                <button id="btn-set-server-dir">📁</button>
-              </div>
+            <div class="stats-card">
+              <span class="stats-label" data-i18n="stats.cpuPeak">Pico de CPU</span>
+              <span class="stats-value" id="stats-cpu-peak">—</span>
+              <span class="stats-sub" id="stats-cpu-peak-at"></span>
             </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.closeToTray">Cerrar en vez de minimizar</span>
-                <p class="set-row-hint" data-i18n="settings.closeToTrayHint">Al pulsar ✕ la app queda en la bandeja
-                  del sistema.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-close-to-tray" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
+            <div class="stats-card">
+              <span class="stats-label" data-i18n="stats.ramPeak">Pico de RAM</span>
+              <span class="stats-value" id="stats-ram-peak">—</span>
+              <span class="stats-sub" id="stats-ram-peak-at"></span>
             </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.startOnBoot">Iniciar con el sistema</span>
-                <p class="set-row-hint" data-i18n="settings.startOnBootHint">Arranca automáticamente al encender el
-                  equipo.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-start-on-boot" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
+            <div class="stats-card">
+              <span class="stats-label" data-i18n="stats.concurrentPeak">Jugadores concurrentes máximos</span>
+              <span class="stats-value" id="stats-concurrent-peak">—</span>
+              <span class="stats-sub" id="stats-concurrent-peak-at"></span>
             </div>
+          </div>
+          <div class="stats-chart">
+            <h3 data-i18n="stats.playersPerDay">Jugadores por día</h3>
+            <div class="stats-chart-body" id="stats-chart-players-day"></div>
+            <ul class="stats-days" id="stats-days"></ul>
           </div>
         </section>
 
-        <!-- Notificaciones -->
-        <section class="set-panel" data-set-panel="notifications">
-          <h3 data-i18n="settings.notifications">Notificaciones</h3>
-          <div class="set-group">
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.notifyServer">Servidores</span>
-                <p class="set-row-hint" data-i18n="settings.notifyServerHint">Avisa al iniciar, detener o caer un
-                  servidor.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-notify-server" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.notifyPlayers">Jugadores</span>
-                <p class="set-row-hint" data-i18n="settings.notifyPlayersHint">Avisa cuando un jugador se conecta o
-                  desconecta.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-notify-players" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.notifyBackups">Copias de seguridad</span>
-                <p class="set-row-hint" data-i18n="settings.notifyBackupsHint">Avisa cuando se crea una copia de
-                  seguridad.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-notify-backups" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-          </div>
-
-          <h3 data-i18n="settings.emailNotifications">Notificaciones por correo</h3>
-          <div class="set-group">
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailEnabled">Enviar por correo</span>
-                <p class="set-row-hint" data-i18n="settings.emailEnabledHint">Envía un email cuando ocurran las acciones seleccionadas.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-email-enabled" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailHost">Servidor SMTP</span>
-                <p class="set-row-hint" data-i18n="settings.emailHostHint">Host SMTP de tu proveedor de correo.</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="text" id="set-email-host" placeholder="smtp.gmail.com" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailPort">Puerto SMTP</span>
-                <p class="set-row-hint" data-i18n="settings.emailPortHint">Normalmente 587 (STARTTLS) o 465 (SSL).</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="number" id="set-email-port" min="1" max="65535" step="1" placeholder="587" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailSecure">SSL/TLS seguro</span>
-                <p class="set-row-hint" data-i18n="settings.emailSecureHint">Actívalo para puerto 465; déjalo desactivado para 587 con STARTTLS.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-email-secure" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailUser">Usuario SMTP</span>
-                <p class="set-row-hint" data-i18n="settings.emailUserHint">Usuario o correo de la cuenta SMTP.</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="text" id="set-email-user" placeholder="usuario@ejemplo.com" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailPass">Contraseña SMTP</span>
-                <p class="set-row-hint" data-i18n="settings.emailPassHint">Contraseña o contraseña de aplicación del proveedor.</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="password" id="set-email-pass" placeholder="••••••••" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailFrom">Remitente</span>
-                <p class="set-row-hint" data-i18n="settings.emailFromHint">Dirección que aparecerá como remitente.</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="text" id="set-email-from" placeholder="Minecraft Manager <usuario@ejemplo.com>" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailTo">Destinatario</span>
-                <p class="set-row-hint" data-i18n="settings.emailToHint">Correo o correos separados por comas.</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="text" id="set-email-to" placeholder="admin@ejemplo.com" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailNotifyServer">Correo: servidores</span>
-                <p class="set-row-hint" data-i18n="settings.emailNotifyServerHint">Iniciado, detenido, caído o reiniciado.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-email-notify-server" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailNotifyPlayers">Correo: jugadores</span>
-                <p class="set-row-hint" data-i18n="settings.emailNotifyPlayersHint">Conexión y desconexión de jugadores.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-email-notify-players" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailNotifyBackups">Correo: backups</span>
-                <p class="set-row-hint" data-i18n="settings.emailNotifyBackupsHint">Cuando se completa una copia de seguridad.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-email-notify-backups" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailSave">Guardar datos de correo</span>
-                <p class="set-row-hint" data-i18n="settings.emailSaveHint">Guarda la configuración SMTP y las opciones de correo.</p>
-              </div>
-              <div class="set-row-control">
-                <button class="btn-primary" id="btn-save-email" data-i18n="settings.emailSaveBtn">Guardar datos</button>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.emailTest">Probar correo</span>
-                <p class="set-row-hint" data-i18n="settings.emailTestHint">Envía un correo de prueba con la configuración actual.</p>
-              </div>
-              <div class="set-row-control">
-                <button class="btn-secondary" id="btn-test-email" data-i18n="settings.emailTestBtn">Enviar prueba</button>
-              </div>
-            </div>
-          </div>
+        <section class="stats-section">
+          <h3 data-i18n="stats.topMoments">Momentos con más jugadores</h3>
+          <ul class="stats-moments" id="stats-moments"></ul>
+          <p class="stats-empty hidden" id="stats-moments-empty" data-i18n="stats.noData">Sin datos todavía.</p>
         </section>
 
-        <!-- Apariencia -->
-        <section class="set-panel" data-set-panel="appearance">
-          <h3 data-i18n="settings.appearance">Apariencia</h3>
-          <div class="set-group">
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.theme">Tema</span>
-                <p class="set-row-hint" data-i18n="settings.themeHint">Apariencia de toda la aplicación.</p>
-              </div>
-              <div class="set-row-control">
-                <div class="seg-options" id="theme-options">
-                  <button class="seg-opt" data-theme-value="dark" data-i18n="settings.themeDark">Oscuro</button>
-                  <button class="seg-opt" data-theme-value="light" data-i18n="settings.themeLight">Claro</button>
-                </div>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.uiScale">Tamaño de la interfaz</span>
-                <p class="set-row-hint" data-i18n="settings.uiScaleHint">Escala de los textos y controles: 100 %, 125
-                  % o 150 %.</p>
-              </div>
-              <div class="set-row-control">
-                <div class="seg-options" id="uiscale-options">
-                  <button class="seg-opt" data-scale-value="100">100 %</button>
-                  <button class="seg-opt" data-scale-value="125">125 %</button>
-                  <button class="seg-opt" data-scale-value="150">150 %</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Copias de seguridad -->
-        <section class="set-panel" data-set-panel="backups">
-          <h3 data-i18n="settings.backups">Copias de seguridad</h3>
-          <div class="set-group">
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.backupsDir">Carpeta de backups</span>
-                <p class="set-row-hint" data-i18n="settings.backupsDirHint">Se usa en todos los servidores que no
-                  tengan carpeta propia.</p>
-              </div>
-              <div class="set-row-control set-row-dir">
-                <input type="text" id="set-backup-dir" readonly placeholder="Carpeta de backups"
-                  data-i18n-placeholder="backups.dirPlaceholder" />
-                <button id="btn-set-backup-dir">📁</button>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.keepLastBackups">Conservar solo las últimas
-                  copias</span>
-                <p class="set-row-hint" data-i18n="settings.keepLastBackupsHint">Borra las copias antiguas al crear
-                  una nueva.</p>
-              </div>
-              <div class="set-row-control">
-                <div class="seg-options" id="backup-keep-options">
-                  <button class="seg-opt" data-keep-value="0" data-i18n="settings.noLimit">Sin límite</button>
-                  <button class="seg-opt" data-keep-value="5">5</button>
-                  <button class="seg-opt" data-keep-value="10">10</button>
-                  <button class="seg-opt" data-keep-value="20">20</button>
-                  <button class="seg-opt" data-keep-value="50">50</button>
-                </div>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.backupCompression">Nivel de compresión</span>
-                <p class="set-row-hint" data-i18n="settings.backupCompressionHint">Más compresión = archivo más
-                  pequeño y proceso más lento.</p>
-              </div>
-              <div class="set-row-control">
-                <div class="seg-options" id="backup-level-options">
-                  <button class="seg-opt" data-level-value="1" data-i18n="settings.compressionFast">Rápida</button>
-                  <button class="seg-opt" data-level-value="6" data-i18n="settings.compressionNormal">Normal</button>
-                  <button class="seg-opt" data-level-value="9" data-i18n="settings.compressionMax">Máxima</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Servidores -->
-        <section class="set-panel" data-set-panel="servers">
-          <h3 data-i18n="settings.servers">Servidores</h3>
-          <div class="set-group">
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.defaultRam">RAM por defecto (MB)</span>
-                <p class="set-row-hint" data-i18n="settings.defaultRamHint">Memoria asignada a los servidores
-                  nuevos.</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="number" id="set-default-ram" min="512" max="65536" step="256" placeholder="4096" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.defaultJava">Java por defecto</span>
-                <p class="set-row-hint" data-i18n="settings.defaultJavaHint">Ruta de Java para servidores sin ruta
-                  propia.</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="text" id="set-default-java" placeholder="java" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.defaultJvmArgs">Argumentos JVM por defecto</span>
-                <p class="set-row-hint" data-i18n="settings.defaultJvmArgsHint">Se aplican a los servidores sin
-                  argumentos propios.</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="text" id="set-default-jvm" placeholder="-XX:+UseG1GC" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.autoEula">Aceptar la EULA automáticamente</span>
-                <p class="set-row-hint" data-i18n="settings.autoEulaHint">Crea eula.txt en el primer arranque del
-                  servidor.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="set-auto-eula" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.retentionSamples">Muestras con retención (días)</span>
-                <p class="set-row-hint" data-i18n="settings.retentionSamplesHint">Historial de CPU/RAM que se
-                  conserva por servidor (días).</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="number" id="set-retention-samples" min="1" max="365" step="1" />
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.retentionEvents">Eventos con retención (días)</span>
-                <p class="set-row-hint" data-i18n="settings.retentionEventsHint">Eventos de jugadores y totales
-                  por jugador (días).</p>
-              </div>
-              <div class="set-row-control set-row-input">
-                <input type="number" id="set-retention-events" min="1" max="3650" step="1" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Errores -->
-        <section class="set-panel" data-set-panel="errors">
-          <h3 data-i18n="settings.errors">Errores</h3>
-          <div class="set-group">
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="diag.clearErrors">Limpiar errores</span>
-                <p class="set-row-hint" data-i18n="settings.clearErrorsHint">Borra los informes de error guardados
-                  en esta máquina.</p>
-              </div>
-              <div class="set-row-control">
-                <button class="btn-secondary" id="btn-clear-crashes" data-i18n="diag.clearErrors">Limpiar
-                  errores</button>
-              </div>
-            </div>
-          </div>
-          <h3 data-i18n="diag.recentErrors">Últimos errores</h3>
-          <div class="set-group set-group-plain">
-            <div id="diag-crashes"></div>
-          </div>
-        </section>
-
-        <!-- Privacidad y datos -->
-        <section class="set-panel" data-set-panel="privacy">
-          <h3 data-i18n="settings.privacy">Privacidad y datos</h3>
-          <div class="set-group">
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="diag.sendData">Envío de datos anónimos</span>
-                <p class="set-row-hint" data-i18n="settings.analyticsHint">Sin nombres, IPs ni datos de tu servidor.
-                  Puedes desactivarlo cuando quieras.</p>
-              </div>
-              <div class="set-row-control">
-                <label class="switch"><input type="checkbox" id="diag-analytics-toggle" /><span
-                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.clearAnalytics">Borrar eventos de uso</span>
-                <p class="set-row-hint" data-i18n="settings.clearAnalyticsHint">Elimina los eventos guardados sin
-                  desactivar el envío.</p>
-              </div>
-              <div class="set-row-control">
-                <button class="btn-secondary" id="btn-clear-events" data-i18n="settings.clearAnalytics">Borrar
-                  eventos de uso</button>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.exportData">Exportar todos los datos</span>
-                <p class="set-row-hint" data-i18n="settings.exportDataHint">Guarda servidores, ajustes y estadísticas
-                  en un JSON que puedes conservar donde quieras.</p>
-              </div>
-              <div class="set-row-control">
-                <button class="btn-secondary" id="btn-export-data"
-                  data-i18n="settings.exportData">Exportar todos los datos</button>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.importData">Importar datos</span>
-                <p class="set-row-hint" data-i18n="settings.importDataHint">Sustituye los datos actuales por los de un
-                  backup exportado por esta app. Se crea una copia antes.</p>
-              </div>
-              <div class="set-row-control">
-                <button class="btn-secondary" id="btn-import-data"
-                  data-i18n="settings.importData">Importar datos</button>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="privacy.viewPolicy">Ver política de privacidad</span>
-                <p class="set-row-hint" data-i18n="privacy.viewPolicyHint">Qué se guarda, qué se envía y cómo
-                  borrarlo.</p>
-              </div>
-              <div class="set-row-control">
-                <button class="btn-secondary" id="btn-privacy-policy"
-                  data-i18n="privacy.viewPolicy">Ver política de privacidad</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Actualizaciones -->
-        <section class="set-panel" data-set-panel="updates">
-          <h3 data-i18n="settings.updates">Actualizaciones</h3>
-
-          <div class="set-group">
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="upd.installed">Versión instalada</span>
-              </div>
-              <div class="set-row-control"><span class="upd-version" id="upd-installed">—</span></div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="upd.lastCheck">Última comprobación</span>
-              </div>
-              <div class="set-row-control"><span class="upd-version" id="upd-lastcheck"
-                  data-i18n="upd.never">Nunca</span></div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="settings.checkUpdates">Buscar actualizaciones</span>
-                <p class="set-row-hint" data-i18n="settings.checkUpdatesHint">Comprueba si hay una versión nueva y
-                  te avisa para instalarla.</p>
-              </div>
-              <div class="set-row-control">
-                <button class="btn-secondary" id="btn-check-update" data-i18n="settings.checkUpdates">Buscar
-                  actualizaciones</button>
-              </div>
-            </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <span class="set-row-label" data-i18n="upd.state">Estado</span>
-                <p class="set-row-hint" id="upd-state" data-i18n="upd.state.idle">Sin comprobar</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Nueva versión detectada -->
-          <div class="set-group upd-card hidden" id="upd-card">
-            <div class="upd-head">
-              <span class="upd-newversion" id="upd-newversion"></span>
-              <span class="upd-pill" id="upd-pill"></span>
-            </div>
-            <p class="set-row-hint" id="upd-hint"></p>
-            <div class="upd-progress hidden" id="upd-progress">
-              <div class="upd-bar" id="upd-bar"></div>
-            </div>
-            <div class="upd-actions">
-              <button class="btn-secondary" id="btn-update-download" data-i18n="upd.download">Descargar</button>
-              <button class="btn-primary" id="btn-update-install" data-i18n="update.install">Instalar y
-                reiniciar</button>
-            </div>
-            <div class="upd-notes" id="upd-notes">
-              <div class="upd-notes-title" data-i18n="upd.notes">Novedades de la versión</div>
-              <div class="update-notes" id="update-notes"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Información -->
-        <section class="set-panel" data-set-panel="about">
-          <h3 data-i18n="settings.about">Acerca de</h3>
-          <div class="set-group">
-            <div class="diag-rows" id="diag-info"></div>
-          </div>
-        </section>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ MODAL: privacy policy ═══════════════════════════════════════════════ -->
-  <div class="modal-backdrop hidden" id="modal-privacy" role="dialog" aria-modal="true" aria-labelledby="modal-privacy-title">
-    <div class="modal modal-wide privacy-modal">
-      <h3 id="modal-privacy-title" data-i18n="privacy.title">Política de privacidad</h3>
-      <div class="privacy-content" id="privacy-content"></div>
-      <div class="modal-actions">
-        <button id="privacy-close" data-i18n="privacy.close">Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ MODAL: new server ════════════════════════════════════════════════════ -->
-  <div class="modal-backdrop hidden" id="modal-server" role="dialog" aria-modal="true" aria-labelledby="modal-server-title">
-    <div class="modal modal-wide">
-      <h3 id="modal-server-title" data-i18n="servers.add">Añadir servidor</h3>
-
-      <div class="segmented" id="ms-source" role="tablist" aria-label="Origen del servidor">
-        <button type="button" role="tab" aria-selected="true" class="active" data-source="manual" data-i18n="modal.sourceManual">Ya tengo el .jar</button>
-        <button type="button" role="tab" aria-selected="false" data-source="download" data-i18n="modal.sourceDownload">Descargar servidor</button>
-      </div>
-
-      <div id="ms-manual-fields" role="tabpanel">
-        <div class="field-group">
-          <label data-i18n="config.jarLabel">Archivo JAR</label>
-          <div class="field-row"><input type="text" id="ms-jar" placeholder="Ruta al .jar del servidor"
-              data-i18n-placeholder="modal.jarPlaceholder" readonly /><button id="ms-pick-jar" data-i18n-aria="modal.pickFile"
-              data-i18n-title="modal.pickFile">📁</button></div>
-        </div>
-      </div>
-
-      <div id="ms-download-fields" role="tabpanel" class="hidden">
-        <div class="field-row">
-          <div class="field-group flex1">
-            <label for="ms-provider" data-i18n="modal.provider">Variante</label>
-            <select id="ms-provider">
-              <option value="paper" data-i18n="modal.providerPaper">Paper</option>
-              <option value="vanilla" data-i18n="modal.providerVanilla">Vanilla</option>
-              <option value="fabric" data-i18n="modal.providerFabric">Fabric</option>
-              <option value="forge" data-i18n="modal.providerForge">Forge</option>
+        <section class="stats-section">
+          <div class="stats-players-header">
+            <h3 data-i18n="stats.playersList">Jugadores</h3>
+            <label class="stats-filter-label" data-i18n="stats.filterPlayersPeriod">Período de jugadores</label>
+            <select id="stats-players-filter-period" class="stats-filter-select" aria-label="Players period">
+              <option value="all" data-i18n="stats.filterAll" selected>Todo</option>
+              <option value="7d" data-i18n="stats.filter7d">Últimos 7 días</option>
+              <option value="14d" data-i18n="stats.filter14d">Últimos 14 días</option>
+              <option value="30d" data-i18n="stats.filter30d">Últimos 30 días</option>
+              <option value="90d" data-i18n="stats.filter90d">Últimos 90 días</option>
+              <option value="6m" data-i18n="stats.filter6m">Últimos 6 meses</option>
+              <option value="1y" data-i18n="stats.filter1y">Último año</option>
             </select>
           </div>
-          <div class="field-group flex1">
-            <label for="ms-version" data-i18n="modal.version">Versión</label>
-            <select id="ms-version"></select>
+          <div class="stats-players">
+            <table class="stats-table" id="stats-players-table">
+              <thead>
+                <tr>
+                  <th data-i18n="stats.colPlayer">Jugador</th>
+                  <th data-i18n="stats.colPlayed">Tiempo jugado</th>
+                  <th data-i18n="stats.colDaysActive">Días activos</th>
+                  <th data-i18n="stats.colLastSeen">Última vez visto</th>
+                </tr>
+              </thead>
+              <tbody id="stats-players-body"></tbody>
+            </table>
+            <p class="stats-empty hidden" id="stats-players-empty" data-i18n="stats.noData">Sin datos todavía.</p>
+          </div>
+        </section>
+      </div>
+
+      <div class="tab" id="tab-lists">
+        <div class="lists-container">
+          <div class="list-panel">
+            <div class="list-header">
+              <h2>Whitelist</h2>
+              <label class="toggle-wrap"><input type="checkbox" id="whitelist-toggle" /><span data-i18n="lists.active">Activa</span></label>
+            </div>
+            <div class="list-add">
+              <input type="text" id="wl-input" placeholder="Nombre del jugador" data-i18n-placeholder="common.playerName" /><button
+                id="wl-add"
+                data-i18n="common.add"
+              >
+                Añadir
+              </button>
+            </div>
+            <ul class="player-list" id="whitelist-ul"></ul>
+          </div>
+          <div class="list-panel">
+            <div class="list-header">
+              <h2>Banlist</h2>
+            </div>
+            <div class="list-add">
+              <input type="text" id="bl-input" placeholder="Nombre del jugador" data-i18n-placeholder="common.playerName" />
+              <input type="text" id="bl-reason" placeholder="Motivo (opcional)" data-i18n-placeholder="lists.reasonOptional" />
+              <button id="bl-add" data-i18n="lists.ban">Banear</button>
+            </div>
+            <ul class="player-list" id="banlist-ul"></ul>
           </div>
         </div>
-        <p class="field-hint hidden" id="ms-java-warn"></p>
+      </div>
+
+      <div class="tab" id="tab-properties">
+        <div class="panel-header">
+          <h2>server.properties</h2>
+          <button class="btn-primary" id="btn-save-props" data-i18n="common.save">Guardar</button>
+        </div>
+        <div class="props-grid" id="props-grid">
+          <div class="empty-state" data-i18n="properties.needSave">Guarda la configuración del servidor primero.</div>
+        </div>
+      </div>
+
+      <div class="tab" id="tab-backups">
+        <div class="panel-header">
+          <h2 data-i18n="backups.title">Backups del mundo</h2>
+          <button class="btn-primary" id="btn-backup-now" data-i18n="backups.createNow">Crear backup ahora</button>
+        </div>
+        <div class="backup-auto-config">
+          <h3 data-i18n="backups.auto">Backup automático</h3>
+          <p class="field-hint" data-i18n="backups.dirHint">La carpeta de destino se configura en Ajustes.</p>
+          <div class="auto-backup-row">
+            <label class="toggle-wrap"
+              ><input type="checkbox" id="auto-backup-enabled" /><span data-i18n="backups.enable">Activar</span></label
+            >
+            <select id="auto-backup-interval">
+              <option value="1h" data-i18n="backups.everyHour">Cada hora</option>
+              <option value="6h" selected data-i18n="backups.every6h">Cada 6 horas</option>
+              <option value="12h" data-i18n="backups.every12h">Cada 12 horas</option>
+              <option value="24h" data-i18n="backups.daily">Una vez al día</option>
+            </select>
+            <span class="time-label" data-i18n="backups.atTime" hidden>A las</span>
+            <input type="time" id="auto-backup-time" class="daily-time" hidden />
+            <button class="btn-primary" id="btn-save-auto" data-i18n="common.save">Guardar</button>
+          </div>
+        </div>
+        <div class="backup-auto-config">
+          <h3 data-i18n="backups.restartTitle">Reinicio programado</h3>
+          <p class="field-hint" data-i18n="backups.restartHint">Detiene y arranca el servidor periódicamente.</p>
+          <div class="auto-backup-row">
+            <label class="toggle-wrap"
+              ><input type="checkbox" id="auto-restart-enabled" /><span data-i18n="backups.restartEnable"
+                >Reiniciar automáticamente</span
+              ></label
+            >
+            <select id="auto-restart-interval">
+              <option value="6h" data-i18n="backups.every6h">Cada 6 horas</option>
+              <option value="12h" data-i18n="backups.every12h">Cada 12 horas</option>
+              <option value="24h" selected data-i18n="backups.daily">Una vez al día</option>
+            </select>
+            <span class="time-label" data-i18n="backups.atTime" hidden>A las</span>
+            <input type="time" id="auto-restart-time" class="daily-time" hidden />
+          </div>
+          <p class="field-hint" id="auto-restart-next" data-i18n="backups.restartNone">Sin reinicio programado</p>
+        </div>
+        <div class="backup-auto-config">
+          <h3 data-i18n="backups.warnTitle">Avisos antes del mantenimiento</h3>
+          <p class="field-hint" data-i18n="backups.warnHint">Minutos antes del backup o reinicio, separados por comas.</p>
+          <div class="auto-backup-row">
+            <label class="time-label" for="maintenance-warn-minutes" data-i18n="backups.warnMinutes">Minutos de aviso</label>
+            <input
+              type="text"
+              id="maintenance-warn-minutes"
+              class="warn-minutes-input"
+              placeholder="5, 1"
+              data-i18n-placeholder="backups.warnPlaceholder"
+            />
+            <button class="btn-primary" id="btn-save-warn" data-i18n="common.save">Guardar</button>
+          </div>
+        </div>
+        <div class="backups-list" id="backups-list"></div>
+      </div>
+
+      <div class="tab" id="tab-notificaciones">
+        <div class="panel-header">
+          <h2 data-i18n="notificaciones.title">Notificaciones del servidor</h2>
+          <div class="backup-actions">
+            <button class="btn-icon" id="btn-notificaciones-refresh" title="Actualizar" data-i18n-title="common.refresh">🔄</button>
+            <button class="btn-primary" id="btn-notificaciones-clear" data-i18n="notificaciones.clear">Limpiar</button>
+          </div>
+        </div>
+        <p class="field-hint" data-i18n="notificaciones.hint">Encendido, apagado, reinicios y backups de este servidor.</p>
+        <div class="notificaciones-list" id="notificaciones-list"></div>
+      </div>
+
+      <div class="tab" id="tab-config">
+        <div class="settings-form">
+          <h2 data-i18n="config.title">Configuración del servidor</h2>
+          <div class="field-group">
+            <label data-i18n="config.nameLabel">Nombre del servidor</label>
+            <div class="name-color-row">
+              <input type="text" id="cfg-name" placeholder="Mi servidor" data-i18n-placeholder="config.namePlaceholder" />
+              <div class="color-options" id="color-options"></div>
+            </div>
+          </div>
+          <div class="field-group">
+            <label data-i18n="config.jarLabel">Archivo JAR</label>
+            <div class="field-row">
+              <input type="text" id="cfg-jar" placeholder="C:\servers\server.jar" readonly /><button
+                id="btn-pick-jar"
+                data-i18n="config.browse"
+              >
+                Buscar
+              </button>
+            </div>
+            <p class="field-hint" data-i18n="config.jarHint">Compatible con Vanilla, Paper, Spigot, Bukkit, Fabric y Forge</p>
+          </div>
+          <div class="field-group">
+            <label data-i18n="config.javaLabel">Ruta de Java (opcional)</label><input type="text" id="cfg-java" placeholder="java" />
+          </div>
+          <div class="field-row">
+            <div class="field-group flex1">
+              <label data-i18n="config.ramMin">RAM mínima (MB)</label
+              ><input type="number" id="cfg-min-ram" value="1024" min="512" step="256" />
+            </div>
+            <div class="field-group flex1">
+              <label data-i18n="config.ramMax">RAM máxima (MB)</label
+              ><input type="number" id="cfg-max-ram" value="4096" min="1024" step="256" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label data-i18n="config.jvmArgs">Argumentos JVM adicionales</label
+            ><input type="text" id="cfg-extra" placeholder="-XX:+UseG1GC" />
+          </div>
+          <div class="config-actions">
+            <button class="btn-primary" id="btn-save-cfg" data-i18n="config.save">Guardar configuración</button>
+            <button class="btn-danger" id="btn-delete-server" data-i18n="config.delete">Eliminar servidor</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: SETTINGS ══════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-settings">
+      <div class="servers-header">
+        <button class="btn-back" id="btn-settings-back" data-i18n="nav.servers">Servidores</button>
+        <div class="servers-header-title">
+          <h1 class="servers-title" data-i18n="settings.title">Ajustes</h1>
+          <p class="servers-sub" data-i18n="settings.subtitle">Preferencias de la aplicación</p>
+        </div>
+      </div>
+
+      <div class="settings-layout">
+        <!-- ── Raíl de secciones ── -->
+        <nav class="set-nav" id="set-nav">
+          <button class="set-nav-item active" data-set-section="general">⚙ <span data-i18n="settings.general">General</span></button>
+          <button class="set-nav-item" data-set-section="notifications">
+            🔔 <span data-i18n="settings.notifications">Notificaciones</span>
+          </button>
+          <button class="set-nav-item" data-set-section="appearance">🎨 <span data-i18n="settings.appearance">Apariencia</span></button>
+          <button class="set-nav-item" data-set-section="backups">💾 <span data-i18n="settings.backups">Copias de seguridad</span></button>
+          <button class="set-nav-item" data-set-section="servers">🖥 <span data-i18n="settings.servers">Servidores</span></button>
+          <button class="set-nav-item" data-set-section="errors">🐞 <span data-i18n="settings.errors">Errores</span></button>
+          <button class="set-nav-item" data-set-section="privacy">🔒 <span data-i18n="settings.privacy">Privacidad y datos</span></button>
+          <button class="set-nav-item" data-set-section="updates">🔄 <span data-i18n="settings.updates">Actualizaciones</span></button>
+          <button class="set-nav-item" data-set-section="about">ℹ <span data-i18n="settings.about">Acerca de</span></button>
+        </nav>
+
+        <!-- ── Paneles ── -->
+        <div class="set-panels">
+          <!-- General -->
+          <section class="set-panel active" data-set-panel="general">
+            <h3 data-i18n="settings.general">General</h3>
+            <div class="set-group">
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.language">Idioma</span>
+                  <p class="set-row-hint" data-i18n="settings.languageHint">Idioma de los textos de la aplicación.</p>
+                </div>
+                <div class="set-row-control">
+                  <div class="seg-options" id="lang-options">
+                    <button class="seg-opt" data-lang-value="es">Español</button>
+                    <button class="seg-opt" data-lang-value="en">English</button>
+                  </div>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.defaultServerDir">Carpeta por defecto de servidores</span>
+                  <p class="set-row-hint" data-i18n="settings.defaultServerDirHint">Dónde se crean los mundos de los servidores nuevos.</p>
+                </div>
+                <div class="set-row-control set-row-dir">
+                  <input
+                    type="text"
+                    id="set-server-dir"
+                    readonly
+                    placeholder="Carpeta de servidores"
+                    data-i18n-placeholder="settings.serverDirPlaceholder"
+                  />
+                  <button id="btn-set-server-dir">📁</button>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.closeToTray">Cerrar en vez de minimizar</span>
+                  <p class="set-row-hint" data-i18n="settings.closeToTrayHint">Al pulsar ✕ la app queda en la bandeja del sistema.</p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-close-to-tray" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.startOnBoot">Iniciar con el sistema</span>
+                  <p class="set-row-hint" data-i18n="settings.startOnBootHint">Arranca automáticamente al encender el equipo.</p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-start-on-boot" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Notificaciones -->
+          <section class="set-panel" data-set-panel="notifications">
+            <h3 data-i18n="settings.notifications">Notificaciones</h3>
+            <div class="set-group">
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.notifyServer">Servidores</span>
+                  <p class="set-row-hint" data-i18n="settings.notifyServerHint">Avisa al iniciar, detener o caer un servidor.</p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-notify-server" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.notifyPlayers">Jugadores</span>
+                  <p class="set-row-hint" data-i18n="settings.notifyPlayersHint">Avisa cuando un jugador se conecta o desconecta.</p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-notify-players" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.notifyBackups">Copias de seguridad</span>
+                  <p class="set-row-hint" data-i18n="settings.notifyBackupsHint">Avisa cuando se crea una copia de seguridad.</p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-notify-backups" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <h3 data-i18n="settings.emailNotifications">Notificaciones por correo</h3>
+            <div class="set-group">
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailEnabled">Enviar por correo</span>
+                  <p class="set-row-hint" data-i18n="settings.emailEnabledHint">
+                    Envía un email cuando ocurran las acciones seleccionadas.
+                  </p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-email-enabled" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailHost">Servidor SMTP</span>
+                  <p class="set-row-hint" data-i18n="settings.emailHostHint">Host SMTP de tu proveedor de correo.</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="text" id="set-email-host" placeholder="smtp.gmail.com" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailPort">Puerto SMTP</span>
+                  <p class="set-row-hint" data-i18n="settings.emailPortHint">Normalmente 587 (STARTTLS) o 465 (SSL).</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="number" id="set-email-port" min="1" max="65535" step="1" placeholder="587" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailSecure">SSL/TLS seguro</span>
+                  <p class="set-row-hint" data-i18n="settings.emailSecureHint">
+                    Actívalo para puerto 465; déjalo desactivado para 587 con STARTTLS.
+                  </p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-email-secure" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailUser">Usuario SMTP</span>
+                  <p class="set-row-hint" data-i18n="settings.emailUserHint">Usuario o correo de la cuenta SMTP.</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="text" id="set-email-user" placeholder="usuario@ejemplo.com" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailPass">Contraseña SMTP</span>
+                  <p class="set-row-hint" data-i18n="settings.emailPassHint">Contraseña o contraseña de aplicación del proveedor.</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="password" id="set-email-pass" placeholder="••••••••" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailFrom">Remitente</span>
+                  <p class="set-row-hint" data-i18n="settings.emailFromHint">Dirección que aparecerá como remitente.</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="text" id="set-email-from" placeholder="Minecraft Manager <usuario@ejemplo.com>" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailTo">Destinatario</span>
+                  <p class="set-row-hint" data-i18n="settings.emailToHint">Correo o correos separados por comas.</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="text" id="set-email-to" placeholder="admin@ejemplo.com" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailNotifyServer">Correo: servidores</span>
+                  <p class="set-row-hint" data-i18n="settings.emailNotifyServerHint">Iniciado, detenido, caído o reiniciado.</p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-email-notify-server" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailNotifyPlayers">Correo: jugadores</span>
+                  <p class="set-row-hint" data-i18n="settings.emailNotifyPlayersHint">Conexión y desconexión de jugadores.</p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-email-notify-players" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailNotifyBackups">Correo: backups</span>
+                  <p class="set-row-hint" data-i18n="settings.emailNotifyBackupsHint">Cuando se completa una copia de seguridad.</p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-email-notify-backups" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailSave">Guardar datos de correo</span>
+                  <p class="set-row-hint" data-i18n="settings.emailSaveHint">Guarda la configuración SMTP y las opciones de correo.</p>
+                </div>
+                <div class="set-row-control">
+                  <button class="btn-primary" id="btn-save-email" data-i18n="settings.emailSaveBtn">Guardar datos</button>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.emailTest">Probar correo</span>
+                  <p class="set-row-hint" data-i18n="settings.emailTestHint">Envía un correo de prueba con la configuración actual.</p>
+                </div>
+                <div class="set-row-control">
+                  <button class="btn-secondary" id="btn-test-email" data-i18n="settings.emailTestBtn">Enviar prueba</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Apariencia -->
+          <section class="set-panel" data-set-panel="appearance">
+            <h3 data-i18n="settings.appearance">Apariencia</h3>
+            <div class="set-group">
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.theme">Tema</span>
+                  <p class="set-row-hint" data-i18n="settings.themeHint">Apariencia de toda la aplicación.</p>
+                </div>
+                <div class="set-row-control">
+                  <div class="seg-options" id="theme-options">
+                    <button class="seg-opt" data-theme-value="dark" data-i18n="settings.themeDark">Oscuro</button>
+                    <button class="seg-opt" data-theme-value="light" data-i18n="settings.themeLight">Claro</button>
+                  </div>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.uiScale">Tamaño de la interfaz</span>
+                  <p class="set-row-hint" data-i18n="settings.uiScaleHint">Escala de los textos y controles: 100 %, 125 % o 150 %.</p>
+                </div>
+                <div class="set-row-control">
+                  <div class="seg-options" id="uiscale-options">
+                    <button class="seg-opt" data-scale-value="100">100 %</button>
+                    <button class="seg-opt" data-scale-value="125">125 %</button>
+                    <button class="seg-opt" data-scale-value="150">150 %</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Copias de seguridad -->
+          <section class="set-panel" data-set-panel="backups">
+            <h3 data-i18n="settings.backups">Copias de seguridad</h3>
+            <div class="set-group">
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.backupsDir">Carpeta de backups</span>
+                  <p class="set-row-hint" data-i18n="settings.backupsDirHint">
+                    Se usa en todos los servidores que no tengan carpeta propia.
+                  </p>
+                </div>
+                <div class="set-row-control set-row-dir">
+                  <input
+                    type="text"
+                    id="set-backup-dir"
+                    readonly
+                    placeholder="Carpeta de backups"
+                    data-i18n-placeholder="backups.dirPlaceholder"
+                  />
+                  <button id="btn-set-backup-dir">📁</button>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.keepLastBackups">Conservar solo las últimas copias</span>
+                  <p class="set-row-hint" data-i18n="settings.keepLastBackupsHint">Borra las copias antiguas al crear una nueva.</p>
+                </div>
+                <div class="set-row-control">
+                  <div class="seg-options" id="backup-keep-options">
+                    <button class="seg-opt" data-keep-value="0" data-i18n="settings.noLimit">Sin límite</button>
+                    <button class="seg-opt" data-keep-value="5">5</button>
+                    <button class="seg-opt" data-keep-value="10">10</button>
+                    <button class="seg-opt" data-keep-value="20">20</button>
+                    <button class="seg-opt" data-keep-value="50">50</button>
+                  </div>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.backupCompression">Nivel de compresión</span>
+                  <p class="set-row-hint" data-i18n="settings.backupCompressionHint">
+                    Más compresión = archivo más pequeño y proceso más lento.
+                  </p>
+                </div>
+                <div class="set-row-control">
+                  <div class="seg-options" id="backup-level-options">
+                    <button class="seg-opt" data-level-value="1" data-i18n="settings.compressionFast">Rápida</button>
+                    <button class="seg-opt" data-level-value="6" data-i18n="settings.compressionNormal">Normal</button>
+                    <button class="seg-opt" data-level-value="9" data-i18n="settings.compressionMax">Máxima</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Servidores -->
+          <section class="set-panel" data-set-panel="servers">
+            <h3 data-i18n="settings.servers">Servidores</h3>
+            <div class="set-group">
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.defaultRam">RAM por defecto (MB)</span>
+                  <p class="set-row-hint" data-i18n="settings.defaultRamHint">Memoria asignada a los servidores nuevos.</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="number" id="set-default-ram" min="512" max="65536" step="256" placeholder="4096" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.defaultJava">Java por defecto</span>
+                  <p class="set-row-hint" data-i18n="settings.defaultJavaHint">Ruta de Java para servidores sin ruta propia.</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="text" id="set-default-java" placeholder="java" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.defaultJvmArgs">Argumentos JVM por defecto</span>
+                  <p class="set-row-hint" data-i18n="settings.defaultJvmArgsHint">Se aplican a los servidores sin argumentos propios.</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="text" id="set-default-jvm" placeholder="-XX:+UseG1GC" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.autoEula">Aceptar la EULA automáticamente</span>
+                  <p class="set-row-hint" data-i18n="settings.autoEulaHint">Crea eula.txt en el primer arranque del servidor.</p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="set-auto-eula" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.retentionSamples">Muestras con retención (días)</span>
+                  <p class="set-row-hint" data-i18n="settings.retentionSamplesHint">
+                    Historial de CPU/RAM que se conserva por servidor (días).
+                  </p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="number" id="set-retention-samples" min="1" max="365" step="1" />
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.retentionEvents">Eventos con retención (días)</span>
+                  <p class="set-row-hint" data-i18n="settings.retentionEventsHint">Eventos de jugadores y totales por jugador (días).</p>
+                </div>
+                <div class="set-row-control set-row-input">
+                  <input type="number" id="set-retention-events" min="1" max="3650" step="1" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Errores -->
+          <section class="set-panel" data-set-panel="errors">
+            <h3 data-i18n="settings.errors">Errores</h3>
+            <div class="set-group">
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="diag.clearErrors">Limpiar errores</span>
+                  <p class="set-row-hint" data-i18n="settings.clearErrorsHint">Borra los informes de error guardados en esta máquina.</p>
+                </div>
+                <div class="set-row-control">
+                  <button class="btn-secondary" id="btn-clear-crashes" data-i18n="diag.clearErrors">Limpiar errores</button>
+                </div>
+              </div>
+            </div>
+            <h3 data-i18n="diag.recentErrors">Últimos errores</h3>
+            <div class="set-group set-group-plain">
+              <div id="diag-crashes"></div>
+            </div>
+          </section>
+
+          <!-- Privacidad y datos -->
+          <section class="set-panel" data-set-panel="privacy">
+            <h3 data-i18n="settings.privacy">Privacidad y datos</h3>
+            <div class="set-group">
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="diag.sendData">Envío de datos anónimos</span>
+                  <p class="set-row-hint" data-i18n="settings.analyticsHint">
+                    Sin nombres, IPs ni datos de tu servidor. Puedes desactivarlo cuando quieras.
+                  </p>
+                </div>
+                <div class="set-row-control">
+                  <label class="switch"
+                    ><input type="checkbox" id="diag-analytics-toggle" /><span class="switch-track"></span
+                    ><span class="switch-label" data-i18n="lists.active">Activa</span></label
+                  >
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.clearAnalytics">Borrar eventos de uso</span>
+                  <p class="set-row-hint" data-i18n="settings.clearAnalyticsHint">Elimina los eventos guardados sin desactivar el envío.</p>
+                </div>
+                <div class="set-row-control">
+                  <button class="btn-secondary" id="btn-clear-events" data-i18n="settings.clearAnalytics">Borrar eventos de uso</button>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.exportData">Exportar todos los datos</span>
+                  <p class="set-row-hint" data-i18n="settings.exportDataHint">
+                    Guarda servidores, ajustes y estadísticas en un JSON que puedes conservar donde quieras.
+                  </p>
+                </div>
+                <div class="set-row-control">
+                  <button class="btn-secondary" id="btn-export-data" data-i18n="settings.exportData">Exportar todos los datos</button>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.importData">Importar datos</span>
+                  <p class="set-row-hint" data-i18n="settings.importDataHint">
+                    Sustituye los datos actuales por los de un backup exportado por esta app. Se crea una copia antes.
+                  </p>
+                </div>
+                <div class="set-row-control">
+                  <button class="btn-secondary" id="btn-import-data" data-i18n="settings.importData">Importar datos</button>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="privacy.viewPolicy">Ver política de privacidad</span>
+                  <p class="set-row-hint" data-i18n="privacy.viewPolicyHint">Qué se guarda, qué se envía y cómo borrarlo.</p>
+                </div>
+                <div class="set-row-control">
+                  <button class="btn-secondary" id="btn-privacy-policy" data-i18n="privacy.viewPolicy">Ver política de privacidad</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Actualizaciones -->
+          <section class="set-panel" data-set-panel="updates">
+            <h3 data-i18n="settings.updates">Actualizaciones</h3>
+
+            <div class="set-group">
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="upd.installed">Versión instalada</span>
+                </div>
+                <div class="set-row-control"><span class="upd-version" id="upd-installed">—</span></div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="upd.lastCheck">Última comprobación</span>
+                </div>
+                <div class="set-row-control"><span class="upd-version" id="upd-lastcheck" data-i18n="upd.never">Nunca</span></div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="settings.checkUpdates">Buscar actualizaciones</span>
+                  <p class="set-row-hint" data-i18n="settings.checkUpdatesHint">
+                    Comprueba si hay una versión nueva y te avisa para instalarla.
+                  </p>
+                </div>
+                <div class="set-row-control">
+                  <button class="btn-secondary" id="btn-check-update" data-i18n="settings.checkUpdates">Buscar actualizaciones</button>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-text">
+                  <span class="set-row-label" data-i18n="upd.state">Estado</span>
+                  <p class="set-row-hint" id="upd-state" data-i18n="upd.state.idle">Sin comprobar</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nueva versión detectada -->
+            <div class="set-group upd-card hidden" id="upd-card">
+              <div class="upd-head">
+                <span class="upd-newversion" id="upd-newversion"></span>
+                <span class="upd-pill" id="upd-pill"></span>
+              </div>
+              <p class="set-row-hint" id="upd-hint"></p>
+              <div class="upd-progress hidden" id="upd-progress">
+                <div class="upd-bar" id="upd-bar"></div>
+              </div>
+              <div class="upd-actions">
+                <button class="btn-secondary" id="btn-update-download" data-i18n="upd.download">Descargar</button>
+                <button class="btn-primary" id="btn-update-install" data-i18n="update.install">Instalar y reiniciar</button>
+              </div>
+              <div class="upd-notes" id="upd-notes">
+                <div class="upd-notes-title" data-i18n="upd.notes">Novedades de la versión</div>
+                <div class="update-notes" id="update-notes"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Información -->
+          <section class="set-panel" data-set-panel="about">
+            <h3 data-i18n="settings.about">Acerca de</h3>
+            <div class="set-group">
+              <div class="diag-rows" id="diag-info"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL: privacy policy ═══════════════════════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="modal-privacy" role="dialog" aria-modal="true" aria-labelledby="modal-privacy-title">
+      <div class="modal modal-wide privacy-modal">
+        <h3 id="modal-privacy-title" data-i18n="privacy.title">Política de privacidad</h3>
+        <div class="privacy-content" id="privacy-content"></div>
+        <div class="modal-actions">
+          <button id="privacy-close" data-i18n="privacy.close">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL: new server ════════════════════════════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="modal-server" role="dialog" aria-modal="true" aria-labelledby="modal-server-title">
+      <div class="modal modal-wide">
+        <h3 id="modal-server-title" data-i18n="servers.add">Añadir servidor</h3>
+
+        <div class="segmented" id="ms-source" role="tablist" aria-label="Origen del servidor">
+          <button type="button" role="tab" aria-selected="true" class="active" data-source="manual" data-i18n="modal.sourceManual">
+            Ya tengo el .jar
+          </button>
+          <button type="button" role="tab" aria-selected="false" data-source="download" data-i18n="modal.sourceDownload">
+            Descargar servidor
+          </button>
+        </div>
+
+        <div id="ms-manual-fields" role="tabpanel">
+          <div class="field-group">
+            <label data-i18n="config.jarLabel">Archivo JAR</label>
+            <div class="field-row">
+              <input
+                type="text"
+                id="ms-jar"
+                placeholder="Ruta al .jar del servidor"
+                data-i18n-placeholder="modal.jarPlaceholder"
+                readonly
+              /><button id="ms-pick-jar" data-i18n-aria="modal.pickFile" data-i18n-title="modal.pickFile">📁</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="ms-download-fields" role="tabpanel" class="hidden">
+          <div class="field-row">
+            <div class="field-group flex1">
+              <label for="ms-provider" data-i18n="modal.provider">Variante</label>
+              <select id="ms-provider">
+                <option value="paper" data-i18n="modal.providerPaper">Paper</option>
+                <option value="vanilla" data-i18n="modal.providerVanilla">Vanilla</option>
+                <option value="fabric" data-i18n="modal.providerFabric">Fabric</option>
+                <option value="forge" data-i18n="modal.providerForge">Forge</option>
+              </select>
+            </div>
+            <div class="field-group flex1">
+              <label for="ms-version" data-i18n="modal.version">Versión</label>
+              <select id="ms-version"></select>
+            </div>
+          </div>
+          <p class="field-hint hidden" id="ms-java-warn"></p>
+          <div class="field-group">
+            <label for="ms-install-root" data-i18n="modal.installRoot">Instalar en</label>
+            <div class="field-row">
+              <input type="text" id="ms-install-root" readonly data-i18n-placeholder="modal.installRootPlaceholder" /><button
+                id="ms-pick-dir"
+                data-i18n-aria="modal.pickDir"
+                data-i18n-title="modal.pickDir"
+              >
+                📁
+              </button>
+            </div>
+            <p class="field-hint" id="ms-install-hint"></p>
+          </div>
+          <div class="progress-wrap hidden" id="ms-progress">
+            <p id="ms-progress-label"></p>
+            <div class="upd-progress"><div class="upd-bar" id="ms-progress-fill"></div></div>
+          </div>
+        </div>
+
         <div class="field-group">
-          <label for="ms-install-root" data-i18n="modal.installRoot">Instalar en</label>
-          <div class="field-row"><input type="text" id="ms-install-root" readonly data-i18n-placeholder="modal.installRootPlaceholder" /><button
-              id="ms-pick-dir" data-i18n-aria="modal.pickDir" data-i18n-title="modal.pickDir">📁</button></div>
-          <p class="field-hint" id="ms-install-hint"></p>
+          <label data-i18n="modal.name">Nombre</label
+          ><input type="text" id="ms-name" placeholder="Mi servidor survival" data-i18n-placeholder="modal.namePlaceholder" />
         </div>
-        <div class="progress-wrap hidden" id="ms-progress">
-          <p id="ms-progress-label"></p>
-          <div class="upd-progress"><div class="upd-bar" id="ms-progress-fill"></div></div>
+        <div class="field-group">
+          <label data-i18n="modal.colorLabel">Color identificador</label>
+          <div class="color-options" id="ms-color-options"></div>
         </div>
-      </div>
-
-      <div class="field-group"><label data-i18n="modal.name">Nombre</label><input type="text" id="ms-name"
-          placeholder="Mi servidor survival" data-i18n-placeholder="modal.namePlaceholder" /></div>
-      <div class="field-group"><label data-i18n="modal.colorLabel">Color identificador</label>
-        <div class="color-options" id="ms-color-options"></div>
-      </div>
-      <div class="field-row">
-        <div class="field-group flex1"><label data-i18n="modal.ramMin">RAM mín (MB)</label><input type="number"
-            id="ms-min-ram" value="1024" min="512" step="256" /></div>
-        <div class="field-group flex1"><label data-i18n="modal.ramMax">RAM máx (MB)</label><input type="number"
-            id="ms-max-ram" value="4096" min="1024" step="256" /></div>
-      </div>
-      <div class="field-group"><label data-i18n="modal.javaLabel">Java (opcional)</label><input type="text" id="ms-java"
-          placeholder="java" /></div>
-      <p class="auth-error" id="ms-error"></p>
-      <div class="modal-actions"><button id="ms-cancel" data-i18n="common.cancel">Cancelar</button><button
-          class="btn-primary" id="ms-save" data-i18n="common.save">Guardar</button></div>
-    </div>
-  </div>
-
-  <!-- ══ MODAL: confirm close ══════════════════════════════════════════════════════════════════ -->
-  <div class="modal-backdrop hidden" id="modal-close" role="dialog" aria-modal="true" aria-labelledby="modal-close-title">
-    <div class="modal">
-      <h3 id="modal-close-title" data-i18n="close.title">¿Cerrar la aplicación?</h3>
-      <p id="modal-close-msg" data-i18n="close.msg">Hay servidores en ejecución. Se detendrán antes de cerrar.</p>
-      <div id="modal-close-level1" class="modal-actions">
-        <button id="modal-cancel" data-i18n="common.cancel">Cancelar</button>
-        <button id="modal-confirm-proceed" data-i18n="close.continue">Continuar</button>
-      </div>
-      <div id="modal-close-level2" class="modal-actions hidden">
-        <button id="modal-cancel-2" data-i18n="close.back">Volver</button>
-        <button class="danger" id="modal-confirm" data-i18n="close.confirmStopAll">Cerrar y detener todo</button>
+        <div class="field-row">
+          <div class="field-group flex1">
+            <label data-i18n="modal.ramMin">RAM mín (MB)</label><input type="number" id="ms-min-ram" value="1024" min="512" step="256" />
+          </div>
+          <div class="field-group flex1">
+            <label data-i18n="modal.ramMax">RAM máx (MB)</label><input type="number" id="ms-max-ram" value="4096" min="1024" step="256" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label data-i18n="modal.javaLabel">Java (opcional)</label><input type="text" id="ms-java" placeholder="java" />
+        </div>
+        <p class="auth-error" id="ms-error"></p>
+        <div class="modal-actions">
+          <button id="ms-cancel" data-i18n="common.cancel">Cancelar</button
+          ><button class="btn-primary" id="ms-save" data-i18n="common.save">Guardar</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+    <!-- ══ MODAL: confirm close ══════════════════════════════════════════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="modal-close" role="dialog" aria-modal="true" aria-labelledby="modal-close-title">
+      <div class="modal">
+        <h3 id="modal-close-title" data-i18n="close.title">¿Cerrar la aplicación?</h3>
+        <p id="modal-close-msg" data-i18n="close.msg">Hay servidores en ejecución. Se detendrán antes de cerrar.</p>
+        <div id="modal-close-level1" class="modal-actions">
+          <button id="modal-cancel" data-i18n="common.cancel">Cancelar</button>
+          <button id="modal-confirm-proceed" data-i18n="close.continue">Continuar</button>
+        </div>
+        <div id="modal-close-level2" class="modal-actions hidden">
+          <button id="modal-cancel-2" data-i18n="close.back">Volver</button>
+          <button class="danger" id="modal-confirm" data-i18n="close.confirmStopAll">Cerrar y detener todo</button>
+        </div>
+      </div>
+    </div>
 
-  <!-- Scripts clásicos: comparten ámbito global, por lo que el ORDEN importa.
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts clásicos: comparten ámbito global, por lo que el ORDEN importa.
        renderer.js conserva el estado y los helpers; el resto está troceado
        por responsabilidad en src/renderer/. -->
-  <script src="i18n.js"></script>
-  <script src="renderer.js"></script>
-  <script src="renderer/bootstrap.js"></script>
-  <script src="renderer/updates.js"></script>
-  <script src="renderer/titlebar.js"></script>
-  <script src="renderer/delegates.js"></script>
-  <script src="renderer/consent.js"></script>
-  <script src="renderer/settings.js"></script>
-  <script src="renderer/events.js"></script>
-  <script src="renderer/servers-ui.js"></script>
-  <script src="renderer/modal.js"></script>
-  <script src="renderer/download.js"></script>
-  <script src="renderer/detail.js"></script>
-  <script src="renderer/console.js"></script>
-  <script src="renderer/players.js"></script>
-  <script src="renderer/stats.js"></script>
-  <script src="renderer/lists.js"></script>
-  <script src="renderer/properties.js"></script>
-  <script src="renderer/backups.js"></script>
-  <script src="renderer/notificaciones.js"></script>
-  <script src="renderer/config.js"></script>
-  <script src="renderer/late.js"></script>
-</body>
-
+    <script src="i18n.js"></script>
+    <script src="renderer.js"></script>
+    <script src="renderer/bootstrap.js"></script>
+    <script src="renderer/updates.js"></script>
+    <script src="renderer/titlebar.js"></script>
+    <script src="renderer/delegates.js"></script>
+    <script src="renderer/consent.js"></script>
+    <script src="renderer/settings.js"></script>
+    <script src="renderer/events.js"></script>
+    <script src="renderer/servers-ui.js"></script>
+    <script src="renderer/modal.js"></script>
+    <script src="renderer/download.js"></script>
+    <script src="renderer/detail.js"></script>
+    <script src="renderer/console.js"></script>
+    <script src="renderer/players.js"></script>
+    <script src="renderer/stats.js"></script>
+    <script src="renderer/lists.js"></script>
+    <script src="renderer/properties.js"></script>
+    <script src="renderer/backups.js"></script>
+    <script src="renderer/notificaciones.js"></script>
+    <script src="renderer/config.js"></script>
+    <script src="renderer/late.js"></script>
+  </body>
 </html>

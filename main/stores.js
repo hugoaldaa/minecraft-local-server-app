@@ -5,7 +5,11 @@ const { getDb, metaGet, metaSet } = require('./db')
 let _safeStorage
 function getSafeStorage() {
   if (_safeStorage !== undefined) return _safeStorage
-  try { _safeStorage = require('electron').safeStorage || null } catch (_) { _safeStorage = null }
+  try {
+    _safeStorage = require('electron').safeStorage || null
+  } catch (_) {
+    _safeStorage = null
+  }
   return _safeStorage
 }
 
@@ -39,11 +43,16 @@ function decryptSecret(stored) {
 function jsonGet(table, keyColumn, key, fallback) {
   const row = getDb().prepare(`SELECT value FROM ${table} WHERE ${keyColumn} = ?`).get(key)
   if (!row || row.value === null || row.value === undefined) return fallback
-  try { return JSON.parse(row.value) } catch (_) { return fallback }
+  try {
+    return JSON.parse(row.value)
+  } catch (_) {
+    return fallback
+  }
 }
 
 function jsonSet(table, keyColumn, key, value) {
-  getDb().prepare(`INSERT INTO ${table}(${keyColumn}, value) VALUES (?, ?) ON CONFLICT(${keyColumn}) DO UPDATE SET value = excluded.value`)
+  getDb()
+    .prepare(`INSERT INTO ${table}(${keyColumn}, value) VALUES (?, ?) ON CONFLICT(${keyColumn}) DO UPDATE SET value = excluded.value`)
     .run(key, JSON.stringify(value === undefined ? null : value))
 }
 
@@ -56,7 +65,9 @@ function getAllServersMap() {
   const rows = getDb().prepare('SELECT id, data FROM servers').all()
   const map = {}
   for (const row of rows) {
-    try { map[row.id] = JSON.parse(row.data) } catch (_) {}
+    try {
+      map[row.id] = JSON.parse(row.data)
+    } catch (_) {}
   }
   return map
 }
@@ -77,9 +88,15 @@ function saveServerMap(map) {
 }
 
 // ─── Ajustes ─────────────────────────────────────────────────────────────────
-function getServerSettings(serverId) { return jsonGet('settings', 'key', `server_${serverId}`, {}) }
-function setServerSettings(serverId, data) { jsonSet('settings', 'key', `server_${serverId}`, data) }
-function getGlobalBackupDir() { return jsonGet('settings', 'key', 'backupDir', '') }
+function getServerSettings(serverId) {
+  return jsonGet('settings', 'key', `server_${serverId}`, {})
+}
+function setServerSettings(serverId, data) {
+  jsonSet('settings', 'key', `server_${serverId}`, data)
+}
+function getGlobalBackupDir() {
+  return jsonGet('settings', 'key', 'backupDir', '')
+}
 
 // Compatibilidad con el código que usa settingsStore.get/set/delete directamente.
 const settingsStore = {
@@ -87,7 +104,11 @@ const settingsStore = {
     if (key === 'emailPass') {
       const row = getDb().prepare('SELECT value FROM settings WHERE key = ?').get(key)
       if (!row || row.value === null || row.value === undefined) return fallback
-      try { return decryptSecret(JSON.parse(row.value)) } catch (_) { return fallback }
+      try {
+        return decryptSecret(JSON.parse(row.value))
+      } catch (_) {
+        return fallback
+      }
     }
     return jsonGet('settings', 'key', key, fallback)
   },
@@ -99,8 +120,8 @@ const settingsStore = {
     jsonSet('settings', 'key', key, value)
     return settingsStore
   },
-  delete: (key) => jsonDelete('settings', 'key', key),
-  has: (key) => !!getDb().prepare('SELECT 1 FROM settings WHERE key = ?').get(key)
+  delete: key => jsonDelete('settings', 'key', key),
+  has: key => !!getDb().prepare('SELECT 1 FROM settings WHERE key = ?').get(key)
 }
 
 const analyticsStore = {
@@ -122,7 +143,7 @@ const analyticsStore = {
     } else metaSet(key, value)
     return analyticsStore
   },
-  delete: (key) => {
+  delete: key => {
     if (key === 'events') getDb().prepare('DELETE FROM analytics_events').run()
     else getDb().prepare('DELETE FROM meta WHERE key = ?').run(key)
     return analyticsStore
@@ -134,8 +155,14 @@ const crashStore = {
     if (key === 'crashes') {
       const rows = getDb().prepare('SELECT * FROM crashes ORDER BY ts DESC').all()
       return rows.map(row => ({
-        id: row.id, type: row.type, message: row.message, stack: row.stack,
-        appVersion: row.app_version, platform: row.platform, osVersion: row.os_version, timestamp: row.ts
+        id: row.id,
+        type: row.type,
+        message: row.message,
+        stack: row.stack,
+        appVersion: row.app_version,
+        platform: row.platform,
+        osVersion: row.os_version,
+        timestamp: row.ts
       }))
     }
     if (key === 'lastCrash') return metaGet('lastCrash') === undefined ? fallback : metaGet('lastCrash')
@@ -149,15 +176,23 @@ const crashStore = {
       getDb().transaction(() => {
         getDb().prepare('DELETE FROM crashes').run()
         for (const c of value || []) {
-          insert.run(c.id, c.type || '', c.message || '', c.stack || '', c.appVersion || '',
-            c.platform || '', c.osVersion || '', c.timestamp || Date.now())
+          insert.run(
+            c.id,
+            c.type || '',
+            c.message || '',
+            c.stack || '',
+            c.appVersion || '',
+            c.platform || '',
+            c.osVersion || '',
+            c.timestamp || Date.now()
+          )
         }
       })()
     } else if (key === 'lastCrash') metaSet('lastCrash', value)
     else metaSet(`crash_${key}`, value)
     return crashStore
   },
-  delete: (key) => {
+  delete: key => {
     if (key === 'crashes') getDb().prepare('DELETE FROM crashes').run()
     else getDb().prepare('DELETE FROM meta WHERE key = ?').run(`crash_${key}`)
     return crashStore
@@ -186,9 +221,13 @@ function pruneSamples(serverId, cutoffTs, max) {
   getDb().transaction(() => {
     getDb().prepare('DELETE FROM samples WHERE server_id = ? AND ts < ?').run(serverId, cutoffTs)
     if (max) {
-      getDb().prepare(`DELETE FROM samples WHERE id IN (
+      getDb()
+        .prepare(
+          `DELETE FROM samples WHERE id IN (
         SELECT id FROM samples WHERE server_id = ? ORDER BY ts DESC LIMIT -1 OFFSET ?
-      )`).run(serverId, max)
+      )`
+        )
+        .run(serverId, max)
     }
   })()
 }
@@ -214,9 +253,13 @@ function prunePlayerEvents(serverId, cutoffTs, max) {
   getDb().transaction(() => {
     getDb().prepare('DELETE FROM player_events WHERE server_id = ? AND ts < ?').run(serverId, cutoffTs)
     if (max) {
-      getDb().prepare(`DELETE FROM player_events WHERE id IN (
+      getDb()
+        .prepare(
+          `DELETE FROM player_events WHERE id IN (
         SELECT id FROM player_events WHERE server_id = ? ORDER BY ts DESC LIMIT -1 OFFSET ?
-      )`).run(serverId, max)
+      )`
+        )
+        .run(serverId, max)
     }
   })()
 }
@@ -225,7 +268,9 @@ function getPlayerTotals(serverId) {
   const rows = getDb().prepare('SELECT player, total_ms, last_seen, days_json FROM player_totals WHERE server_id = ?').all(serverId)
   const totals = {}
   for (const row of rows) {
-    try { totals[row.player] = { totalMs: row.total_ms, lastSeen: row.last_seen, days: JSON.parse(row.days_json) } } catch (_) {}
+    try {
+      totals[row.player] = { totalMs: row.total_ms, lastSeen: row.last_seen, days: JSON.parse(row.days_json) }
+    } catch (_) {}
   }
   return totals
 }
@@ -244,14 +289,25 @@ function getRunTime(serverId) {
   const row = getDb().prepare('SELECT * FROM server_runs WHERE server_id = ?').get(serverId)
   if (!row) return null
   return {
-    startedAt: row.started_at, stoppedAt: row.stopped_at, totalMs: row.total_ms,
+    startedAt: row.started_at,
+    stoppedAt: row.stopped_at,
+    totalMs: row.total_ms,
     currentSessionStart: row.current_session_start
   }
 }
 function saveRunTime(serverId, run) {
-  getDb().prepare(`INSERT OR REPLACE INTO server_runs(server_id, started_at, stopped_at, total_ms, current_session_start)
-    VALUES (?, ?, ?, ?, ?)`).run(serverId, run && run.startedAt || null, run && run.stoppedAt || null,
-      (run && run.totalMs) || 0, run && run.currentSessionStart || null)
+  getDb()
+    .prepare(
+      `INSERT OR REPLACE INTO server_runs(server_id, started_at, stopped_at, total_ms, current_session_start)
+    VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(
+      serverId,
+      (run && run.startedAt) || null,
+      (run && run.stoppedAt) || null,
+      (run && run.totalMs) || 0,
+      (run && run.currentSessionStart) || null
+    )
 }
 
 function deleteServerStats(serverId) {
@@ -265,13 +321,19 @@ function deleteServerStats(serverId) {
 
 // Lecturas con rango para las consultas de estadísticas.
 function getSamplesRange(serverId, from, to) {
-  return getDb().prepare(`SELECT ts, cpu, ram_used_mb AS ramUsed FROM samples
-    WHERE server_id = ? AND (? IS NULL OR ts >= ?) AND (? IS NULL OR ts <= ?) ORDER BY ts`)
+  return getDb()
+    .prepare(
+      `SELECT ts, cpu, ram_used_mb AS ramUsed FROM samples
+    WHERE server_id = ? AND (? IS NULL OR ts >= ?) AND (? IS NULL OR ts <= ?) ORDER BY ts`
+    )
     .all(serverId, from ?? null, from ?? null, to ?? null, to ?? null)
 }
 function getPlayerEventsRange(serverId, from, to) {
-  return getDb().prepare(`SELECT ts, type, player FROM player_events
-    WHERE server_id = ? AND (? IS NULL OR ts >= ?) AND (? IS NULL OR ts <= ?) ORDER BY ts`)
+  return getDb()
+    .prepare(
+      `SELECT ts, type, player FROM player_events
+    WHERE server_id = ? AND (? IS NULL OR ts >= ?) AND (? IS NULL OR ts <= ?) ORDER BY ts`
+    )
     .all(serverId, from ?? null, from ?? null, to ?? null, to ?? null)
 }
 
@@ -287,11 +349,28 @@ function migrateEmailPass() {
 }
 
 module.exports = {
-  settingsStore, analyticsStore, crashStore,
-  getAllServersMap, saveServerMap,
-  getServerSettings, setServerSettings, getGlobalBackupDir,
-  getSamples, saveSamples, insertSamples, pruneSamples, getSamplesRange,
-  getPlayerEvents, savePlayerEvents, insertPlayerEvents, prunePlayerEvents, getPlayerEventsRange,
-  getPlayerTotals, savePlayerTotals, getRunTime, saveRunTime, deleteServerStats,
+  settingsStore,
+  analyticsStore,
+  crashStore,
+  getAllServersMap,
+  saveServerMap,
+  getServerSettings,
+  setServerSettings,
+  getGlobalBackupDir,
+  getSamples,
+  saveSamples,
+  insertSamples,
+  pruneSamples,
+  getSamplesRange,
+  getPlayerEvents,
+  savePlayerEvents,
+  insertPlayerEvents,
+  prunePlayerEvents,
+  getPlayerEventsRange,
+  getPlayerTotals,
+  savePlayerTotals,
+  getRunTime,
+  saveRunTime,
+  deleteServerStats,
   migrateEmailPass
 }

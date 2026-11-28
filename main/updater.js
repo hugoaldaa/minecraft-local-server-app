@@ -12,8 +12,8 @@ function canAutoUpdate() {
 
 let updateCheckTimer = null
 let updateCheckInterval = null
-let hasUpdate = false     // ya hemos detectado una versión nueva
-let manualCheck = false   // hay una comprobación pedida por el usuario en curso
+let hasUpdate = false // ya hemos detectado una versión nueva
+let manualCheck = false // hay una comprobación pedida por el usuario en curso
 
 function setupAutoUpdater() {
   // Solo funciona en la app compilada, no en desarrollo
@@ -31,7 +31,7 @@ function setupAutoUpdater() {
   // Vuelve a comprobar cada 4 horas
   updateCheckInterval = setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000)
 
-  autoUpdater.on('update-available', (info) => {
+  autoUpdater.on('update-available', info => {
     hasUpdate = true
     manualCheck = false
     sendToRenderer('update-status', {
@@ -41,7 +41,7 @@ function setupAutoUpdater() {
     })
   })
 
-  autoUpdater.on('update-not-available', (info) => {
+  autoUpdater.on('update-not-available', info => {
     hasUpdate = false
     manualCheck = false
     sendToRenderer('update-status', {
@@ -50,21 +50,21 @@ function setupAutoUpdater() {
     })
   })
 
-  autoUpdater.on('download-progress', (progress) => {
+  autoUpdater.on('download-progress', progress => {
     sendToRenderer('update-status', {
       status: 'downloading',
       percent: Math.round(progress.percent)
     })
   })
 
-  autoUpdater.on('update-downloaded', (info) => {
+  autoUpdater.on('update-downloaded', info => {
     sendToRenderer('update-status', {
       status: 'ready',
       version: info.version
     })
   })
 
-  autoUpdater.on('error', (err) => {
+  autoUpdater.on('error', err => {
     console.error('AutoUpdater error:', err.message)
     // Solo avisamos si el usuario pidió la comprobación o ya sabemos que hay
     // actualización: una comprobación rutinaria fallida no debe borrar ese estado.
@@ -76,8 +76,14 @@ function setupAutoUpdater() {
 }
 
 function stopUpdater() {
-  if (updateCheckTimer) { clearTimeout(updateCheckTimer); updateCheckTimer = null }
-  if (updateCheckInterval) { clearInterval(updateCheckInterval); updateCheckInterval = null }
+  if (updateCheckTimer) {
+    clearTimeout(updateCheckTimer)
+    updateCheckTimer = null
+  }
+  if (updateCheckInterval) {
+    clearInterval(updateCheckInterval)
+    updateCheckInterval = null
+  }
 }
 
 function registerUpdaterIpc() {

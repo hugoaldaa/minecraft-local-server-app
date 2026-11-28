@@ -6,9 +6,21 @@ const path = require('node:path')
 // i18n.js es un script de navegador: se cargan sus dependencias y se captura
 // MESSAGES desde window.I18N, tal y como lo hará en el renderer.
 global.window = {}
-global.document = { readyState: 'complete', addEventListener() {}, querySelectorAll() { return [] }, documentElement: {} }
+global.document = {
+  readyState: 'complete',
+  addEventListener() {},
+  querySelectorAll() {
+    return []
+  },
+  documentElement: {}
+}
 global.navigator = { language: 'es' }
-global.localStorage = { getItem() { return null }, setItem() {} }
+global.localStorage = {
+  getItem() {
+    return null
+  },
+  setItem() {}
+}
 
 require('../src/i18n')
 const MESSAGES = global.window.I18N.MESSAGES
@@ -23,15 +35,21 @@ function usedKeys() {
   const files = [path.join(src, 'renderer.js')]
   const modulesDir = path.join(src, 'renderer')
   if (fs.existsSync(modulesDir)) {
-    fs.readdirSync(modulesDir).filter(f => f.endsWith('.js')).forEach(f => files.push(path.join(modulesDir, f)))
+    fs.readdirSync(modulesDir)
+      .filter(f => f.endsWith('.js'))
+      .forEach(f => files.push(path.join(modulesDir, f)))
   }
   const renderer = files.map(f => fs.readFileSync(f, 'utf8')).join('\n')
   const html = fs.readFileSync(path.join(src, 'index.html'), 'utf8')
 
   // T('clave') en el renderer
-  for (const m of renderer.matchAll(/T\('([\w.]+)'/g)) { if (!m[1].endsWith('.')) keys.add(m[1]) }
+  for (const m of renderer.matchAll(/T\('([\w.]+)'/g)) {
+    if (!m[1].endsWith('.')) keys.add(m[1])
+  }
   // Claves 'upd.*' literales que alimentan mapas dinámicos (UPDATE_STATE_KEYS…)
-  for (const m of renderer.matchAll(/'(upd\.[\w.]+)'/g)) { if (!m[1].endsWith('.')) keys.add(m[1]) }
+  for (const m of renderer.matchAll(/'(upd\.[\w.]+)'/g)) {
+    if (!m[1].endsWith('.')) keys.add(m[1])
+  }
   // Construcción dinámica "upd.hint." + estado
   if (renderer.includes("'upd.hint.'")) {
     for (const s of ['available', 'downloading', 'ready', 'error']) keys.add(`upd.hint.${s}`)

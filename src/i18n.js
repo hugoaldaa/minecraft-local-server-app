@@ -44,7 +44,8 @@ const MESSAGES = {
     'servers.empty': 'No tienes servidores aún.',
     'servers.emptyHint': 'Pulsa "+ Añadir servidor" para empezar.',
     'servers.createError': 'No se pudo crear el servidor',
-    'servers.externalNote': '{count} servidor(es) iniciado(s) fuera de la app: su consola no está conectada. Detenlos desde la terminal o reinícialos aquí.',
+    'servers.externalNote':
+      '{count} servidor(es) iniciado(s) fuera de la app: su consola no está conectada. Detenlos desde la terminal o reinícialos aquí.',
 
     'status.online': 'En línea',
     'status.stopped': 'Detenido',
@@ -337,7 +338,8 @@ const MESSAGES = {
     'privacy.sentTitle': 'Datos que se envían',
     'privacy.sentDefault': 'Por defecto no se envía nada: la app no incluye endpoints de analytics ni de errores.',
     'privacy.sentEndpoints': 'Solo si se configura manualmente un endpoint HTTPS se envían esos eventos o informes.',
-    'privacy.sentNetwork': 'La app contacta con GitHub y proveedores de jars para actualizaciones y descargas. No reciben datos de tus servidores.',
+    'privacy.sentNetwork':
+      'La app contacta con GitHub y proveedores de jars para actualizaciones y descargas. No reciben datos de tus servidores.',
     'privacy.controlsTitle': 'Tus controles',
     'privacy.controlsText': 'Puedes activar o desactivar la telemetría, borrar eventos y limpiar errores en Ajustes → Privacidad y datos.',
     'privacy.docs': 'La política completa está en PRIVACY.md, en el repositorio del proyecto.',
@@ -482,7 +484,8 @@ const MESSAGES = {
     'servers.empty': "You don't have any servers yet.",
     'servers.emptyHint': 'Press "+ Add server" to get started.',
     'servers.createError': 'Could not create the server',
-    'servers.externalNote': '{count} server(s) started outside the app: their console is not connected. Stop them from the terminal or restart them here.',
+    'servers.externalNote':
+      '{count} server(s) started outside the app: their console is not connected. Stop them from the terminal or restart them here.',
 
     'status.online': 'Online',
     'status.stopped': 'Stopped',
@@ -885,14 +888,18 @@ function detectLang() {
 async function migrateLangFromStorage() {
   let saved = null
   let old = null
-  try { saved = await window.api.getPref('lang') } catch (_) {}
+  try {
+    saved = await window.api.getPref('lang')
+  } catch (_) {}
   try {
     old = localStorage.getItem('app-lang')
     localStorage.removeItem('app-lang')
   } catch (_) {}
   if (saved !== 'es' && saved !== 'en' && (old === 'es' || old === 'en')) {
     saved = old
-    try { await window.api.setPref('lang', old) } catch (_) {}
+    try {
+      await window.api.setPref('lang', old)
+    } catch (_) {}
   }
   if (saved === 'es' || saved === 'en') {
     currentLang = saved

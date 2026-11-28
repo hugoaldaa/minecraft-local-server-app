@@ -5,11 +5,17 @@ const { getAllServersMap, getServerSettings, getGlobalBackupDir } = require('./s
 
 const pickedBackupDirs = new Set()
 
-function isStr(v) { return typeof v === 'string' && v.length > 0 && !v.includes('\0') }
+function isStr(v) {
+  return typeof v === 'string' && v.length > 0 && !v.includes('\0')
+}
 
 function normalize(p) {
   if (!isStr(p)) return null
-  try { return path.normalize(path.resolve(p)) } catch { return null }
+  try {
+    return path.normalize(path.resolve(p))
+  } catch {
+    return null
+  }
 }
 
 function samePath(a, b) {
@@ -102,7 +108,9 @@ function isIntInRange(v, min, max, fallback) {
   return Math.min(max, Math.max(min, n))
 }
 
-function isValidColor(c) { return typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c) }
+function isValidColor(c) {
+  return typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c)
+}
 
 // Divide argumentos de la línea de comandos respetando comillas simples/dobles.
 // Evita que `.split(' ')` rompa rutas con espacios: -Ddir="C:\My Servers".
@@ -121,7 +129,11 @@ function splitArgs(input) {
       quote = ch
       quoted = true
     } else if (/\s/.test(ch)) {
-      if (current !== '' || quoted) { args.push(current); current = ''; quoted = false }
+      if (current !== '' || quoted) {
+        args.push(current)
+        current = ''
+        quoted = false
+      }
     } else {
       current += ch
     }
@@ -132,7 +144,10 @@ function splitArgs(input) {
 
 function cleanText(v, maxLen) {
   if (typeof v !== 'string') return ''
-  return v.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, maxLen)
+  return v
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .trim()
+    .slice(0, maxLen)
 }
 
 // javaPath: nombre de comando simple (java) o ruta absoluta válida
