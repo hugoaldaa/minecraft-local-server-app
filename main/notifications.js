@@ -1,5 +1,6 @@
 // Notificaciones del sistema (Fase 2.3). Se envían al renderer como «toast»
 // y, si el sistema lo permite, como notificación nativa de Windows/Linux.
+// También pueden enviarse por correo si el usuario lo configura.
 // Los helpers son puros para poder testearlos sin Electron.
 'use strict'
 
@@ -14,6 +15,16 @@ const PREF_BY_TYPE = {
   backup_done: 'notifyBackups',
   player_join: 'notifyPlayers',
   player_leave: 'notifyPlayers'
+}
+
+const EMAIL_PREF_BY_TYPE = {
+  server_started: 'emailNotifyServer',
+  server_stopped: 'emailNotifyServer',
+  server_crash: 'emailNotifyServer',
+  server_restart: 'emailNotifyServer',
+  backup_done: 'emailNotifyBackups',
+  player_join: 'emailNotifyPlayers',
+  player_leave: 'emailNotifyPlayers'
 }
 
 const TEXTS = {
@@ -66,23 +77,48 @@ function shouldNotify(type, prefs) {
   return prefs ? prefs[pref] === true : settingsStore.get(pref) === true
 }
 
+function shouldEmailNotify(type, prefs) {
+  const pref = EMAIL_PREF_BY_TYPE[type]
+  if (!pref) return false
+  return prefs ? prefs[pref] === true : settingsStore.get(pref) === true
+}
+
+function canSendEmail() {
+  return settingsStore.get('emailEnabled') === true
+}
+
 // Envía el «toast» al renderer y, además, una notificación nativa si está
-// disponible. Nunca lanza: una notificación no debe romper el arranque.
+// disponible. Si el correo está configurado, también lo envía en segundo plano.
+// Nunca lanza: una notificación no debe romper el arranque.
 function notify(type, data = {}) {
-  if (!shouldNotify(type)) return false
+  const inApp = shouldNotify(type)
+  const byEmail = canSendEmail() && shouldEmailNotify(type)
+  if (!inApp && !byEmail) return false
+
   const payload = buildNotification(type, data, currentLang())
   if (!payload) return false
-  sendToRenderer('app-notification', payload)
-  try {
-    // Requerimiento diferido: en Node (tests) require('electron') devuelve una
-    // ruta, no el módulo. Así los helpers de arriba siguen siendo testeables.
-    const electron = require('electron')
-    if (electron && typeof electron.Notification === 'function' && electron.Notification.isSupported()) {
-      const native = new electron.Notification({ title: payload.title, body: payload.body })
-      native.show()
-    }
-  } catch (_) { /* sin soporte nativo: el toast del renderer es suficiente */ }
+
+  if (inApp) {
+    sendToRenderer('app-notification', payload)
+    try {
+      // Requerimiento diferido: en Node (tests) require('electron') devuelve una
+      // ruta, no el módulo. Así los helpers de arriba siguen siendo testeables.
+      const electron = require('electron')
+      if (electron && typeof electron.Notification === 'function' && electron.Notification.isSupported()) {
+        const native = new electron.Notification({ title: payload.title, body: payload.body })
+        native.show()
+      }
+    } catch (_) { /* sin soporte nativo: el toast del renderer es suficiente */ }
+  }
+
+  if (byEmail) {
+    try {
+      const { sendNotificationEmail } = require('./email')
+      Promise.resolve(sendNotificationEmail(payload, data)).catch(() => {})
+    } catch (_) { /* email no disponible: no romper notificación */ }
+  }
+
   return true
 }
 
-module.exports = { notify, buildNotification, shouldNotify, PREF_BY_TYPE }
+module.exports = { notify, buildNotification, shouldNotify, shouldEmailNotify, canSendEmail, PREF_BY_TYPE, EMAIL_PREF_BY_TYPE }

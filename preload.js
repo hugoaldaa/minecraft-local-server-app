@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('api', {
   // Preferencias globales (Ajustes)
   getPref: (key) => ipcRenderer.invoke('prefs:get', key),
   setPref: (key, value) => ipcRenderer.invoke('prefs:set', { key, value }),
+  testEmail: () => ipcRenderer.invoke('email:test'),
 
   // Auto-updater
   checkUpdate: () => ipcRenderer.invoke('update:check'),

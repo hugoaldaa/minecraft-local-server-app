@@ -1,6 +1,7 @@
 const fs = require('fs')
 const { app, dialog, ipcMain } = require('electron')
 const { initDb, closeDb, exportAll, importAll } = require('./db')
+const { migrateEmailPass } = require('./stores')
 const { settingsStore, getAllServersMap } = require('./stores')
 const { getMainWindow } = require('./state')
 const { trackEvent, registerAnalyticsIpc } = require('./analytics')
@@ -17,6 +18,7 @@ const { startStatsPolling, stopStatsPolling } = require('./stats')
 const { startLogPolling, stopLogPolling } = require('./logs')
 const { registerEstadisticasIpc } = require('./estadisticas')
 const { registerNotificacionesIpc } = require('./notificaciones')
+const { sendTestEmail } = require('./email')
 const { isPlainObject, isStr, cleanText } = require('./validate')
 
 // ─── Registro de IPC ────────────────────────────────────────────────────────
@@ -79,7 +81,9 @@ ipcMain.handle('data:importFile', async () => {
 // ─── Preferencias globales (Ajustes) ────────────────────────────────────────
 const PREF_KEYS = ['backupDir', 'backupKeep', 'backupLevel', 'theme', 'lang', 'defaultServerDir', 'closeToTray', 'startOnBoot', 'uiScale',
   'defaultRam', 'defaultJava', 'defaultJvmArgs', 'autoEula', 'retentionSamples', 'retentionEvents',
-  'notifyServer', 'notifyPlayers', 'notifyBackups']
+  'notifyServer', 'notifyPlayers', 'notifyBackups',
+  'emailEnabled', 'emailHost', 'emailPort', 'emailSecure', 'emailUser', 'emailPass', 'emailFrom', 'emailTo',
+  'emailNotifyServer', 'emailNotifyBackups', 'emailNotifyPlayers']
 
 ipcMain.handle('prefs:get', (_, key) => (PREF_KEYS.includes(key) ? settingsStore.get(key, null) : null))
 ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
@@ -96,7 +100,8 @@ ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
     updateTrayLang() // el menú de bandeja se traduce con el idioma guardado
     return { ok: true }
   }
-  if (key === 'closeToTray' || key === 'startOnBoot' || key === 'notifyServer' || key === 'notifyPlayers' || key === 'notifyBackups') {
+  if (key === 'closeToTray' || key === 'startOnBoot' || key === 'notifyServer' || key === 'notifyPlayers' || key === 'notifyBackups'
+    || key === 'emailEnabled' || key === 'emailSecure' || key === 'emailNotifyServer' || key === 'emailNotifyBackups' || key === 'emailNotifyPlayers') {
     if (typeof value !== 'boolean') return { ok: false, error: 'Valor no válido' }
     settingsStore.set(key, value)
     if (key === 'closeToTray') syncTray() // crea o elimina el icono de bandeja
@@ -156,12 +161,32 @@ ipcMain.handle('prefs:set', (_, { key, value } = {}) => {
     settingsStore.set('defaultServerDir', value || '')
     return { ok: true }
   }
+  if (key === 'emailPort') {
+    const n = Number.parseInt(value, 10)
+    if (!Number.isInteger(n) || n < 1 || n > 65535) return { ok: false, error: 'Puerto no válido' }
+    settingsStore.set('emailPort', n)
+    return { ok: true }
+  }
+  if (key === 'emailHost' || key === 'emailUser' || key === 'emailPass' || key === 'emailFrom' || key === 'emailTo') {
+    if (value !== null && !isStr(value)) return { ok: false, error: 'Valor no válido' }
+    const max = key === 'emailPass' ? 512 : 320
+    settingsStore.set(key, cleanText(value || '', max))
+    return { ok: true }
+  }
   // backupDir
   if (value !== null && !isStr(value)) return { ok: false, error: 'Ruta no válida' }
   settingsStore.set('backupDir', value || '')
   // La carpeta cambia para todos: se reprograman todos los mantenimientos
   Object.keys(getAllServersMap()).forEach((id) => scheduleServerMaintenance(id))
   return { ok: true }
+})
+
+ipcMain.handle('email:test', async () => {
+  try {
+    return await sendTestEmail()
+  } catch (err) {
+    return { ok: false, error: err.message }
+  }
 })
 
 ipcMain.handle('settings:get', (_, serverId) => {
@@ -219,6 +244,7 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     initDb()
     migrateGlobalBackupDir()
+    migrateEmailPass()
     createWindow()
     syncTray()
     startStatsPolling()

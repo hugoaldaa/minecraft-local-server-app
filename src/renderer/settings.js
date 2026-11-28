@@ -85,13 +85,56 @@ function initSettings() {
   const notifyToggles = {
     'set-notify-server': 'notifyServer',
     'set-notify-players': 'notifyPlayers',
-    'set-notify-backups': 'notifyBackups'
+    'set-notify-backups': 'notifyBackups',
+    'set-email-enabled': 'emailEnabled',
+    'set-email-secure': 'emailSecure',
+    'set-email-notify-server': 'emailNotifyServer',
+    'set-email-notify-players': 'emailNotifyPlayers',
+    'set-email-notify-backups': 'emailNotifyBackups'
   }
   Object.entries(notifyToggles).forEach(([id, key]) => {
-    document.getElementById(id).onchange = (e) => {
+    const el = document.getElementById(id)
+    if (!el) return
+    el.onchange = (e) => {
       run(T('run.settings'), () => window.api.setPref(key, e.target.checked))
     }
   })
+
+  const saveEmailBtn = document.getElementById('btn-save-email')
+  if (saveEmailBtn) {
+    saveEmailBtn.onclick = async () => {
+      const portRaw = parseInt(document.getElementById('set-email-port').value, 10)
+      const payload = [
+        ['emailEnabled', document.getElementById('set-email-enabled').checked === true],
+        ['emailHost', document.getElementById('set-email-host').value || ''],
+        ['emailPort', Number.isInteger(portRaw) ? portRaw : 587],
+        ['emailSecure', document.getElementById('set-email-secure').checked === true],
+        ['emailUser', document.getElementById('set-email-user').value || ''],
+        ['emailPass', document.getElementById('set-email-pass').value || ''],
+        ['emailFrom', document.getElementById('set-email-from').value || ''],
+        ['emailTo', document.getElementById('set-email-to').value || ''],
+        ['emailNotifyServer', document.getElementById('set-email-notify-server').checked === true],
+        ['emailNotifyPlayers', document.getElementById('set-email-notify-players').checked === true],
+        ['emailNotifyBackups', document.getElementById('set-email-notify-backups').checked === true]
+      ]
+      let ok = true
+      for (const [key, value] of payload) {
+        const res = await run(T('run.settings'), () => window.api.setPref(key, value))
+        if (!res || res.ok !== true) { ok = false; break }
+      }
+      if (ok) showToast(T('settings.emailSaveOk'), T('settings.emailSaveOkHint'), 'success')
+      else showToast(T('settings.emailSaveFail'), T('settings.emailSaveFailHint'), 'server_crash')
+    }
+  }
+
+  const emailTestBtn = document.getElementById('btn-test-email')
+  if (emailTestBtn) {
+    emailTestBtn.onclick = async () => {
+      const res = await run(T('run.emailTest'), () => window.api.testEmail())
+      if (res && res.ok) showToast(T('settings.emailTestOk'), T('settings.emailTestOkHint'), 'success')
+      else if (res && !res.canceled) showToast(T('settings.emailTestFail'), res.error || T('settings.emailTestFailHint'), 'server_crash')
+    }
+  }
   document.getElementById('set-retention-samples').addEventListener('change', async (e) => {
     const n = parseInt(e.target.value, 10)
     if (!Number.isInteger(n) || n < 1) return
@@ -168,6 +211,17 @@ async function loadSettings() {
   const notifyServer = await run(T('run.settings'), () => window.api.getPref('notifyServer'), false)
   const notifyPlayers = await run(T('run.settings'), () => window.api.getPref('notifyPlayers'), false)
   const notifyBackups = await run(T('run.settings'), () => window.api.getPref('notifyBackups'), false)
+  const emailEnabled = await run(T('run.settings'), () => window.api.getPref('emailEnabled'), false)
+  const emailHost = await run(T('run.settings'), () => window.api.getPref('emailHost'), '')
+  const emailPort = await run(T('run.settings'), () => window.api.getPref('emailPort'), 587)
+  const emailSecure = await run(T('run.settings'), () => window.api.getPref('emailSecure'), false)
+  const emailUser = await run(T('run.settings'), () => window.api.getPref('emailUser'), '')
+  const emailPass = await run(T('run.settings'), () => window.api.getPref('emailPass'), '')
+  const emailFrom = await run(T('run.settings'), () => window.api.getPref('emailFrom'), '')
+  const emailTo = await run(T('run.settings'), () => window.api.getPref('emailTo'), '')
+  const emailNotifyServer = await run(T('run.settings'), () => window.api.getPref('emailNotifyServer'), false)
+  const emailNotifyPlayers = await run(T('run.settings'), () => window.api.getPref('emailNotifyPlayers'), false)
+  const emailNotifyBackups = await run(T('run.settings'), () => window.api.getPref('emailNotifyBackups'), false)
   const retentionSamples = (await run(T('run.settings'), () => window.api.getPref('retentionSamples'), 30)) || 30
   const retentionEvents = (await run(T('run.settings'), () => window.api.getPref('retentionEvents'), 730)) || 730
   document.getElementById('set-server-dir').value = prefServerDir || ''
@@ -180,6 +234,17 @@ async function loadSettings() {
   document.getElementById('set-notify-server').checked = notifyServer === true
   document.getElementById('set-notify-players').checked = notifyPlayers === true
   document.getElementById('set-notify-backups').checked = notifyBackups === true
+  document.getElementById('set-email-enabled').checked = emailEnabled === true
+  document.getElementById('set-email-host').value = emailHost || ''
+  document.getElementById('set-email-port').value = Number.isInteger(emailPort) ? emailPort : 587
+  document.getElementById('set-email-secure').checked = emailSecure === true
+  document.getElementById('set-email-user').value = emailUser || ''
+  document.getElementById('set-email-pass').value = emailPass || ''
+  document.getElementById('set-email-from').value = emailFrom || ''
+  document.getElementById('set-email-to').value = emailTo || ''
+  document.getElementById('set-email-notify-server').checked = emailNotifyServer === true
+  document.getElementById('set-email-notify-players').checked = emailNotifyPlayers === true
+  document.getElementById('set-email-notify-backups').checked = emailNotifyBackups === true
   document.getElementById('set-retention-samples').value = retentionSamples
   document.getElementById('set-retention-events').value = retentionEvents
   selectUiScale(Math.round((typeof uiScale === 'number' && uiScale > 0 ? uiScale : 1) * 100))

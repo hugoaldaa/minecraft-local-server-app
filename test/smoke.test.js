@@ -250,4 +250,12 @@ test('smoke: las notificaciones respetan las preferencias', () => {
   assert.equal(n.body, 'Mundo se ha caído. sin memoria')
 })
 
+test('smoke: la notificacion por email respeta sus preferencias', () => {
+  const { shouldEmailNotify } = require('../main/notifications')
+  assert.equal(shouldEmailNotify('server_started', { emailNotifyServer: true }), true)
+  assert.equal(shouldEmailNotify('server_started', { emailNotifyServer: false }), false)
+  assert.equal(shouldEmailNotify('backup_done', { emailNotifyBackups: true }), true)
+  assert.equal(shouldEmailNotify('player_join', { emailNotifyPlayers: false }), false)
+})
+
 test.after(() => teardownTestDb())

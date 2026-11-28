@@ -2,6 +2,40 @@
 // ofrecía electron-store, pero los datos viven exclusivamente en SQLite.
 const { getDb, metaGet, metaSet } = require('./db')
 
+let _safeStorage
+function getSafeStorage() {
+  if (_safeStorage !== undefined) return _safeStorage
+  try { _safeStorage = require('electron').safeStorage || null } catch (_) { _safeStorage = null }
+  return _safeStorage
+}
+
+function encryptSecret(plain) {
+  const value = typeof plain === 'string' ? plain : ''
+  if (!value) return ''
+  const ss = getSafeStorage()
+  try {
+    if (ss && typeof ss.isEncryptionAvailable === 'function' && ss.isEncryptionAvailable() && typeof ss.encryptString === 'function') {
+      return { __safe: 'v1', data: ss.encryptString(value).toString('base64') }
+    }
+  } catch (_) {}
+  return value
+}
+
+function decryptSecret(stored) {
+  if (!stored) return ''
+  if (typeof stored === 'string') return stored
+  if (stored && stored.__safe === 'v1' && typeof stored.data === 'string') {
+    const ss = getSafeStorage()
+    try {
+      if (ss && typeof ss.decryptString === 'function') {
+        return ss.decryptString(Buffer.from(stored.data, 'base64'))
+      }
+    } catch (_) {}
+    return ''
+  }
+  return ''
+}
+
 function jsonGet(table, keyColumn, key, fallback) {
   const row = getDb().prepare(`SELECT value FROM ${table} WHERE ${keyColumn} = ?`).get(key)
   if (!row || row.value === null || row.value === undefined) return fallback
@@ -49,8 +83,22 @@ function getGlobalBackupDir() { return jsonGet('settings', 'key', 'backupDir', '
 
 // Compatibilidad con el código que usa settingsStore.get/set/delete directamente.
 const settingsStore = {
-  get: (key, fallback) => jsonGet('settings', 'key', key, fallback),
-  set: (key, value) => { jsonSet('settings', 'key', key, value); return settingsStore },
+  get: (key, fallback) => {
+    if (key === 'emailPass') {
+      const row = getDb().prepare('SELECT value FROM settings WHERE key = ?').get(key)
+      if (!row || row.value === null || row.value === undefined) return fallback
+      try { return decryptSecret(JSON.parse(row.value)) } catch (_) { return fallback }
+    }
+    return jsonGet('settings', 'key', key, fallback)
+  },
+  set: (key, value) => {
+    if (key === 'emailPass') {
+      jsonSet('settings', 'key', key, encryptSecret(typeof value === 'string' ? value : ''))
+      return settingsStore
+    }
+    jsonSet('settings', 'key', key, value)
+    return settingsStore
+  },
   delete: (key) => jsonDelete('settings', 'key', key),
   has: (key) => !!getDb().prepare('SELECT 1 FROM settings WHERE key = ?').get(key)
 }
@@ -227,11 +275,23 @@ function getPlayerEventsRange(serverId, from, to) {
     .all(serverId, from ?? null, from ?? null, to ?? null, to ?? null)
 }
 
+function migrateEmailPass() {
+  const row = getDb().prepare('SELECT value FROM settings WHERE key = ?').get('emailPass')
+  if (!row || row.value === null || row.value === undefined) return
+  try {
+    const parsed = JSON.parse(row.value)
+    if (parsed && parsed.__safe === 'v1') return
+    if (typeof parsed === 'string' && parsed) settingsStore.set('emailPass', parsed)
+    else if (typeof parsed === 'string') settingsStore.set('emailPass', '')
+  } catch (_) {}
+}
+
 module.exports = {
   settingsStore, analyticsStore, crashStore,
   getAllServersMap, saveServerMap,
   getServerSettings, setServerSettings, getGlobalBackupDir,
   getSamples, saveSamples, insertSamples, pruneSamples, getSamplesRange,
   getPlayerEvents, savePlayerEvents, insertPlayerEvents, prunePlayerEvents, getPlayerEventsRange,
-  getPlayerTotals, savePlayerTotals, getRunTime, saveRunTime, deleteServerStats
+  getPlayerTotals, savePlayerTotals, getRunTime, saveRunTime, deleteServerStats,
+  migrateEmailPass
 }

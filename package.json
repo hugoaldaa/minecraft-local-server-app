@@ -116,6 +116,7 @@
     "better-sqlite3": "^13.2.0",
     "electron-updater": "^6.8.11",
     "node-schedule": "^2.1.1",
+    "nodemailer": "^6.10.1",
     "systeminformation": "^5.33.26"
   },
   "devDependencies": {

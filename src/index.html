@@ -486,6 +486,132 @@
               </div>
             </div>
           </div>
+
+          <h3 data-i18n="settings.emailNotifications">Notificaciones por correo</h3>
+          <div class="set-group">
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailEnabled">Enviar por correo</span>
+                <p class="set-row-hint" data-i18n="settings.emailEnabledHint">Envía un email cuando ocurran las acciones seleccionadas.</p>
+              </div>
+              <div class="set-row-control">
+                <label class="switch"><input type="checkbox" id="set-email-enabled" /><span
+                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailHost">Servidor SMTP</span>
+                <p class="set-row-hint" data-i18n="settings.emailHostHint">Host SMTP de tu proveedor de correo.</p>
+              </div>
+              <div class="set-row-control set-row-input">
+                <input type="text" id="set-email-host" placeholder="smtp.gmail.com" />
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailPort">Puerto SMTP</span>
+                <p class="set-row-hint" data-i18n="settings.emailPortHint">Normalmente 587 (STARTTLS) o 465 (SSL).</p>
+              </div>
+              <div class="set-row-control set-row-input">
+                <input type="number" id="set-email-port" min="1" max="65535" step="1" placeholder="587" />
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailSecure">SSL/TLS seguro</span>
+                <p class="set-row-hint" data-i18n="settings.emailSecureHint">Actívalo para puerto 465; déjalo desactivado para 587 con STARTTLS.</p>
+              </div>
+              <div class="set-row-control">
+                <label class="switch"><input type="checkbox" id="set-email-secure" /><span
+                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailUser">Usuario SMTP</span>
+                <p class="set-row-hint" data-i18n="settings.emailUserHint">Usuario o correo de la cuenta SMTP.</p>
+              </div>
+              <div class="set-row-control set-row-input">
+                <input type="text" id="set-email-user" placeholder="usuario@ejemplo.com" />
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailPass">Contraseña SMTP</span>
+                <p class="set-row-hint" data-i18n="settings.emailPassHint">Contraseña o contraseña de aplicación del proveedor.</p>
+              </div>
+              <div class="set-row-control set-row-input">
+                <input type="password" id="set-email-pass" placeholder="••••••••" />
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailFrom">Remitente</span>
+                <p class="set-row-hint" data-i18n="settings.emailFromHint">Dirección que aparecerá como remitente.</p>
+              </div>
+              <div class="set-row-control set-row-input">
+                <input type="text" id="set-email-from" placeholder="Minecraft Manager <usuario@ejemplo.com>" />
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailTo">Destinatario</span>
+                <p class="set-row-hint" data-i18n="settings.emailToHint">Correo o correos separados por comas.</p>
+              </div>
+              <div class="set-row-control set-row-input">
+                <input type="text" id="set-email-to" placeholder="admin@ejemplo.com" />
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailNotifyServer">Correo: servidores</span>
+                <p class="set-row-hint" data-i18n="settings.emailNotifyServerHint">Iniciado, detenido, caído o reiniciado.</p>
+              </div>
+              <div class="set-row-control">
+                <label class="switch"><input type="checkbox" id="set-email-notify-server" /><span
+                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailNotifyPlayers">Correo: jugadores</span>
+                <p class="set-row-hint" data-i18n="settings.emailNotifyPlayersHint">Conexión y desconexión de jugadores.</p>
+              </div>
+              <div class="set-row-control">
+                <label class="switch"><input type="checkbox" id="set-email-notify-players" /><span
+                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailNotifyBackups">Correo: backups</span>
+                <p class="set-row-hint" data-i18n="settings.emailNotifyBackupsHint">Cuando se completa una copia de seguridad.</p>
+              </div>
+              <div class="set-row-control">
+                <label class="switch"><input type="checkbox" id="set-email-notify-backups" /><span
+                    class="switch-track"></span><span class="switch-label" data-i18n="lists.active">Activa</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailSave">Guardar datos de correo</span>
+                <p class="set-row-hint" data-i18n="settings.emailSaveHint">Guarda la configuración SMTP y las opciones de correo.</p>
+              </div>
+              <div class="set-row-control">
+                <button class="btn-primary" id="btn-save-email" data-i18n="settings.emailSaveBtn">Guardar datos</button>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <span class="set-row-label" data-i18n="settings.emailTest">Probar correo</span>
+                <p class="set-row-hint" data-i18n="settings.emailTestHint">Envía un correo de prueba con la configuración actual.</p>
+              </div>
+              <div class="set-row-control">
+                <button class="btn-secondary" id="btn-test-email" data-i18n="settings.emailTestBtn">Enviar prueba</button>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- Apariencia -->
