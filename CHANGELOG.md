@@ -4,6 +4,44 @@ Historial de versiones de **Minecraft Local Server Manager**, reconstruido a par
 de los tags y commits del repositorio. Formato de [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 
+## v2.6.0 - Add email settings save button and encrypt SMTP password with safeStorage (2026-11-28)
+
+### Añadido
+
+- Nuevo módulo main/email.js con configuración SMTP, construcción de contenido y envío de correos de notificación/prueba mediante nodemailer.
+- Nuevas preferencias globales de correo: activación, host, puerto, SSL/TLS, usuario, contraseña, remitente, destinatario y categorías emailNotifyServer, emailNotifyPlayers, emailNotifyBackups.
+- Nueva sección “Notificaciones por correo” en Ajustes con formulario SMTP, toggles por categoría y botón de envío de prueba.
+- Nuevo IPC email:test y puente window.api.testEmail() para validar la configuración SMTP desde la UI.
+- Caso de smoke test para verificar que shouldEmailNotify respeta las preferencias de correo.
+- Botón “Guardar datos” en la sección de notificaciones por correo para guardar explícitamente la configuración SMTP y los toggles de email.
+- Cifrado de la contraseña SMTP con safeStorage de Electron al persistir emailPass.
+- Migración de arranque para cifrar contraseñas SMTP previamente guardadas en texto plano.
+
+### Corregido
+
+- Se evitó acoplar el envío de correo al historial persistente en español: el email usa el payload localizado generado por el sistema de notificaciones existente.
+- Se evita dejar la contraseña SMTP en texto plano cuando Electron safeStorage está disponible.
+
+### Cambios
+
+- main/notifications.js ahora soporta despacho opcional por email además del toast/notificación nativa, reutilizando buildNotification() para el contenido.
+- main/index.js amplía PREF_KEYS y la validación de prefs:set para las nuevas opciones de correo.
+- preload.js, src/index.html, src/renderer/settings.js y src/i18n.js se actualizaron para exponer, mostrar y traducir la configuración de notificaciones por correo.
+- package.json y package-lock.json incluyen la dependencia nodemailer.
+- src/renderer/settings.js ahora guarda la configuración de correo mediante una acción explícita y muestra confirmación visual.
+- main/stores.js maneja emailPass como secreto cifrado (__safe: v1) con fallback cuando el cifrado no está disponible.
+- main/index.js ejecuta migrateEmailPass() tras inicializar la base de datos.
+- src/index.html y src/i18n.js incluyen el nuevo botón/textos ES/EN.
+
+### Otros
+
+- Verificación: node --check main/email.js; node --check main/notifications.js; node --check main/index.js; node --check preload.js; node --check src/renderer/settings.js; node --check src/renderer/events.js.
+- Verificación: npm.cmd test -- test/smoke.test.js (7 pruebas, 0 fallos).
+- Verificación: npm.cmd install --ignore-scripts para actualizar lockfile con nodemailer.
+- Nota: la contraseña SMTP queda almacenada en settings/SQLite; considerar safeStorage en una mejora futura.
+- Verificación: node --check main/stores.js; node --check main/index.js; node --check src/renderer/settings.js.
+- Nota: si safeStorage no está disponible en el entorno, la app usa fallback a texto plano para no impedir el guardado; en entornos normales de Electron debería cifrarse.
+
 ## v2.5.3 - Configure per-server maintenance warning minutes (2026-11-27)
 
 ### Añadido
